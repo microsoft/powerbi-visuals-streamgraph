@@ -1,1 +1,248 @@
-{}
+{
+    "dataRoles": [
+        {
+            "name": "Category",
+            "kind": "Grouping",
+            "displayName": "Category"
+        },
+        {
+            "name": "Series",
+            "kind": "Grouping",
+            "displayName": "Series"
+        },
+        {
+            "name": "Y",
+            "kind": "Measure",
+            "displayName": "Values"
+        }
+    ],
+    "dataViewMappings": [
+        {
+            "conditions": [
+                {
+                    "Category": {
+                        "max": 1
+                    },
+                    "Series": {
+                        "max": 0
+                    }
+                },
+                {
+                    "Category": {
+                        "max": 1
+                    },
+                    "Series": {
+                        "min": 1,
+                        "max": 1
+                    },
+                    "Y": {
+                        "max": 1
+                    }
+                }
+            ],
+            "categorical": {
+                "categories": {
+                    "for": {
+                        "in": "Category"
+                    },
+                    "dataReductionAlgorithm": {
+                        "bottom": {}
+                    }
+                },
+                "values": {
+                    "group": {
+                        "by": "Series",
+                        "select": [
+                            {
+                                "for": {
+                                    "in": "Y"
+                                }
+                            }
+                        ],
+                        "dataReductionAlgorithm": {
+                            "bottom": {}
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "objects": {
+        "general": {
+            "displayName": "General",
+            "properties": {
+                "wiggle": {
+                    "type": {
+                        "bool": true
+                    },
+                    "displayName": "Wiggle"
+                }
+            }
+        },
+        "categoryAxis": {
+            "displayName": "X-Axis",
+            "properties": {
+                "show": {
+                    "displayName": "show",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showAxisTitle": {
+                    "displayName": "Title",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelColor": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "valueAxis": {
+            "displayName": "Y-Axis",
+            "properties": {
+                "show": {
+                    "displayName": "show",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showAxisTitle": {
+                    "displayName": "Title",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelColor": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "legend": {
+            "displayName": "Legend",
+            "properties": {
+                "show": {
+                    "displayName": "show",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "position": {
+                    "displayName": "Position",
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "Top",
+                                "displayName": "Top"
+                            },
+                            {
+                                "value": "Bottom",
+                                "displayName": "Bottom"
+                            },
+                            {
+                                "value": "Left",
+                                "displayName": "Left"
+                            },
+                            {
+                                "value": "Right",
+                                "displayName": "Right"
+                            },
+                            {
+                                "value": "TopCenter",
+                                "displayName": "Top Center"
+                            },
+                            {
+                                "value": "BottomCenter",
+                                "displayName": "Bottom Center"
+                            },
+                            {
+                                "value": "LeftCenter",
+                                "displayName": "Left Center"
+                            },
+                            {
+                                "value": "RightCenter",
+                                "displayName": "Right center"
+                            }
+                        ]
+                    }
+                },
+                "showTitle": {
+                    "displayName": "Title",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "titleText": {
+                    "displayName": "Legend Name",
+                    "type": {
+                        "text": true
+                    },
+                    "suppressFormatPainterCopy": true
+                },
+                "labelColor": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "fontSize": {
+                    "displayName": "Text Size",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                }
+            }
+        },
+        "labels": {
+            "displayName": "Data Labels",
+            "properties": {
+                "show": {
+                    "displayName": "Show",
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "color": {
+                    "displayName": "Color",
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "fontSize": {
+                    "displayName": "Text Size",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "supportsHighlight": true
+}
