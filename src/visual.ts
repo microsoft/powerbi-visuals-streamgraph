@@ -39,8 +39,9 @@ module powerbi.extensibility.visual {
     // powerbi.extensibility.visual
     import DefaultOpacity = utils.DefaultOpacity;
     import BehaviorOptions = behavior.BehaviorOptions;
-    import StreamGraphBehavior = behavior.StreamGraphBehavior;
     import StreamGraphSettings = settings.StreamGraphSettings;
+    import StreamGraphBehavior = behavior.StreamGraphBehavior;
+    import createTooltipInfo = tooltipBuilder.createTooltipInfo;
     import StreamGraphAxisSettings = settings.StreamGraphAxisSettings;
     import StreamGraphLegendSettings = settings.StreamGraphLegendSettings;
 
@@ -92,7 +93,7 @@ module powerbi.extensibility.visual {
     export class StreamGraph implements IVisual {
         private static VisualClassName = "streamGraph";
 
-        private static AnimationDuration: number = 250;
+        private static AnimationDuration: number = 0;
 
         private static Properties = {
             legend: {
@@ -268,7 +269,6 @@ module powerbi.extensibility.visual {
                 categoryFormatter: IValueFormatter;
 
             var category = categories && categories.length > 0 ? categories[0] : null;
-            // var formatString = StreamGraph.Properties.general.formatString;
             var hasHighlights: boolean = !!(values.length > 0 && values[0].highlights);
             var streamGraphSettings: settings.StreamGraphSettings = StreamGraph.parseSettings(dataView);
             var fontSizeInPx = PixelConverter.fromPoint(streamGraphSettings.dataLabelsSettings.fontSize);
@@ -291,15 +291,9 @@ module powerbi.extensibility.visual {
                         .createSelectionId();
                 }
 
-                // TODO: implement it
-                var tooltipInfo: VisualTooltipDataItem[] = [];/*TooltipBuilder.createTooltipInfo(
-                    formatString,
+                var tooltipInfo: VisualTooltipDataItem[] = createTooltipInfo(
                     { categories: null, values: values },
-                    null,
-                    null,
-                    null,
-                    null,
-                    i);*/
+                    valueIndex);
 
                 if (!label) {
                     if (tooltipInfo &&

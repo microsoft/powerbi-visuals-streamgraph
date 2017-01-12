@@ -22,6 +22,7 @@
     "src/settings.ts",
     "src/utils.ts",
     "src/behavior.ts",
+    "src/tooltipBuilder.ts",
     "src/visual.ts"
   ]
 }
