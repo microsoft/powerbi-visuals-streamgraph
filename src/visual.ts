@@ -463,8 +463,6 @@ module powerbi.extensibility.visual {
         }
 
         public update(options: VisualUpdateOptions): void {
-            console.log("update");
-
             if (!options.dataViews || !options.dataViews[0] || !options.dataViews[0].categorical) {
                 this.clearData();
                 return;
