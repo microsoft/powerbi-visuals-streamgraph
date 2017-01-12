@@ -23,3 +23,22 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+
+.streamGraph {
+    @streamGraphFontSize: 11px;
+
+    font-family: helvetica, arial, sans-serif;
+    font-size: @streamGraphFontSize;
+
+    .axis {
+        path, line {
+            fill: none;
+            stroke: black;
+            shape-rendering: auto;
+        }
+
+        text {
+            font-size: @streamGraphFontSize;
+        }
+    }
+}
