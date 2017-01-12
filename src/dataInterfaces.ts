@@ -25,16 +25,26 @@
  */
 
 module powerbi.extensibility.visual {
+    // powerbi.extensibility.utils.interactivity
+    import SelectableDataPoint = powerbi.extensibility.utils.interactivity.SelectableDataPoint;
+
+    // powerbi.extensibility.utils.chart
+    import LegendData = powerbi.extensibility.utils.chart.legend.LegendData;
+    import IDataLabelInfo = powerbi.extensibility.utils.chart.dataLabel.IDataLabelInfo;
+
+    // powerbi.extensibility.utils.formatting
+    import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
+
     export interface StreamData {
         series: StreamGraphSeries[];
         legendData: LegendData;
         valueFormatter: IValueFormatter;
         categoryFormatter: IValueFormatter;
-        streamGraphSettings: StreamGraphSettings;
+        streamGraphSettings: settings.StreamGraphSettings;
         categoriesText: string[];
     }
 
-    export interface StreamDataPoint {
+    export interface StreamDataPoint extends IDataLabelInfo {
         x: number;
         y: number;
         y0?: number;
@@ -44,7 +54,7 @@ module powerbi.extensibility.visual {
 
     export interface StreamGraphSeries extends SelectableDataPoint {
         dataPoints: StreamDataPoint[];
-        tooltipInfo?: TooltipDataItem[];
+        tooltipInfo?: VisualTooltipDataItem[];
         highlight?: boolean;
     }
 }

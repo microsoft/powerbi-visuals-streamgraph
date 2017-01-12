@@ -24,28 +24,38 @@
  *  THE SOFTWARE.
  */
 
-module powerbi.extensibility.visual.utils.behavior {
-    export interface StreamGraphBehaviorOptions {
-        selection: D3.Selection;
-        clearCatcher: D3.Selection;
+module powerbi.extensibility.visual.behavior {
+    // d3
+    import Selection = d3.Selection;
+
+    // powerbi.extensibility.utils.interactivity
+    import ISelectionHandler = powerbi.extensibility.utils.interactivity.ISelectionHandler;
+    import IInteractiveBehavior = powerbi.extensibility.utils.interactivity.IInteractiveBehavior;
+    import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
+
+    export interface BehaviorOptions {
+        selection: Selection<any>;
+        clearCatcher: Selection<any>;
         interactivityService: IInteractivityService;
     }
 
-    class StreamGraphWebBehavior implements IInteractiveBehavior {
-        private selection: D3.Selection;
-        private clearCatcher: D3.Selection;
+    export class StreamGraphBehavior implements IInteractiveBehavior {
+        private selection: Selection<any>;
+        private clearCatcher: Selection<any>;
         private interactivityService: IInteractivityService;
 
         public bindEvents(
-            options: StreamGraphBehaviorOptions,
+            options: BehaviorOptions,
             selectionHandler: ISelectionHandler): void {
 
             this.selection = options.selection;
             this.clearCatcher = options.clearCatcher;
             this.interactivityService = options.interactivityService;
 
-            this.selection.on("click", (d: StreamGraphSeries, i: number) => {
-                selectionHandler.handleSelection(d, d3.event.ctrlKey);
+            this.selection.on("click", (series: StreamGraphSeries) => {
+                selectionHandler.handleSelection(
+                    series,
+                    (d3.event as MouseEvent).ctrlKey);
             });
 
             this.clearCatcher.on("click", () => {
@@ -54,9 +64,14 @@ module powerbi.extensibility.visual.utils.behavior {
         }
 
         public renderSelection(hasSelection: boolean): void {
-            var hasHighlights = this.interactivityService.hasSelection();
-            this.selection.style("fill-opacity", (d: StreamGraphSeries) => {
-                return streamGraphUtils.getFillOpacity(d.selected, d.highlight, !d.highlight && hasSelection, !d.selected && hasHighlights);
+            const hasHighlights: boolean = this.interactivityService.hasSelection();
+
+            this.selection.style("fill-opacity", (series: StreamGraphSeries) => {
+                return utils.getFillOpacity(
+                    series.selected,
+                    series.highlight,
+                    !series.highlight && hasSelection,
+                    !series.selected && hasHighlights);
             });
         }
     }
