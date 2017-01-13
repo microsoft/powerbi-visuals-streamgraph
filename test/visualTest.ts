@@ -68,7 +68,6 @@ module powerbi.extensibility.visual.test {
             dataView = defaultDataViewBuilder.getDataView();
         });
 
-
         describe("DOM tests", () => {
             it("path is not throwing exceptions (NaN values)", () => {
                 dataView.categorical.values[0].values = [NaN];
@@ -78,11 +77,13 @@ module powerbi.extensibility.visual.test {
 
                 visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                $(".streamGraph .dataPointsContainer").children("path").each(function (index, value) {
-                    let nanLocation: number = ($(value).attr("d")).indexOf("NaN");
+                $(".streamGraph .dataPointsContainer")
+                    .children("path")
+                    .each(function (index: number, element: Element) {
+                        let nanLocation: number = ($(element).attr("d")).indexOf("NaN");
 
-                    expect(nanLocation !== -1).toBeFalsy();
-                });
+                        expect(nanLocation !== -1).toBeFalsy();
+                    });
             });
 
             it("should display text in x-axis and not values", () => {
@@ -103,26 +104,32 @@ module powerbi.extensibility.visual.test {
 
                 visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                let isNumber: boolean = false;
-                const regExp = /\d/;
-                visualBuilder.xAxisTicks.children("text").each(function (index, value) {
-                    isNumber = regExp.test($(value).text());
-                    expect(isNumber).toBeFalsy();
-                });
+                const isNumberRegExp: RegExp = /\d/;
+
+                visualBuilder.xAxisTicks
+                    .children("text")
+                    .each(function (index: number, element: Element) {
+                        expect(isNumberRegExp.test($(element).text())).toBeFalsy();
+                    });
             });
 
             it("should ellipsis text if its too long", () => {
                 let dataPointsArray: number[] = [];
-                for (let i = 0; i < dataView.categorical.values.length; i++) {
-                    dataPointsArray = dataPointsArray.concat(<number[]>dataView.categorical.values[i].values);
-                }
+
+                dataView.categorical.values.forEach((values: DataViewValueColumn) => {
+                    dataPointsArray = dataPointsArray.concat(values.values as number[]);
+                });
 
                 dataView.categorical.values[0].values[0] = 1e+14;
 
                 visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                let tick = visualBuilder.yAxisTicks.children("text").last().text();
-                expect(tick.indexOf("...")).toBeGreaterThan(-1);
+                let tickValue: string = visualBuilder.yAxisTicks
+                    .children("text")
+                    .last()
+                    .text();
+
+                expect(tickValue.indexOf("...")).toBeGreaterThan(-1);
             });
 
             it("svg element created", () => {
@@ -140,7 +147,7 @@ module powerbi.extensibility.visual.test {
                 let selectionIdIndex: number = 0;
 
                 powerbi.extensibility.utils.test.mocks.createSelectionId = function () {
-                    return new MockISelectionId((++selectionIdIndex).toString())
+                    return new MockISelectionId((++selectionIdIndex).toString());
                 };
 
                 dataView.metadata.objects = {
@@ -158,9 +165,9 @@ module powerbi.extensibility.visual.test {
             it("multi-selection test", () => {
                 visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                let firstLayer = visualBuilder.layers.eq(0);
-                let secondLayer = visualBuilder.layers.eq(1);
-                let thirdLayer = visualBuilder.layers.eq(2);
+                const firstLayer: JQuery = visualBuilder.layers.eq(0),
+                    secondLayer: JQuery = visualBuilder.layers.eq(1),
+                    thirdLayer: JQuery = visualBuilder.layers.eq(2);
 
                 clickElement(firstLayer);
                 clickElement(secondLayer, true);
@@ -183,23 +190,28 @@ module powerbi.extensibility.visual.test {
 
                 it("show", () => {
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.legendGroup.children()).toBeInDOM();
 
                     (dataView.metadata.objects as any).legend.show = false;
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.legendGroup.children()).not.toBeInDOM();
                 });
 
                 it("position", () => {
                     (dataView.metadata.objects as any).legend.show = true;
-
                     (dataView.metadata.objects as any).legend.position = legendPosition.top;
+
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.legendOrientation).toEqual("0");
                     expect(visualBuilder.legendWidth).toBeGreaterThan(200);
 
                     (dataView.metadata.objects as any).legend.position = legendPosition.rightCenter;
+
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.legendOrientation).toEqual("7");
                     expect(visualBuilder.legendWidth).toBeLessThan(200);
                 });
@@ -216,22 +228,28 @@ module powerbi.extensibility.visual.test {
 
                 it("show", () => {
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.dataLabelsText).toBeInDOM();
 
                     (dataView.metadata.objects as any).labels.show = false;
+
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.dataLabelsText).not.toBeInDOM();
                 });
 
                 it("color", () => {
-                    let color = "#ABCDEF";
+                    const color: string = "#ABCDEF";
 
                     (dataView.metadata.objects as any).labels.color = getSolidColorStructuralObject(color);
 
                     visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                    visualBuilder.dataLabelsText.toArray().map($).forEach(e =>
-                        assertColorsMatch(e.css('fill'), color));
+                    visualBuilder.dataLabelsText
+                        .toArray()
+                        .forEach((element: Element) => {
+                            assertColorsMatch($(element).css("fill"), color);
+                        });
                 });
 
                 it("font size", () => {
@@ -245,7 +263,7 @@ module powerbi.extensibility.visual.test {
                     visualBuilder.dataLabelsText
                         .toArray()
                         .forEach((element: Element) => {
-                            expect($(element).css('font-size')).toBe(expectedFontSize);
+                            expect($(element).css("font-size")).toBe(expectedFontSize);
                         });
                 });
             });
@@ -261,25 +279,29 @@ module powerbi.extensibility.visual.test {
 
                 it("show", () => {
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.xAxisTicks).toBeInDOM();
 
                     (dataView.metadata.objects as any).categoryAxis.show = false;
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.xAxisTicks).not.toBeInDOM();
                 });
 
                 it("show title", () => {
                     (dataView.metadata.objects as any).categoryAxis.showAxisTitle = true;
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.xAxisLabel).toBeInDOM();
 
                     (dataView.metadata.objects as any).categoryAxis.showAxisTitle = false;
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.xAxisLabel).not.toBeInDOM();
                 });
 
                 it("color", () => {
-                    let color = "#ABCDEF";
+                    const color: string = "#ABCDEF";
 
                     (dataView.metadata.objects as any).categoryAxis.labelColor = getSolidColorStructuralObject(color);
 
@@ -287,8 +309,8 @@ module powerbi.extensibility.visual.test {
 
                     visualBuilder.xAxisTicks.children("text")
                         .toArray()
-                        .forEach(e => {
-                            assertColorsMatch($(e).css('fill'), color);
+                        .forEach((element: Element) => {
+                            assertColorsMatch($(element).css("fill"), color);
                         });
                 });
             });
@@ -304,25 +326,29 @@ module powerbi.extensibility.visual.test {
 
                 it("show", () => {
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.yAxisTicks).toBeInDOM();
 
                     (dataView.metadata.objects as any).valueAxis.show = false;
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.yAxisTicks).not.toBeInDOM();
                 });
 
                 it("show title", () => {
                     (dataView.metadata.objects as any).valueAxis.showAxisTitle = true;
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.yAxisLabel).toBeInDOM();
 
                     (dataView.metadata.objects as any).valueAxis.showAxisTitle = false;
                     visualBuilder.updateFlushAllD3Transitions(dataView);
+
                     expect(visualBuilder.yAxisLabel).not.toBeInDOM();
                 });
 
                 it("color", () => {
-                    let color = "#ABCDEF";
+                    const color: string = "#ABCDEF";
 
                     (dataView.metadata.objects as any).valueAxis.labelColor = getSolidColorStructuralObject(color);
 
@@ -331,7 +357,7 @@ module powerbi.extensibility.visual.test {
                     visualBuilder.yAxisTicks.children("text")
                         .toArray()
                         .forEach((element: Element) => {
-                            assertColorsMatch($(element).css('fill'), color);
+                            assertColorsMatch($(element).css("fill"), color);
                         });
                 });
             });
@@ -359,7 +385,7 @@ module powerbi.extensibility.visual.test {
                         return seriesSelectionId;
                     }
 
-                    return new MockISelectionId((selectionIdIndex++).toString())
+                    return new MockISelectionId((selectionIdIndex++).toString());
                 };
 
                 interactivityService["selectedIds"] = [seriesSelectionId];

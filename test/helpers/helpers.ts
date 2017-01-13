@@ -63,7 +63,7 @@ module powerbi.extensibility.visual.test.helpers {
 
         let resultNumbers: number[] = [];
 
-        for (let i = 0; i < count; i++) {
+        for (let i: number = 0; i < count; i++) {
             resultNumbers.push(getRandomNumber(min, max, resultNumbers));
         }
 

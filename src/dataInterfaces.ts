@@ -45,6 +45,7 @@ module powerbi.extensibility.visual {
         categoryFormatter: IValueFormatter;
         settings: VisualSettings;
         categoriesText: string[];
+        maxNumberOfAxisXValues: number;
     }
 
     export interface StreamDataPoint extends IDataLabelInfo {

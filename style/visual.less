@@ -38,8 +38,11 @@
     font-family: helvetica, arial, sans-serif;
     font-size: @streamGraphFontSize;
 
+    position: absolute;
+
     .axis {
-        path, line {
+        path,
+        line {
             fill: none;
             stroke: black;
             shape-rendering: auto;
@@ -48,5 +51,10 @@
         text {
             font-size: @streamGraphFontSize;
         }
+    }
+
+    .xAxisLabel,
+    .yAxisLabel {
+        text-anchor: middle;
     }
 }

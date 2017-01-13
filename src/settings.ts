@@ -26,10 +26,7 @@
 
 module powerbi.extensibility.visual.settings {
     // powerbi.extensibility.utils.chart
-    import VisualDataLabelsSettings = powerbi.extensibility.utils.chart.dataLabel.VisualDataLabelsSettings;
-
     import legendPosition = powerbi.extensibility.utils.chart.legend.position;
-
     import getDefaultPointLabelSettings = powerbi.extensibility.utils.chart.dataLabel.utils.getDefaultPointLabelSettings;
 
     // powerbi.extensibility.utils.dataview
@@ -51,10 +48,12 @@ module powerbi.extensibility.visual.settings {
         public static DefaultLegendLabelFillColor: string = "#666666";
         public static DefaultFontSizeInPoints: number = 8;
 
+        public static DefaultTitleText: string = "";
+
         public show: boolean = true;
         public position: string = legendPosition.top;
         public showTitle: boolean = true;
-        public titleText: string = "";
+        public titleText: string = LegendSettings.DefaultTitleText;
         public labelColor: string = LegendSettings.DefaultLegendLabelFillColor;
         public fontSize: number = LegendSettings.DefaultFontSizeInPoints;
     }

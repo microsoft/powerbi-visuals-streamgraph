@@ -34,13 +34,13 @@ module powerbi.extensibility.visual.behavior {
     import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
 
     export interface BehaviorOptions {
-        selection: Selection<any>;
+        selection: Selection<StreamGraphSeries>;
         clearCatcher: Selection<any>;
         interactivityService: IInteractivityService;
     }
 
     export class StreamGraphBehavior implements IInteractiveBehavior {
-        private selection: Selection<any>;
+        private selection: Selection<StreamGraphSeries>;
         private clearCatcher: Selection<any>;
         private interactivityService: IInteractivityService;
 
