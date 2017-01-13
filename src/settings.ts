@@ -28,25 +28,56 @@ module powerbi.extensibility.visual.settings {
     // powerbi.extensibility.utils.chart
     import VisualDataLabelsSettings = powerbi.extensibility.utils.chart.dataLabel.VisualDataLabelsSettings;
 
-    export interface StreamGraphSettings {
-        legendSettings: StreamGraphLegendSettings;
-        categoryAxisSettings: StreamGraphAxisSettings;
-        valueAxisSettings: StreamGraphAxisSettings;
-        dataLabelsSettings: VisualDataLabelsSettings;
+    import legendPosition = powerbi.extensibility.utils.chart.legend.position;
+
+    import getDefaultPointLabelSettings = powerbi.extensibility.utils.chart.dataLabel.utils.getDefaultPointLabelSettings;
+
+    // powerbi.extensibility.utils.dataview
+    import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
+
+    export class GeneralSettings {
+        public wiggle: boolean = true;
     }
 
-    export interface StreamGraphLegendSettings {
-        show: boolean;
-        position: string;
-        showTitle: boolean;
-        labelColor: string;
-        titleText: string;
-        fontSize: number;
+    export class BaseAxisSettings {
+        public static DefaultColor: string = "#777";
+
+        public show: boolean = true;
+        public showAxisTitle: boolean = false;
+        public labelColor: string = BaseAxisSettings.DefaultColor;
     }
 
-    export interface StreamGraphAxisSettings {
-        show: boolean;
-        labelColor: string;
-        showAxisTitle: boolean;
+    export class LegendSettings {
+        public static DefaultLegendLabelFillColor: string = "#666666";
+        public static DefaultFontSizeInPoints: number = 8;
+
+        public show: boolean = true;
+        public position: string = legendPosition.top;
+        public showTitle: boolean = true;
+        public titleText: string = "";
+        public labelColor: string = LegendSettings.DefaultLegendLabelFillColor;
+        public fontSize: number = LegendSettings.DefaultFontSizeInPoints;
+    }
+
+    export class LabelsSettings {
+        public show: boolean;
+        public color: string;
+        public fontSize: number;
+
+        constructor() {
+            const defaultSettings = getDefaultPointLabelSettings();
+
+            this.show = defaultSettings.show;
+            this.color = defaultSettings.labelColor;
+            this.fontSize = defaultSettings.fontSize;
+        }
+    }
+
+    export class VisualSettings extends DataViewObjectsParser {
+        public general: GeneralSettings = new GeneralSettings();
+        public categoryAxis: BaseAxisSettings = new BaseAxisSettings();
+        public valueAxis: BaseAxisSettings = new BaseAxisSettings();
+        public legend: LegendSettings = new LegendSettings();
+        public labels: LabelsSettings = new LabelsSettings();
     }
 }

@@ -35,12 +35,15 @@ module powerbi.extensibility.visual {
     // powerbi.extensibility.utils.formatting
     import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
 
+    // powerbi.extensibility.visual
+    import VisualSettings = settings.VisualSettings;
+
     export interface StreamData {
         series: StreamGraphSeries[];
         legendData: LegendData;
         valueFormatter: IValueFormatter;
         categoryFormatter: IValueFormatter;
-        streamGraphSettings: settings.StreamGraphSettings;
+        settings: VisualSettings;
         categoriesText: string[];
     }
 
