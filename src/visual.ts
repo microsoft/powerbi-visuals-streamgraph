@@ -386,6 +386,10 @@ module powerbi.extensibility.visual {
         }
 
         public init(options: VisualConstructorOptions): void {
+            d3.select("html").style({
+                "-webkit-tap-highlight-color": "transparent" // Turns off the blue highlighting at mobile browsers
+            });
+
             this.visualHost = options.host;
             this.colorPalette = options.host.colorPalette;
 
@@ -472,7 +476,11 @@ module powerbi.extensibility.visual {
             this.tooltipServiceWrapper.addTooltip(
                 selection,
                 (tooltipEvent: TooltipEventArgs<StreamGraphSeries>) => {
-                    return tooltipEvent.data.tooltipInfo;
+                    const tooltipInfo: VisualTooltipDataItem[] = tooltipEvent.data.tooltipInfo;
+
+                    return tooltipInfo.length > 0
+                        ? tooltipInfo
+                        : null;
                 });
 
             const interactivityService: IInteractivityService = this.interactivityService;
