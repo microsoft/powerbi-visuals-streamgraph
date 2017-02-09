@@ -31,12 +31,11 @@ module powerbi.extensibility.visual.test {
     import VisualBuilderBase = powerbi.extensibility.utils.test.VisualBuilderBase;
 
     // StreamGraph1446659696222
-    import VisualPlugin = powerbi.visuals.plugins.StreamGraph1446659696222;
     import VisualClass = powerbi.extensibility.visual.StreamGraph1446659696222.StreamGraph;
 
     export class StreamGraphBuilder extends VisualBuilderBase<VisualClass> {
         constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
-            super(width, height, VisualPlugin.name);
+            super(width, height, "StreamGraph1446659696222");
         }
 
         protected build(options: VisualConstructorOptions): VisualClass {
