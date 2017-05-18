@@ -48,6 +48,13 @@ module powerbi.extensibility.visual {
         maxNumberOfAxisXValues: number;
     }
 
+    export interface AxisLabelProperties {
+        maxTextWidth: number;
+        needToRotate: boolean;
+        marginBottom: number;
+        marginLeft: number;
+    }
+
     export interface StreamDataPoint extends IDataLabelInfo {
         x: number;
         y: number;

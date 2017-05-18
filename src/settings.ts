@@ -44,6 +44,10 @@ module powerbi.extensibility.visual.settings {
         public labelColor: string = BaseAxisSettings.DefaultColor;
     }
 
+    export class XAxisSettings extends BaseAxisSettings {
+        public rotateLabels: boolean = false;
+    }
+
     export class LegendSettings {
         public static DefaultLegendLabelFillColor: string = "#666666";
         public static DefaultFontSizeInPoints: number = 8;
@@ -74,7 +78,7 @@ module powerbi.extensibility.visual.settings {
 
     export class VisualSettings extends DataViewObjectsParser {
         public general: GeneralSettings = new GeneralSettings();
-        public categoryAxis: BaseAxisSettings = new BaseAxisSettings();
+        public categoryAxis: XAxisSettings = new XAxisSettings();
         public valueAxis: BaseAxisSettings = new BaseAxisSettings();
         public legend: LegendSettings = new LegendSettings();
         public labels: LabelsSettings = new LabelsSettings();
