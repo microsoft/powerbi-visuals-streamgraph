@@ -40,6 +40,7 @@ module powerbi.extensibility.visual.test {
 
     export class ProductSalesByDateData extends TestDataViewBuilder {
         private static DefaultFormat: string = "$0,000.00";
+        private static DefaultDateFormat: string = "dddd MMMM d yyyy";
         private static DefaultGroupName: string = "Product";
 
         public static ColumnCategory: string = "Date";
@@ -68,6 +69,7 @@ module powerbi.extensibility.visual.test {
             const categoriesColumn: TestDataViewBuilderCategoryColumnOptions[] = [{
                 source: {
                     displayName: ProductSalesByDateData.ColumnCategory,
+                    format: ProductSalesByDateData.DefaultDateFormat,
                     type: ValueType.fromDescriptor({ dateTime: true })
                 },
                 values: this.valuesDate

@@ -88,6 +88,12 @@
                         "bool": true
                     }
                 },
+                "rotateLabels": {
+                    "displayName": "Rotate labels",
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "showAxisTitle": {
                     "displayName": "Title",
                     "type": {
