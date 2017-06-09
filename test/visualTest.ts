@@ -113,25 +113,6 @@ module powerbi.extensibility.visual.test {
                     });
             });
 
-            it("should ellipsis text if its too long", () => {
-                let dataPointsArray: number[] = [];
-
-                dataView.categorical.values.forEach((values: DataViewValueColumn) => {
-                    dataPointsArray = dataPointsArray.concat(values.values as number[]);
-                });
-
-                dataView.categorical.values[0].values[0] = 1e+14;
-
-                visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                let tickValue: string = visualBuilder.yAxisTicks
-                    .children("text")
-                    .last()
-                    .text();
-
-                expect(tickValue.indexOf("...")).toBeGreaterThan(-1);
-            });
-
             it("svg element created", () => {
                 expect(visualBuilder.mainElement[0]).toBeInDOM();
             });

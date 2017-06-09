@@ -52,14 +52,12 @@ module powerbi.extensibility.visual.test {
 
         public get xAxisTicks(): JQuery {
             return this.axisGraphicsContext
-                .children("g.x.axis")
-                .children("g.tick");
+                .children("g.xAxis");
         }
 
         public get yAxisTicks(): JQuery {
             return this.axisGraphicsContext
-                .children("g.y.axis")
-                .children("g.tick");
+                .children("g.yAxis");
         }
 
         public get xAxisLabel(): JQuery {
