@@ -45,7 +45,12 @@ module powerbi.extensibility.visual {
         categoryFormatter: IValueFormatter;
         settings: VisualSettings;
         categoriesText: string[];
-        maxNumberOfAxisXValues: number;
+        xLabelMaxValue: number | string;
+        yLabelMaxValue: number | string;
+        xMinValue: number;
+        xMaxValue: number;
+        yMinValue: number;
+        yMaxValue: number;
     }
 
     export interface AxisLabelProperties {
