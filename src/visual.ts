@@ -371,7 +371,7 @@ module powerbi.extensibility.visual {
                 valueFormatter: valuesFormatter,
                 xLabelMaxValue: xLabelMaxValue,
                 yLabelMaxValue: "",
-                xMaxValue: category.values.length,
+                xMaxValue: category.values.length - 1,
                 xMinValue: 0,
                 yMaxValue: yMaxValue,
                 yMinValue: yMinValue
@@ -565,20 +565,21 @@ module powerbi.extensibility.visual {
             if (xShow) {
                 this.xAxisProperties = AxisHelper.createAxis({
                     pixelSpan: effectiveWidth,
-                    dataDomain: d3.range(this.data.xMaxValue),
+                    dataDomain: [this.data.xMinValue,this.data.xMaxValue],
                     metaDataColumn: metaDataColumnPercent,
                     formatString: null,
                     outerPadding: StreamGraph.outerPadding,
                     isCategoryAxis: true,
-                    isScalar: false,
+                    isScalar: true,
                     isVertical: false,
-                    forcedTickCount: Math.max(this.viewport.width / StreamGraph.forcedTickSize, 0),
+                    forcedTickCount: Math.max(Math.ceil(effectiveWidth / StreamGraph.forcedTickSize),0),
                     useTickIntervalForDisplayUnits: true,
+                    disableNiceOnlyForScale: true,
                     getValueFn: (index: number, type: ValueType) => {
                         return this.data.categoryFormatter.format(this.data.categoriesText[index]);
                     }
                 });
-                this.xAxisProperties.xLabelMaxWidth = Math.min(StreamGraph.xLabelMaxWidth, this.viewport.width / StreamGraph.xLabelTickSize);
+                this.xAxisProperties.xLabelMaxWidth = Math.min(StreamGraph.xLabelMaxWidth, effectiveWidth / StreamGraph.xLabelTickSize);
                 this.xAxisProperties.formatter = this.data.categoryFormatter;
             }
             if (yShow) {
