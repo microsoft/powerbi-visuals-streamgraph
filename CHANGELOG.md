@@ -1,4 +1,4 @@
-## 0.5.3
+## 1.0.1
 * Fixed x-axis labels overlaps
 
 ## 0.5.2
