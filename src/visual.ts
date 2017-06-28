@@ -497,30 +497,6 @@ module powerbi.extensibility.visual {
 
             this.calculateAxes();
 
-            this.renderXAxisLabels();
-            this.renderYAxisLabels();
-
-            this.axes.attr("transform", SVGUtil.translate(this.margin.left, 0));
-            this.axisX.attr("transform", SVGUtil.translate(0, this.viewport.height - this.margin.bottom));
-            this.axisY.attr("transform", SVGUtil.translate(0, this.margin.top));
-
-            if (this.data.settings.categoryAxis.show) {
-                this.axisX.classed(StreamGraph.XAxis.class, true);
-            } else {
-                this.axisX.classed(StreamGraph.XAxis.class, false);
-                this.axisX
-                    .selectAll("*")
-                    .remove();
-            }
-            if (this.data.settings.valueAxis.show) {
-                this.axisY.classed(StreamGraph.YAxis.class, true);
-            } else {
-                this.axisY.classed(StreamGraph.YAxis.class, false);
-                this.axisY
-                    .selectAll("*")
-                    .remove();
-            }
-
             const selection: UpdateSelection<StreamGraphSeries> = this.renderChart(
                 this.data.series,
                 StreamGraph.AnimationDuration);
@@ -553,7 +529,7 @@ module powerbi.extensibility.visual {
             }
         }
 
-        private calculateShift() {
+        private calculateShift(): number {
             if (!this.data.settings.categoryAxis.rotateLabels) {
                 return StreamGraph.TickHeight;
             }
@@ -564,10 +540,27 @@ module powerbi.extensibility.visual {
             return rotatedLongestTextHeight + rotatedTextWidth + StreamGraph.TickHeight;
         }
 
-        private setTextNodesPosition(xAxisTextNodes, textAnchor, dx, dy, transform) {
+        private setTextNodesPosition(xAxisTextNodes: Selection<any>,
+                                     textAnchor: string,
+                                     dx: string,
+                                     dy: string,
+                                     transform: string): void {
+            
             xAxisTextNodes
                 .style("text-anchor", textAnchor)
                 .attr({ dx, dy, transform });
+        }
+
+        private toggleAxisVisibility(
+            isShow: boolean,
+            axisName:string): void {
+
+            this[axisName].classed(StreamGraph[axisName].class, isShow);
+            if (!isShow) {
+                this.axisY
+                    .selectAll("*")
+                    .remove();
+            }
         }
 
         private static outerPadding: number = 0;
@@ -655,6 +648,16 @@ module powerbi.extensibility.visual {
 
                 yAxisTextNodes.style("fill", valueAxisLabelColor);
             }
+
+            this.renderXAxisLabels();
+            this.renderYAxisLabels();
+
+            this.axes.attr("transform", SVGUtil.translate(this.margin.left, 0));
+            this.axisX.attr("transform", SVGUtil.translate(0, this.viewport.height - this.margin.bottom));
+            this.axisY.attr("transform", SVGUtil.translate(0, this.margin.top));
+
+            this.toggleAxisVisibility(xShow, "XAxis");
+            this.toggleAxisVisibility(yShow, "YAxis");
         }
 
         private renderYAxisLabels(): void {

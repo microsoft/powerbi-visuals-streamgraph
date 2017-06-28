@@ -1,5 +1,5 @@
 ## 1.0.1
-* Fixed axises titles incorrectly located
+* Fixed incorrectly location of axises titles
 * Fixed rotate property does not work
 
 
