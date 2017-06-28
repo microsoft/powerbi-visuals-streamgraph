@@ -296,7 +296,6 @@ module powerbi.extensibility.visual.test {
                 });
 
                 it("rotated labels should fit well", () => {
-                    debugger;
                     dataView.metadata.objects.categoryAxis.rotateLabels = true;
 
                      visualBuilder.updateFlushAllD3Transitions(dataView);
