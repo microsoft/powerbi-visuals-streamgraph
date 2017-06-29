@@ -545,7 +545,7 @@ module powerbi.extensibility.visual {
                                      dx: string,
                                      dy: string,
                                      transform: string): void {
-            
+
             xAxisTextNodes
                 .style("text-anchor", textAnchor)
                 .attr({ dx, dy, transform });
@@ -553,7 +553,7 @@ module powerbi.extensibility.visual {
 
         private toggleAxisVisibility(
             isShow: boolean,
-            axisName:string): void {
+            axisName: string): void {
 
             this[axisName].classed(StreamGraph[axisName].class, isShow);
             if (!isShow) {
