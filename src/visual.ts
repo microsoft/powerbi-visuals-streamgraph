@@ -565,14 +565,14 @@ module powerbi.extensibility.visual {
             if (xShow) {
                 this.xAxisProperties = AxisHelper.createAxis({
                     pixelSpan: effectiveWidth,
-                    dataDomain: [this.data.xMinValue,this.data.xMaxValue],
+                    dataDomain: [this.data.xMinValue, this.data.xMaxValue],
                     metaDataColumn: metaDataColumnPercent,
                     formatString: null,
                     outerPadding: StreamGraph.outerPadding,
                     isCategoryAxis: true,
                     isScalar: true,
                     isVertical: false,
-                    forcedTickCount: Math.max(Math.ceil(effectiveWidth / StreamGraph.forcedTickSize),0),
+                    forcedTickCount: Math.max(Math.ceil(effectiveWidth / StreamGraph.forcedTickSize), 0),
                     useTickIntervalForDisplayUnits: true,
                     disableNiceOnlyForScale: true,
                     getValueFn: (index: number, type: ValueType) => {
