@@ -371,7 +371,7 @@ module powerbi.extensibility.visual {
                 valueFormatter: valuesFormatter,
                 xLabelMaxValue: xLabelMaxValue,
                 yLabelMaxValue: "",
-                xMaxValue: category.values.length,
+                xMaxValue: category.values.length - 1,
                 xMinValue: 0,
                 yMaxValue: yMaxValue,
                 yMinValue: yMinValue
@@ -419,17 +419,17 @@ module powerbi.extensibility.visual {
 
             this.axes = this.svg
                 .append("g")
-                .classed(StreamGraph.Axes.class, true)
-                .classed(StreamGraph.axisGraphicsContext.class, true);
+                .classed(StreamGraph.Axes.className, true)
+                .classed(StreamGraph.axisGraphicsContext.className, true);
             this.axisX = this.axes
                 .append("g")
-                .classed(StreamGraph.Axis.class, true)
-                .classed(StreamGraph.XAxis.class, true);
+                .classed(StreamGraph.Axis.className, true)
+                .classed(StreamGraph.XAxis.className, true);
 
             this.axisY = this.axes
                 .append("g")
-                .classed(StreamGraph.Axis.class, true)
-                .classed(StreamGraph.YAxis.class, true);
+                .classed(StreamGraph.Axis.className, true)
+                .classed(StreamGraph.YAxis.className, true);
 
             this.dataPointsContainer = this.svg
                 .append("g")
@@ -440,7 +440,7 @@ module powerbi.extensibility.visual {
             this.interactivityService = createInteractivityService(this.visualHost);
 
             this.legend = createLegend(
-                $(element),
+                element,
                 false,
                 this.interactivityService,
                 true);
@@ -521,18 +521,18 @@ module powerbi.extensibility.visual {
             this.calculateAxes();
             if (this.data.settings.categoryAxis.show) {
                 this.axisX.call(this.xAxisProperties.axis);
-                this.axisX.classed(StreamGraph.XAxis.class, true);
+                this.axisX.classed(StreamGraph.XAxis.className, true);
             } else {
-                this.axisX.classed(StreamGraph.XAxis.class, false);
+                this.axisX.classed(StreamGraph.XAxis.className, false);
                 this.axisX
                     .selectAll("*")
                     .remove();
             }
             if (this.data.settings.valueAxis.show) {
                 this.axisY.call(this.yAxisProperties.axis);
-                this.axisY.classed(StreamGraph.YAxis.class, true);
+                this.axisY.classed(StreamGraph.YAxis.className, true);
             } else {
-                this.axisY.classed(StreamGraph.YAxis.class, false);
+                this.axisY.classed(StreamGraph.YAxis.className, false);
                 this.axisY
                     .selectAll("*")
                     .remove();
@@ -565,20 +565,21 @@ module powerbi.extensibility.visual {
             if (xShow) {
                 this.xAxisProperties = AxisHelper.createAxis({
                     pixelSpan: effectiveWidth,
-                    dataDomain: d3.range(this.data.xMaxValue),
+                    dataDomain: [this.data.xMinValue, this.data.xMaxValue],
                     metaDataColumn: metaDataColumnPercent,
                     formatString: null,
                     outerPadding: StreamGraph.outerPadding,
                     isCategoryAxis: true,
-                    isScalar: false,
+                    isScalar: true,
                     isVertical: false,
-                    forcedTickCount: Math.max(this.viewport.width / StreamGraph.forcedTickSize, 0),
+                    forcedTickCount: Math.max(Math.ceil(effectiveWidth / StreamGraph.forcedTickSize), 0),
                     useTickIntervalForDisplayUnits: true,
+                    disableNiceOnlyForScale: true,
                     getValueFn: (index: number, type: ValueType) => {
                         return this.data.categoryFormatter.format(this.data.categoriesText[index]);
                     }
                 });
-                this.xAxisProperties.xLabelMaxWidth = Math.min(StreamGraph.xLabelMaxWidth, this.viewport.width / StreamGraph.xLabelTickSize);
+                this.xAxisProperties.xLabelMaxWidth = Math.min(StreamGraph.xLabelMaxWidth, effectiveWidth / StreamGraph.xLabelTickSize);
                 this.xAxisProperties.formatter = this.data.categoryFormatter;
             }
             if (yShow) {
@@ -598,7 +599,7 @@ module powerbi.extensibility.visual {
 
         private renderYAxisLabels(): void {
             this.axes
-                .selectAll(StreamGraph.YAxisLabelSelector.selector)
+                .selectAll(StreamGraph.YAxisLabelSelector.selectorName)
                 .remove();
 
             const valueAxisSettings: BaseAxisSettings = this.data.settings.valueAxis;
@@ -645,7 +646,7 @@ module powerbi.extensibility.visual {
                         x: -(marginTop + (height / StreamGraph.AxisLabelMiddle)),
                         dy: StreamGraph.YAxisLabelDy
                     })
-                    .classed(StreamGraph.YAxisLabelSelector.class, true)
+                    .classed(StreamGraph.YAxisLabelSelector.className, true)
                     .text(yAxisText);
 
                 yAxisLabel.call(
@@ -685,7 +686,7 @@ module powerbi.extensibility.visual {
 
         private renderXAxisLabels(): void {
             this.axes
-                .selectAll(StreamGraph.XAxisLabelSelector.selector)
+                .selectAll(StreamGraph.XAxisLabelSelector.selectorName)
                 .remove();
 
             const categoryAxisSettings: BaseAxisSettings = this.data.settings.categoryAxis;
@@ -727,14 +728,14 @@ module powerbi.extensibility.visual {
                     "font-weight": textSettings.fontWeight
                 })
                 .attr({
-                    class: StreamGraph.XAxisLabelSelector.class,
+                    class: StreamGraph.XAxisLabelSelector.className,
                     transform: translate(
                         leftMargin + (width / StreamGraph.AxisLabelMiddle),
                         height),
                     fill: categoryAxisSettings.labelColor,
                     dy: StreamGraph.XAxisLabelDy,
                 })
-                .classed(StreamGraph.XAxisLabelSelector.class, true)
+                .classed(StreamGraph.XAxisLabelSelector.className, true)
                 .text(xAxisText);
 
             xAxisLabel.call(
@@ -942,12 +943,12 @@ module powerbi.extensibility.visual {
                 .defined((dataPoint: StreamDataPoint) => !isNaN(dataPoint.y0) && !isNaN(dataPoint.y));
 
             const selection: UpdateSelection<StreamGraphSeries> = this.dataPointsContainer
-                .selectAll(StreamGraph.LayerSelector.selector)
+                .selectAll(StreamGraph.LayerSelector.selectorName)
                 .data(layers);
 
             selection.enter()
                 .append("path")
-                .classed(StreamGraph.LayerSelector.class, true);
+                .classed(StreamGraph.LayerSelector.className, true);
 
             selection
                 .style({
@@ -1084,7 +1085,7 @@ module powerbi.extensibility.visual {
 
         private clearData(): void {
             this.svg
-                .selectAll(StreamGraph.LayerSelector.selector)
+                .selectAll(StreamGraph.LayerSelector.selectorName)
                 .remove();
 
             this.legend.drawLegend(
