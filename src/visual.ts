@@ -552,12 +552,13 @@ module powerbi.extensibility.visual {
         }
 
         private toggleAxisVisibility(
-            isShow: boolean,
-            axisType: string): void {
+            isShown: boolean,
+            className: string,
+            axis: d3.Selection<any>): void {
 
-            this["axis" + axisType].classed(StreamGraph[axisType + "Axis"].class, isShow);
-            if (!isShow) {
-                this["axis" + axisType]
+            axis.classed(className, isShown);
+            if (!isShown) {
+                axis
                     .selectAll("*")
                     .remove();
             }
@@ -610,8 +611,8 @@ module powerbi.extensibility.visual {
                         }
                     }),
                     {
-                        this.xAxisProperties.xLabelMaxWidth = Math.min(StreamGraph.xLabelMaxWidth, effectiveWidth / StreamGraph.xLabelTickSize);
-                        this.xAxisProperties.formatter = this.data.categoryFormatter;
+                        xLabelMaxWidth: Math.min(StreamGraph.xLabelMaxWidth, effectiveWidth / StreamGraph.xLabelTickSize),
+                        formatter: this.data.categoryFormatter
                     }
                 );
 
@@ -657,8 +658,8 @@ module powerbi.extensibility.visual {
             this.axisX.attr("transform", SVGUtil.translate(0, this.viewport.height - this.margin.bottom));
             this.axisY.attr("transform", SVGUtil.translate(0, this.margin.top));
 
-            this.toggleAxisVisibility(xShow, "X");
-            this.toggleAxisVisibility(yShow, "Y");
+            this.toggleAxisVisibility(xShow, StreamGraph.XAxis.className, this.axisX);
+            this.toggleAxisVisibility(yShow, StreamGraph.YAxis.className, this.axisY);
         }
 
         private renderYAxisLabels(): void {
