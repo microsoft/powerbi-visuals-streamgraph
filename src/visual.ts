@@ -553,11 +553,11 @@ module powerbi.extensibility.visual {
 
         private toggleAxisVisibility(
             isShow: boolean,
-            axisName: string): void {
+            axisType: string): void {
 
-            this[axisName].classed(StreamGraph[axisName].class, isShow);
+            this["axis" + axisType].classed(StreamGraph[axisType + "Axis"].class, isShow);
             if (!isShow) {
-                this.axisY
+                this["axis" + axisType]
                     .selectAll("*")
                     .remove();
             }
@@ -656,8 +656,8 @@ module powerbi.extensibility.visual {
             this.axisX.attr("transform", SVGUtil.translate(0, this.viewport.height - this.margin.bottom));
             this.axisY.attr("transform", SVGUtil.translate(0, this.margin.top));
 
-            this.toggleAxisVisibility(xShow, "XAxis");
-            this.toggleAxisVisibility(yShow, "YAxis");
+            this.toggleAxisVisibility(xShow, "X");
+            this.toggleAxisVisibility(yShow, "Y");
         }
 
         private renderYAxisLabels(): void {
