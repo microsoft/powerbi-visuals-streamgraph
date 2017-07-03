@@ -440,7 +440,7 @@ module powerbi.extensibility.visual {
             this.interactivityService = createInteractivityService(this.visualHost);
 
             this.legend = createLegend(
-                $(element),
+                element,
                 false,
                 this.interactivityService,
                 true);
