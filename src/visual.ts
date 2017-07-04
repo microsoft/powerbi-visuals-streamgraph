@@ -123,14 +123,16 @@ module powerbi.extensibility.visual {
         private static MinLineSlope: number = 1e-6;
         private static LineSlopeS: number = 9;
         private static MaxTicks: number = 2;
+        private static TickHeight: number = 6;
         private static EmptyDisplayName: string = "";
         private static MinLabelSize: number = 0;
         private static MiddleOfTheLabel: number = 2;
 
-
         private static DefaultDataLabelsOffset: number = 4;
         private static DefaultLabelTickWidth: number = 10;
 
+        private static Sin60: number = 0.8660266281835431;
+        private static Cos60: number = 0.5000001943375613;
         // Axis
         private static Axes: ClassAndSelector = createClassAndSelector("axes");
         private static Axis: ClassAndSelector = createClassAndSelector("axis");
@@ -145,13 +147,21 @@ module powerbi.extensibility.visual {
         private yAxis2Properties: IAxisProperties;
         private static XAxisOnSize: number = 20;
         private static XAxisOffSize: number = 10;
-        private static YAxisOnSize: number = 45;
+        private static YAxisOnSize: number = 25;
         private static YAxisOffSize: number = 10;
         private static XAxisLabelSize: number = 20;
         private static YAxisLabelSize: number = 20;
         private static AxisLabelMiddle: number = 2;
+        private static AxisTextNodeAngle0: string = "rotate(0)";
+        private static AxisTextNodeAngle60: string = "rotate(-60)";
+        private static AxisTextNodeDXForAngel0: string = "0em";
+        private static AxisTextNodeDXForAngel60: string = "-1em";
+        private static AxisTextNodeTextAnchorForAngel0: string = "middle";
+        private static AxisTextNodeTextAnchorForAngel60: string = "end";
+        private static AxisTextNodeDYForAngel0: string = "1em";
+        private static AxisTextNodeDYForAngel60: string = "0em";
         private static YAxisLabelAngle: string = "rotate(-90)";
-        private static YAxisLabelDy: string = "1em";
+        private static YAxisLabelDy: string = "-2.5em";
         private static XAxisLabelDy: string = "-0.5em";
         private margin: IMargin = {
             left: StreamGraph.YAxisOnSize,
@@ -351,8 +361,10 @@ module powerbi.extensibility.visual {
                 if (category.values[categoryValueIndex] != null) {
                     formattedValue = categoryFormatter.format(category.values[categoryValueIndex]);
 
-                    const textLength: number = textMeasurementService.measureSvgTextWidth(
+                    let textLength: number = textMeasurementService.measureSvgTextWidth(
                         this.getTextPropertiesFunction(formattedValue));
+
+                    textLength += 1;
 
                     if (textLength > maxNumberOfAxisXValues) {
                         maxNumberOfAxisXValues = textLength;
@@ -368,6 +380,7 @@ module powerbi.extensibility.visual {
                 categoriesText,
                 categoryFormatter,
                 settings: visualSettings,
+                maxNumberOfAxisXValues: maxNumberOfAxisXValues,
                 valueFormatter: valuesFormatter,
                 xLabelMaxValue: xLabelMaxValue,
                 yLabelMaxValue: "",
@@ -477,11 +490,12 @@ module powerbi.extensibility.visual {
 
             this.renderLegend(this.data);
 
-
             this.svg.attr({
                 "width": PixelConverter.toString(this.viewport.width),
                 "height": PixelConverter.toString(this.viewport.height)
             });
+
+            this.calculateAxes();
 
             const selection: UpdateSelection<StreamGraphSeries> = this.renderChart(
                 this.data.series,
@@ -513,33 +527,41 @@ module powerbi.extensibility.visual {
 
                 this.behavior.renderSelection(false);
             }
+        }
 
-            this.axes.attr("transform", SVGUtil.translate(this.margin.left, 0));
-            this.axisX.attr("transform", SVGUtil.translate(0, this.viewport.height - this.margin.bottom));
-            this.axisY.attr("transform", SVGUtil.translate(0, this.margin.top));
+        private calculateShift(): number {
+            if (!this.data.settings.categoryAxis.rotateLabels) {
+                return StreamGraph.TickHeight;
+            }
 
-            this.calculateAxes();
-            if (this.data.settings.categoryAxis.show) {
-                this.axisX.call(this.xAxisProperties.axis);
-                this.axisX.classed(StreamGraph.XAxis.className, true);
-            } else {
-                this.axisX.classed(StreamGraph.XAxis.className, false);
-                this.axisX
+            const rotatedTextWidth: number = StreamGraph.XAxisLabelSize * StreamGraph.Sin60,
+                rotatedLongestTextHeight: number = this.data.maxNumberOfAxisXValues * StreamGraph.Cos60;
+
+            return rotatedLongestTextHeight + rotatedTextWidth + StreamGraph.TickHeight;
+        }
+
+        private setTextNodesPosition(xAxisTextNodes: Selection<any>,
+                                     textAnchor: string,
+                                     dx: string,
+                                     dy: string,
+                                     transform: string): void {
+
+            xAxisTextNodes
+                .style("text-anchor", textAnchor)
+                .attr({ dx, dy, transform });
+        }
+
+        private toggleAxisVisibility(
+            isShown: boolean,
+            className: string,
+            axis: d3.Selection<any>): void {
+
+            axis.classed(className, isShown);
+            if (!isShown) {
+                axis
                     .selectAll("*")
                     .remove();
             }
-            if (this.data.settings.valueAxis.show) {
-                this.axisY.call(this.yAxisProperties.axis);
-                this.axisY.classed(StreamGraph.YAxis.className, true);
-            } else {
-                this.axisY.classed(StreamGraph.YAxis.className, false);
-                this.axisY
-                    .selectAll("*")
-                    .remove();
-            }
-
-            this.renderXAxisLabels();
-            this.renderYAxisLabels();
         }
 
         private static outerPadding: number = 0;
@@ -547,8 +569,16 @@ module powerbi.extensibility.visual {
         private static xLabelMaxWidth: number = 160;
         private static xLabelTickSize: number = 3.2;
         private calculateAxes() {
-            let xShow: boolean = this.data.settings.categoryAxis.show;
-            let yShow: boolean = this.data.settings.valueAxis.show;
+            let showAxisTitle: boolean = this.data.settings.categoryAxis.showAxisTitle,
+                categoryAxisLabelColor: string = this.data.settings.categoryAxis.labelColor,
+                rotateLabels: boolean = this.data.settings.categoryAxis.rotateLabels,
+                xShow: boolean = this.data.settings.categoryAxis.show,
+
+                valueAxisLabelColor: string = this.data.settings.valueAxis.labelColor,
+                yShow: boolean = this.data.settings.valueAxis.show;
+
+            this.viewport.height -= this.calculateShift() + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0);
+
             let effectiveWidth: number = Math.max(0, this.viewport.width - this.margin.left - this.margin.right);
             let effectiveHeight: number = Math.max(0, this.viewport.height - this.margin.top - this.margin.bottom);
 
@@ -563,24 +593,44 @@ module powerbi.extensibility.visual {
             };
 
             if (xShow) {
-                this.xAxisProperties = AxisHelper.createAxis({
-                    pixelSpan: effectiveWidth,
-                    dataDomain: [this.data.xMinValue, this.data.xMaxValue],
-                    metaDataColumn: metaDataColumnPercent,
-                    formatString: null,
-                    outerPadding: StreamGraph.outerPadding,
-                    isCategoryAxis: true,
-                    isScalar: true,
-                    isVertical: false,
-                    forcedTickCount: Math.max(Math.ceil(effectiveWidth / StreamGraph.forcedTickSize), 0),
-                    useTickIntervalForDisplayUnits: true,
-                    disableNiceOnlyForScale: true,
-                    getValueFn: (index: number, type: ValueType) => {
-                        return this.data.categoryFormatter.format(this.data.categoriesText[index]);
+                this.xAxisProperties = _.assign(
+                    AxisHelper.createAxis({
+                        pixelSpan: effectiveWidth,
+                        dataDomain: [this.data.xMinValue, this.data.xMaxValue],
+                        metaDataColumn: metaDataColumnPercent,
+                        formatString: null,
+                        outerPadding: StreamGraph.outerPadding,
+                        isCategoryAxis: true,
+                        isScalar: true,
+                        isVertical: false,
+                        forcedTickCount: Math.max(Math.ceil(effectiveWidth / StreamGraph.forcedTickSize), 0),
+                        useTickIntervalForDisplayUnits: true,
+                        disableNiceOnlyForScale: true,
+                        getValueFn: (index: number, type: ValueType) => {
+                            return this.data.categoryFormatter.format(this.data.categoriesText[index]);
+                        }
+                    }),
+                    {
+                        xLabelMaxWidth: Math.min(StreamGraph.xLabelMaxWidth, effectiveWidth / StreamGraph.xLabelTickSize),
+                        formatter: this.data.categoryFormatter
                     }
-                });
-                this.xAxisProperties.xLabelMaxWidth = Math.min(StreamGraph.xLabelMaxWidth, effectiveWidth / StreamGraph.xLabelTickSize);
-                this.xAxisProperties.formatter = this.data.categoryFormatter;
+                );
+
+                this.axisX.call(this.xAxisProperties.axis);
+                const xAxisTextNodes: Selection<any> = this.axisX.selectAll("text");
+
+                xAxisTextNodes.style("fill", categoryAxisLabelColor);
+                let transformParams: any[] = rotateLabels
+                    ? [ StreamGraph.AxisTextNodeTextAnchorForAngel60,
+                        StreamGraph.AxisTextNodeDXForAngel60,
+                        StreamGraph.AxisTextNodeDYForAngel60,
+                        StreamGraph.AxisTextNodeAngle60 ]
+                    : [ StreamGraph.AxisTextNodeTextAnchorForAngel0,
+                        StreamGraph.AxisTextNodeDXForAngel0,
+                        StreamGraph.AxisTextNodeDYForAngel0,
+                        StreamGraph.AxisTextNodeAngle0 ];
+
+                this.setTextNodesPosition.apply(this, [xAxisTextNodes].concat(transformParams));
             }
             if (yShow) {
                 this.yAxisProperties = AxisHelper.createAxis({
@@ -594,7 +644,22 @@ module powerbi.extensibility.visual {
                     isVertical: true,
                     useTickIntervalForDisplayUnits: true
                 });
+
+                this.axisY.call(this.yAxisProperties.axis);
+                const yAxisTextNodes: Selection<any> = this.axisY.selectAll("text");
+
+                yAxisTextNodes.style("fill", valueAxisLabelColor);
             }
+
+            this.renderXAxisLabels();
+            this.renderYAxisLabels();
+
+            this.axes.attr("transform", SVGUtil.translate(this.margin.left, 0));
+            this.axisX.attr("transform", SVGUtil.translate(0, this.viewport.height - this.margin.bottom));
+            this.axisY.attr("transform", SVGUtil.translate(0, this.margin.top));
+
+            this.toggleAxisVisibility(xShow, StreamGraph.XAxis.className, this.axisX);
+            this.toggleAxisVisibility(yShow, StreamGraph.YAxis.className, this.axisY);
         }
 
         private renderYAxisLabels(): void {
@@ -701,8 +766,6 @@ module powerbi.extensibility.visual {
                 return;
             }
 
-            this.margin.bottom += StreamGraph.XAxisLabelSize;
-
             const valueAxisSettings: BaseAxisSettings = this.data.settings.valueAxis,
                 isYAxisOn: boolean = valueAxisSettings.show,
                 isYTitleOn: boolean = valueAxisSettings.showAxisTitle,
@@ -713,7 +776,7 @@ module powerbi.extensibility.visual {
                         ? StreamGraph.YAxisLabelSize
                         : StreamGraph.MinLabelSize),
                 width: number = this.viewport.width - this.margin.right - leftMargin,
-                height: number = this.viewport.height;
+                height: number = this.viewport.height + StreamGraph.XAxisLabelSize + this.calculateShift();
 
             let xAxisText: string = this.dataView.categorical.categories[0].source.displayName;
 

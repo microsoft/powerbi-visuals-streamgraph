@@ -1,3 +1,7 @@
+## 1.1.0
+* Fixed incorrectly location of axises titles
+* Fixed rotate property does not work
+
 ## 1.0.1
 * Fixed x-axis labels overlaps
 

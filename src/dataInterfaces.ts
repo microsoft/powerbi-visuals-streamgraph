@@ -42,6 +42,7 @@ module powerbi.extensibility.visual {
         series: StreamGraphSeries[];
         legendData: LegendData;
         valueFormatter: IValueFormatter;
+        maxNumberOfAxisXValues: number;
         categoryFormatter: IValueFormatter;
         settings: VisualSettings;
         categoriesText: string[];
