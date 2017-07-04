@@ -1,6 +1,6 @@
 ## 1.2.0
 * Updates the visual in order to support localization for English language
-* Update the visual in order to use API 1.7.0 
+* Updates the visual in order to use API 1.7.0 
 
 ## 1.1.0
 * Fixed incorrectly location of axises titles
