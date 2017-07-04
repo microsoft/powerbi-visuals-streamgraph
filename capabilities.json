@@ -97,7 +97,7 @@
                 },
                 "rotateLabels": {
                     "displayName": "Rotate labels",
-                    "displayNameKey": "Visual_Rotate_Labels",
+                    "displayNameKey": "Visual_LabelsRotate",
                     "type": {
                         "bool": true
                     }
