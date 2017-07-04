@@ -231,7 +231,7 @@ module powerbi.extensibility.visual {
 
             let maxNumberOfAxisXValues: number = StreamGraph.DefaultMaxNumberOfAxisXValues,
                 categorical: DataViewCategorical = dataView.categorical,
-                categories: DataViewCategoricalColumn[] = categorical.categories,
+                categories: DataViewCategoryColumn[] = categorical.categories,
                 values: DataViewValueColumns = categorical.values,
                 series: StreamGraphSeries[] = [],
                 legendData: LegendData = {
@@ -245,7 +245,7 @@ module powerbi.extensibility.visual {
                 valuesFormatter: IValueFormatter,
                 categoryFormatter: IValueFormatter;
 
-            const category: DataViewCategoricalColumn = categories && categories.length > 0
+            const category: DataViewCategoryColumn = categories && categories.length > 0
                 ? categories[0]
                 : null;
 
@@ -354,7 +354,7 @@ module powerbi.extensibility.visual {
             });
 
             const categoriesText: string[] = [];
-            let xLabelMaxValue: number|string;
+            let xLabelMaxValue: number | string;
             for (let categoryValueIndex: number = 0; categoryValueIndex < category.values.length; categoryValueIndex++) {
                 let formattedValue: string = undefined;
 
@@ -541,10 +541,10 @@ module powerbi.extensibility.visual {
         }
 
         private setTextNodesPosition(xAxisTextNodes: Selection<any>,
-                                     textAnchor: string,
-                                     dx: string,
-                                     dy: string,
-                                     transform: string): void {
+            textAnchor: string,
+            dx: string,
+            dy: string,
+            transform: string): void {
 
             xAxisTextNodes
                 .style("text-anchor", textAnchor)
@@ -621,14 +621,18 @@ module powerbi.extensibility.visual {
 
                 xAxisTextNodes.style("fill", categoryAxisLabelColor);
                 let transformParams: any[] = rotateLabels
-                    ? [ StreamGraph.AxisTextNodeTextAnchorForAngel60,
+                    ? [
+                        StreamGraph.AxisTextNodeTextAnchorForAngel60,
                         StreamGraph.AxisTextNodeDXForAngel60,
                         StreamGraph.AxisTextNodeDYForAngel60,
-                        StreamGraph.AxisTextNodeAngle60 ]
-                    : [ StreamGraph.AxisTextNodeTextAnchorForAngel0,
+                        StreamGraph.AxisTextNodeAngle60
+                    ]
+                    : [
+                        StreamGraph.AxisTextNodeTextAnchorForAngel0,
                         StreamGraph.AxisTextNodeDXForAngel0,
                         StreamGraph.AxisTextNodeDYForAngel0,
-                        StreamGraph.AxisTextNodeAngle0 ];
+                        StreamGraph.AxisTextNodeAngle0
+                    ];
 
                 this.setTextNodesPosition.apply(this, [xAxisTextNodes].concat(transformParams));
             }
