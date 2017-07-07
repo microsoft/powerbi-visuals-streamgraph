@@ -467,7 +467,7 @@ module powerbi.extensibility.visual {
 
                 this.clearData();
                 return;
-            };
+            }
 
             this.viewport = StreamGraph.getViewport(options.viewport);
 
@@ -606,7 +606,7 @@ module powerbi.extensibility.visual {
                         forcedTickCount: Math.max(Math.ceil(effectiveWidth / StreamGraph.forcedTickSize), 0),
                         useTickIntervalForDisplayUnits: true,
                         disableNiceOnlyForScale: true,
-                        getValueFn: (index: number, type: ValueType) => {
+                        getValueFn: (index: number) => {
                             return this.data.categoryFormatter.format(this.data.categoriesText[index]);
                         }
                     }),
