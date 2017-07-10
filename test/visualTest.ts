@@ -294,19 +294,6 @@ module powerbi.extensibility.visual.test {
                             assertColorsMatch($(element).css("fill"), color);
                         });
                 });
-
-                it("rotated labels should fit well", () => {
-                    dataView.metadata.objects.categoryAxis.rotateLabels = true;
-
-                     visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                      visualBuilder.xAxisTicks.children("text")
-                        .toArray()
-                        .forEach((element: Element) => {
-                            const label = element.innerHTML;
-                            expect(label.substring(label.length - 3)).not.toEqual("...");
-                        });
-                });
             });
 
             describe("Y-axis", () => {

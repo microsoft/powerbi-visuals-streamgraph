@@ -45,7 +45,6 @@ module powerbi.extensibility.visual.settings {
     }
 
     export class XAxisSettings extends BaseAxisSettings {
-        public rotateLabels: boolean = false;
     }
 
     export class LegendSettings {

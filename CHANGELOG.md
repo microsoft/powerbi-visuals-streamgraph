@@ -1,6 +1,12 @@
+## 1.3.0
+* Updated packages
+* Removed jQuery and Lodash from dependencies
+* Removed rotate labels of X axis
+* Added native formatting for dates
+
 ## 1.2.0
-* Updates the visual in order to support localization for English language
-* Updates the visual in order to use API 1.7.0 
+* Updated the visual in order to support localization for English language
+* Updated the visual in order to use API 1.7.0 
 
 ## 1.1.0
 * Fixed incorrectly location of axises titles
