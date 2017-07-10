@@ -553,7 +553,6 @@ module powerbi.extensibility.visual {
             };
 
             if (xShow) {
-                debugger;
                 this.xAxisProperties = AxisHelper.createAxis({
                     pixelSpan: effectiveWidth,
                     dataDomain: [this.data.xMinValue, this.data.xMaxValue],
