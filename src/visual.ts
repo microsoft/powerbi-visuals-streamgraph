@@ -332,7 +332,7 @@ module powerbi.extensibility.visual {
                 format: valueFormatter.getFormatStringByColumn(category.source),
                 value: category.values
             });
-            const metadata = category.source;
+            const metadata: DataViewMetadataColumn = category.source;
 
             const categoriesText: PrimitiveValue[] = category.values;
             if (categoriesText.length) {
