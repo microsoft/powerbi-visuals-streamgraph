@@ -332,42 +332,34 @@ module powerbi.extensibility.visual {
                 format: valueFormatter.getFormatStringByColumn(category.source),
                 value: category.values
             });
+            const metadata = category.source;
 
-            const categoriesText: string[] = [];
-            let xLabelMaxValue: number | string;
-            for (let categoryValueIndex: number = 0; categoryValueIndex < category.values.length; categoryValueIndex++) {
-                let formattedValue: string = undefined;
-
-                if (category.values[categoryValueIndex] != null) {
-                    formattedValue = categoryFormatter.format(category.values[categoryValueIndex]);
-
-                    let textLength: number = textMeasurementService.measureSvgTextWidth(
-                        this.getTextPropertiesFunction(formattedValue));
-
-                    textLength += 1;
-
-                    if (textLength > maxNumberOfAxisXValues) {
-                        maxNumberOfAxisXValues = textLength;
-                        xLabelMaxValue = formattedValue;
-                    }
+            const categoriesText: PrimitiveValue[] = category.values;
+            if (categoriesText.length) {
+                if (metadata.type.dateTime && categoriesText[0] instanceof Date) {
+                    xMinValue = (<Date>categoriesText[0]).getTime();
+                    xMaxValue = (<Date>categoriesText[categoriesText.length - 1]).getTime();
+                } else if (metadata.type.numeric) {
+                    xMinValue = categoriesText[0] as number;
+                    xMaxValue = categoriesText[categoriesText.length - 1] as number;
+                } else {
+                    xMinValue = 0;
+                    xMaxValue = categoriesText.length - 1;
                 }
-
-                categoriesText.push(formattedValue);
             }
+
             return {
+                metadata,
                 series,
                 legendData,
                 categoriesText,
                 categoryFormatter,
                 settings: visualSettings,
-                maxNumberOfAxisXValues: maxNumberOfAxisXValues,
                 valueFormatter: valuesFormatter,
-                xLabelMaxValue: xLabelMaxValue,
-                yLabelMaxValue: "",
-                xMaxValue: category.values.length - 1,
-                xMinValue: 0,
-                yMaxValue: yMaxValue,
-                yMinValue: yMinValue
+                yMaxValue,
+                yMinValue,
+                xMinValue,
+                xMaxValue
             };
         }
 
@@ -561,38 +553,34 @@ module powerbi.extensibility.visual {
             };
 
             if (xShow) {
-                this.xAxisProperties = _.assign(
-                    AxisHelper.createAxis({
-                        pixelSpan: effectiveWidth,
-                        dataDomain: [this.data.xMinValue, this.data.xMaxValue],
-                        metaDataColumn: metaDataColumnPercent,
-                        formatString: null,
-                        outerPadding: StreamGraph.outerPadding,
-                        isCategoryAxis: true,
-                        isScalar: true,
-                        isVertical: false,
-                        forcedTickCount: Math.max(Math.ceil(effectiveWidth / StreamGraph.forcedTickSize), 0),
-                        useTickIntervalForDisplayUnits: true,
-                        disableNiceOnlyForScale: true,
-                        getValueFn: (index: number) => {
-                            return this.data.categoryFormatter.format(this.data.categoriesText[index]);
+                debugger;
+                this.xAxisProperties = AxisHelper.createAxis({
+                    pixelSpan: effectiveWidth,
+                    dataDomain: [this.data.xMinValue, this.data.xMaxValue],
+                    metaDataColumn: this.data.metadata,
+                    outerPadding: StreamGraph.outerPadding,
+                    formatString: null,
+                    isScalar: true,
+                    isVertical: false,
+                    getValueFn: (value: number, dataType: ValueType): any => {
+                        if (dataType.dateTime) {
+                            return new Date(value);
+                        } else if (dataType.text) {
+                            return this.data.categoriesText[value];
                         }
-                    }),
-                    {
-                        xLabelMaxWidth: Math.min(StreamGraph.xLabelMaxWidth, effectiveWidth / StreamGraph.xLabelTickSize),
-                        formatter: this.data.categoryFormatter
+                        return value;
                     }
-                );
+                });
 
                 this.axisX.call(this.xAxisProperties.axis);
                 const xAxisTextNodes: Selection<any> = this.axisX.selectAll("text");
 
                 xAxisTextNodes.style("fill", categoryAxisLabelColor);
                 let transformParams: any[] = [
-                        StreamGraph.AxisTextNodeTextAnchorForAngel0,
-                        StreamGraph.AxisTextNodeDXForAngel0,
-                        StreamGraph.AxisTextNodeDYForAngel0
-                    ];
+                    StreamGraph.AxisTextNodeTextAnchorForAngel0,
+                    StreamGraph.AxisTextNodeDXForAngel0,
+                    StreamGraph.AxisTextNodeDYForAngel0
+                ];
 
                 this.setTextNodesPosition.apply(this, [xAxisTextNodes].concat(transformParams));
             }

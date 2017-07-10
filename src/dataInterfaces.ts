@@ -39,15 +39,13 @@ module powerbi.extensibility.visual {
     import VisualSettings = settings.VisualSettings;
 
     export interface StreamData {
+        metadata: DataViewMetadataColumn;
         series: StreamGraphSeries[];
         legendData: LegendData;
         valueFormatter: IValueFormatter;
-        maxNumberOfAxisXValues: number;
         categoryFormatter: IValueFormatter;
         settings: VisualSettings;
-        categoriesText: string[];
-        xLabelMaxValue: number | string;
-        yLabelMaxValue: number | string;
+        categoriesText: PrimitiveValue[];
         xMinValue: number;
         xMaxValue: number;
         yMinValue: number;
