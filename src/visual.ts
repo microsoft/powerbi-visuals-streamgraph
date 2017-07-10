@@ -1064,7 +1064,7 @@ module powerbi.extensibility.visual {
                 this.legend.changeOrientation(LegendPosition[position]);
             }
 
-            this.legend.drawLegend(legendData, _.clone(this.viewport));
+            this.legend.drawLegend(legendData, { ...this.viewport });
             legend.positionChartArea(this.svg, this.legend);
 
             this.updateViewport();
