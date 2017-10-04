@@ -1,3 +1,9 @@
+## 1.4.0
+* Stream Graph: Community suggestions
+* Data Labels option can now displays measure *field name* measure *value*.
+* Tooltip can now shows the group and measure value
+* Axis text size can now be changed.
+
 ## 1.3.0
 * Updated packages
 * Removed jQuery and Lodash from dependencies

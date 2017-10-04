@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -33,7 +33,6 @@ module powerbi.extensibility.visual {
     import StackLayout = d3.layout.Stack;
     import UpdateSelection = d3.selection.Update;
     import SVGUtil = powerbi.extensibility.utils.svg;
-
     // powerbi.visuals
     import ISelectionId = powerbi.visuals.ISelectionId;
 
@@ -142,13 +141,13 @@ module powerbi.extensibility.visual {
         private static AxisTextNodeDXForAngel0: string = "0em";
         private static AxisTextNodeDYForAngel0: string = "1em";
         private static YAxisLabelAngle: string = "rotate(-90)";
-        private static YAxisLabelDy: string = "-2.5em";
+        private static YAxisLabelDy: number = 30;
         private static XAxisLabelDy: string = "-0.5em";
         private margin: IMargin = {
             left: StreamGraph.YAxisOnSize,
-            right: 15,
+            right: -20,
             bottom: StreamGraph.XAxisOnSize,
-            top: 10
+            top: 0
         };
         private static DefaultMaxNumberOfAxisXValues: number = 5;
 
@@ -251,9 +250,9 @@ module powerbi.extensibility.visual {
                 }
 
                 const tooltipInfo: VisualTooltipDataItem[] = createTooltipInfo(
-                    { categories: null, values: values },
+                    dataView,
+                    {categories: null, values: values },
                     valueIndex);
-
                 if (!label) {
                     if (tooltipInfo
                         && tooltipInfo[0]
@@ -318,7 +317,6 @@ module powerbi.extensibility.visual {
                     }
                 }
             }
-
             if (interactivityService) {
                 interactivityService.applySelectionStateToData(series);
             }
@@ -348,6 +346,25 @@ module powerbi.extensibility.visual {
                 }
             }
 
+            let textProperties: TextProperties = {
+                text: xMaxValue.toString(),
+                fontFamily: "sans-serif",
+                fontSize: PixelConverter.toString(visualSettings.categoryAxis.fontSize)
+            };
+            let xAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textProperties);
+            let xAxisValueMaxTextHalfSize: number = xAxisValueMaxTextSize / 2;
+            let textPropertiesY: TextProperties = {
+                text: yMaxValue.toString(),
+                fontFamily: "sans-serif",
+                fontSize: PixelConverter.toString(visualSettings.valueAxis.fontSize)
+            };
+            let yAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textPropertiesY);
+            let yAxisValueMaxTextHalfSize: number = yAxisValueMaxTextSize / 2;
+            let yAxisFontSize: number = +visualSettings.valueAxis.fontSize;
+            let yAxisFontHalfSize: number = yAxisFontSize / 2;
+            let xAxisFontSize: number = +visualSettings.categoryAxis.fontSize;
+            let xAxisFontHalfSize: number = xAxisFontSize / 2;
+
             return {
                 metadata,
                 series,
@@ -359,7 +376,15 @@ module powerbi.extensibility.visual {
                 yMaxValue,
                 yMinValue,
                 xMinValue,
-                xMaxValue
+                xMaxValue,
+                yAxisValueMaxTextSize,
+                yAxisValueMaxTextHalfSize,
+                xAxisValueMaxTextSize,
+                xAxisValueMaxTextHalfSize,
+                yAxisFontSize,
+                yAxisFontHalfSize,
+                xAxisFontSize,
+                xAxisFontHalfSize
             };
         }
 
@@ -442,7 +467,6 @@ module powerbi.extensibility.visual {
             }
 
             this.viewport = StreamGraph.getViewport(options.viewport);
-
             this.dataView = options.dataViews[0];
             if (options.type !== 4 && options.type !== 32) {
                 this.data = StreamGraph.converter(
@@ -459,19 +483,16 @@ module powerbi.extensibility.visual {
                 this.clearData();
                 return;
             }
-
             this.renderLegend(this.data);
 
             this.svg.attr({
                 "width": PixelConverter.toString(this.viewport.width),
                 "height": PixelConverter.toString(this.viewport.height)
             });
-
-            this.calculateAxes();
-
             const selection: UpdateSelection<StreamGraphSeries> = this.renderChart(
                 this.data.series,
                 StreamGraph.AnimationDuration);
+            this.calculateAxes();
 
             this.tooltipServiceWrapper.addTooltip(
                 selection,
@@ -538,10 +559,8 @@ module powerbi.extensibility.visual {
                 yShow: boolean = this.data.settings.valueAxis.show;
 
             this.viewport.height -= StreamGraph.TickHeight + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0);
-
-            let effectiveWidth: number = Math.max(0, this.viewport.width - this.margin.left - this.margin.right);
-            let effectiveHeight: number = Math.max(0, this.viewport.height - this.margin.top - this.margin.bottom);
-
+            let effectiveWidth: number = Math.max(0, this.viewport.width - this.margin.left - (this.margin.right + this.data.xAxisValueMaxTextHalfSize));
+            let effectiveHeight: number = Math.max(0, this.viewport.height - (this.margin.top + this.data.yAxisFontHalfSize) - this.margin.bottom + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0));
             let metaDataColumnPercent: powerbi.DataViewMetadataColumn = {
                 displayName: "Column",
                 type: ValueType.fromDescriptor({ numeric: true }),
@@ -574,7 +593,9 @@ module powerbi.extensibility.visual {
                 this.axisX.call(this.xAxisProperties.axis);
                 const xAxisTextNodes: Selection<any> = this.axisX.selectAll("text");
 
-                xAxisTextNodes.style("fill", categoryAxisLabelColor);
+                xAxisTextNodes
+                    .style("fill", categoryAxisLabelColor)
+                    .style("font-size", this.data.settings.categoryAxis.fontSize);
                 let transformParams: any[] = [
                     StreamGraph.AxisTextNodeTextAnchorForAngel0,
                     StreamGraph.AxisTextNodeDXForAngel0,
@@ -598,8 +619,9 @@ module powerbi.extensibility.visual {
 
                 this.axisY.call(this.yAxisProperties.axis);
                 const yAxisTextNodes: Selection<any> = this.axisY.selectAll("text");
-
-                yAxisTextNodes.style("fill", valueAxisLabelColor);
+                yAxisTextNodes
+                    .style("fill", valueAxisLabelColor)
+                    .style("font-size", this.data.settings.valueAxis.fontSize);
             }
 
             this.renderXAxisLabels();
@@ -607,7 +629,7 @@ module powerbi.extensibility.visual {
 
             this.axes.attr("transform", SVGUtil.translate(this.margin.left, 0));
             this.axisX.attr("transform", SVGUtil.translate(0, this.viewport.height - this.margin.bottom));
-            this.axisY.attr("transform", SVGUtil.translate(0, this.margin.top));
+            this.axisY.attr("transform", SVGUtil.translate(0, (this.margin.top + this.data.yAxisFontHalfSize)));
 
             this.toggleAxisVisibility(xShow, StreamGraph.XAxis.className, this.axisX);
             this.toggleAxisVisibility(yShow, StreamGraph.YAxis.className, this.axisY);
@@ -617,11 +639,9 @@ module powerbi.extensibility.visual {
             this.axes
                 .selectAll(StreamGraph.YAxisLabelSelector.selectorName)
                 .remove();
-
             const valueAxisSettings: BaseAxisSettings = this.data.settings.valueAxis;
-
             this.margin.left = valueAxisSettings.show
-                ? StreamGraph.YAxisOnSize
+                ? StreamGraph.YAxisOnSize + this.data.yAxisValueMaxTextSize
                 : StreamGraph.YAxisOffSize;
 
             if (valueAxisSettings.showAxisTitle) {
@@ -630,14 +650,14 @@ module powerbi.extensibility.visual {
                 const categoryAxisSettings: BaseAxisSettings = this.data.settings.categoryAxis,
                     isXAxisOn: boolean = categoryAxisSettings.show,
                     isXTitleOn: boolean = categoryAxisSettings.showAxisTitle,
-                    marginTop: number = this.margin.top,
+                    marginTop: number = (this.margin.top + this.data.yAxisFontHalfSize),
                     height: number = this.viewport.height
                         - marginTop
                         - (isXAxisOn
-                            ? StreamGraph.XAxisOnSize
+                            ? StreamGraph.XAxisOnSize + this.data.xAxisFontSize
                             : StreamGraph.XAxisOffSize)
                         - (isXTitleOn
-                            ? StreamGraph.XAxisLabelSize
+                        ? StreamGraph.XAxisLabelSize
                             : StreamGraph.MinLabelSize),
                     values = this.dataView.categorical.values;
 
@@ -646,9 +666,7 @@ module powerbi.extensibility.visual {
                     : StreamGraph.getYAxisTitleFromValues(values);
 
                 const textSettings: TextProperties = StreamGraph.getTextPropertiesFunction(yAxisText);
-
                 yAxisText = textMeasurementService.getTailoredTextOrDefault(textSettings, height);
-
                 const yAxisLabel: Selection<any> = this.axes.append("text")
                     .style({
                         "font-family": textSettings.fontFamily,
@@ -660,7 +678,7 @@ module powerbi.extensibility.visual {
                         transform: StreamGraph.YAxisLabelAngle,
                         fill: valueAxisSettings.labelColor,
                         x: -(marginTop + (height / StreamGraph.AxisLabelMiddle)),
-                        dy: StreamGraph.YAxisLabelDy
+                        y: PixelConverter.fromPoint(-(this.margin.left - StreamGraph.YAxisLabelDy))
                     })
                     .classed(StreamGraph.YAxisLabelSelector.className, true)
                     .text(yAxisText);
@@ -706,9 +724,8 @@ module powerbi.extensibility.visual {
                 .remove();
 
             const categoryAxisSettings: BaseAxisSettings = this.data.settings.categoryAxis;
-
             this.margin.bottom = categoryAxisSettings.show
-                ? StreamGraph.XAxisOnSize
+                ? StreamGraph.XAxisOnSize + parseInt(this.data.settings.categoryAxis.fontSize.toString())
                 : StreamGraph.XAxisOffSize;
 
             if (!categoryAxisSettings.showAxisTitle
@@ -726,7 +743,7 @@ module powerbi.extensibility.visual {
                     + (isYTitleOn
                         ? StreamGraph.YAxisLabelSize
                         : StreamGraph.MinLabelSize),
-                width: number = this.viewport.width - this.margin.right - leftMargin,
+                width: number = this.viewport.width - (this.margin.right + this.data.xAxisValueMaxTextHalfSize) - leftMargin,
                 height: number = this.viewport.height + StreamGraph.XAxisLabelSize + StreamGraph.TickHeight;
 
             let xAxisText: string = this.dataView.categorical.categories[0].source.displayName;
@@ -764,9 +781,8 @@ module powerbi.extensibility.visual {
             labelsSettings: LabelsSettings): ILabelLayout {
 
             const fontSize: string = PixelConverter.fromPoint(labelsSettings.fontSize);
-
             return {
-                labelText: (dataPoint: StreamDataPoint) => dataPoint.text,
+                labelText: (dataPoint: StreamDataPoint) => dataPoint.text + (labelsSettings.showValue ?  " " + dataPoint.y : ""),
                 labelLayout: {
                     x: (dataPoint: StreamDataPoint) => xScale(dataPoint.x),
                     y: (dataPoint: StreamDataPoint) => yScale(dataPoint.y0)
@@ -926,11 +942,28 @@ module powerbi.extensibility.visual {
                 stack.offset("wiggle");
             }
 
+
+            this.margin.left = this.data.settings.valueAxis.show
+                ? StreamGraph.YAxisOnSize + this.data.yAxisValueMaxTextSize
+                : StreamGraph.YAxisOffSize;
+
+            if (this.data.settings.valueAxis.showAxisTitle) {
+                this.margin.left += StreamGraph.YAxisLabelSize;
+            }
+
+            this.margin.bottom = this.data.settings.categoryAxis.show
+                ? StreamGraph.XAxisOnSize + this.data.xAxisFontSize
+                : StreamGraph.XAxisOffSize;
+
+            if (this.data.settings.categoryAxis.showAxisTitle) {
+                this.margin.bottom += StreamGraph.XAxisLabelSize;
+            }
+
             const layers: StreamGraphSeries[] = stack(series),
                 margin: IMargin = this.margin,
                 xScale: LinearScale<number, number> = d3.scale.linear()
                     .domain([0, series[0].dataPoints.length - 1])
-                    .range([margin.left, width - margin.right]);
+                    .range([margin.left, width - (margin.right + this.data.xAxisValueMaxTextHalfSize)]);
 
             const yMax: number = d3.max(layers, (series: StreamGraphSeries) => {
                 return d3.max(series.dataPoints, (dataPoint: StreamDataPoint) => {
@@ -946,7 +979,7 @@ module powerbi.extensibility.visual {
 
             const yScale: LinearScale<number, number> = d3.scale.linear()
                 .domain([Math.min(yMin, 0), yMax])
-                .range([height - margin.bottom, margin.top])
+                .range([height - (margin.bottom + StreamGraph.TickHeight), (this.margin.top - this.data.yAxisFontHalfSize)])
                 .nice();
 
             const area: Area<StreamDataPoint> = d3.svg.area<StreamDataPoint>()
@@ -989,7 +1022,7 @@ module powerbi.extensibility.visual {
             if (this.data.settings.labels.show) {
                 const labelsXScale: LinearScale<number, number> = d3.scale.linear()
                     .domain([0, series[0].dataPoints.length - 1])
-                    .range([0, width - margin.left - margin.right]);
+                    .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxTextHalfSize]);
 
                 const layout: ILabelLayout = StreamGraph.getStreamGraphLabelLayout(
                     labelsXScale,
@@ -1012,8 +1045,8 @@ module powerbi.extensibility.visual {
                 });
 
                 const viewport: IViewport = {
-                    height: height - margin.top - margin.bottom,
-                    width: width - margin.right - margin.left,
+                    height: height - (this.margin.top + this.data.yAxisFontHalfSize) - margin.bottom,
+                    width: width - (this.margin.right + this.data.xAxisValueMaxTextHalfSize) - margin.left,
                 };
 
                 const labels: UpdateSelection<StreamDataPoint> =
@@ -1123,7 +1156,6 @@ module powerbi.extensibility.visual {
             const fontFamily: string = StreamGraph.DefaultFontFamily,
                 fontSize: string = PixelConverter.fromPoint(LegendSettings.DefaultFontSizeInPoints),
                 fontWeight: string = StreamGraph.DefaultFontWeight;
-
             return {
                 text,
                 fontSize,
