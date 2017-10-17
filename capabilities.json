@@ -119,6 +119,15 @@
                             }
                         }
                     }
+                },
+                "fontSize": {
+                    "displayName": "Text Size",
+                    "displayNameKey": "Visual_TextSize",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
                 }
             }
         },
@@ -148,6 +157,15 @@
                             "solid": {
                                 "color": true
                             }
+                        }
+                    }
+                },
+                "fontSize": {
+                    "displayName": "Text Size",
+                    "displayNameKey": "Visual_TextSize",
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
                         }
                     }
                 }
@@ -260,15 +278,22 @@
                         "bool": true
                     }
                 },
-                "color": {
-                    "displayName": "Color",
-                    "displayNameKey": "Visual_LabelsFill",
+              "color": {
+                "displayName": "Color",
+                "displayNameKey": "Visual_LabelsFill",
+                "type": {
+                  "fill": {
+                    "solid": {
+                      "color": true
+                    }
+                  }
+                }
+              },
+              "showValue": {
+                    "displayName": "Show Values",
+                    "displayNameKey": "Visual_ShowValues",
                     "type": {
-                        "fill": {
-                            "solid": {
-                                "color": true
-                            }
-                        }
+                        "bool": true
                     }
                 },
                 "fontSize": {

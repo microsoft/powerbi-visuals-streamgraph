@@ -38,6 +38,7 @@ module powerbi.extensibility.visual.tooltipBuilder {
     }
 
     export function createTooltipInfo(
+        dataView: DataView,
         dataViewCat: DataViewCategorical,
         seriesIndex?: number): VisualTooltipDataItem[] {
 
@@ -45,7 +46,6 @@ module powerbi.extensibility.visual.tooltipBuilder {
             valuesSource: DataViewMetadataColumn = undefined;
 
         seriesIndex = seriesIndex | DefaultSeriesIndex;
-
         if (dataViewCat && dataViewCat.values) {
             valuesSource = dataViewCat.values.source;
 
@@ -65,10 +65,11 @@ module powerbi.extensibility.visual.tooltipBuilder {
             }
         }
 
-        return createTooltipData(valuesSource, seriesSource);
+        return createTooltipData(dataView, valuesSource, seriesSource);
     }
 
     export function createTooltipData(
+        dataView: DataView,
         valuesSource: DataViewMetadataColumn,
         seriesValues: TooltipSeriesDataItem[]): VisualTooltipDataItem[] {
 
@@ -119,6 +120,18 @@ module powerbi.extensibility.visual.tooltipBuilder {
                     items.push({
                         displayName: HighlightedValueDisplayName,
                         value: formattedHighlightedValue
+                    });
+                }
+
+                if (seriesData.metadata.values) {
+                    let valuesList: string;
+                    if (seriesData.metadata.highlights)
+                        valuesList = seriesData.metadata.highlights.filter(d => d === null ? false : true ).join(" ");
+                    else
+                        valuesList = seriesData.metadata.values.join(" ");
+                    items.push({
+                        displayName: "values",
+                        value: valuesList
                     });
                 }
             }

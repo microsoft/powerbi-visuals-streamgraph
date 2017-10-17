@@ -50,6 +50,14 @@ module powerbi.extensibility.visual {
         xMaxValue: number;
         yMinValue: number;
         yMaxValue: number;
+        yAxisValueMaxTextSize: number;
+        yAxisValueMaxTextHalfSize: number;
+        xAxisValueMaxTextSize: number;
+        xAxisValueMaxTextHalfSize: number;
+        yAxisFontSize: number;
+        yAxisFontHalfSize: number;
+        xAxisFontSize: number;
+        xAxisFontHalfSize: number;
     }
 
     export interface AxisLabelProperties {

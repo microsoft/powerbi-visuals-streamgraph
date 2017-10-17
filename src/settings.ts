@@ -38,10 +38,12 @@ module powerbi.extensibility.visual.settings {
 
     export class BaseAxisSettings {
         public static DefaultColor: string = "#777";
+        public static DefaultAxisFontSizeInPoints: number = 8;
 
         public show: boolean = true;
         public showAxisTitle: boolean = false;
         public labelColor: string = BaseAxisSettings.DefaultColor;
+        public fontSize: number = BaseAxisSettings.DefaultAxisFontSizeInPoints;
     }
 
     export class XAxisSettings extends BaseAxisSettings {
@@ -65,7 +67,7 @@ module powerbi.extensibility.visual.settings {
         public show: boolean;
         public color: string;
         public fontSize: number;
-
+        public showValue: boolean = false;
         constructor() {
             const defaultSettings = getDefaultPointLabelSettings();
 

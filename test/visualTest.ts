@@ -219,6 +219,15 @@ module powerbi.extensibility.visual.test {
                     expect(visualBuilder.dataLabelsText).not.toBeInDOM();
                 });
 
+                it("showValues", () => {
+                    const expectedTextWithValue: string = "Product";
+                    visualBuilder.updateFlushAllD3Transitions(dataView);
+                    (dataView.metadata.objects as any).labels.showValue = true;
+
+                    visualBuilder.updateFlushAllD3Transitions(dataView);
+                    expect(visualBuilder.dataLabelsText["0"].childNodes["0"].data.length).toBeGreaterThan(expectedTextWithValue.length);
+                });
+
                 it("color", () => {
                     const color: string = "#ABCDEF";
 
@@ -294,6 +303,15 @@ module powerbi.extensibility.visual.test {
                             assertColorsMatch($(element).css("fill"), color);
                         });
                 });
+
+                it("font size", () => {
+                    const fontSize: number = 22,
+                        expectedFontSize: string = "22px";
+                    (dataView.metadata.objects as any).categoryAxis.fontSize = fontSize;
+                    visualBuilder.updateFlushAllD3Transitions(dataView);
+                    expect($(visualBuilder.xAxisTicks["0"].children["0"].lastChild).css("font-size")).toBe(expectedFontSize);
+                });
+
             });
 
             describe("Y-axis", () => {
@@ -340,6 +358,17 @@ module powerbi.extensibility.visual.test {
                         .forEach((element: Element) => {
                             assertColorsMatch($(element).css("fill"), color);
                         });
+                });
+
+                it("font size", () => {
+                    const fontSize: number = 22,
+                        expectedFontSize: string = "22px";
+
+                    (dataView.metadata.objects as any).valueAxis.fontSize = fontSize;
+
+                    visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                    expect($(visualBuilder.yAxisTicks["0"].children["0"].lastChild).css("font-size")).toBe(expectedFontSize);
                 });
             });
         });
