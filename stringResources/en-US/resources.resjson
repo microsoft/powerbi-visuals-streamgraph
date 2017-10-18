@@ -23,5 +23,6 @@
 	"Visual_LegendPosition_LeftCenter": "Left Center",
 	"Visual_LegendPosition_RightCenter": "Right center",
 	"Visual_TextSize": "Text Size",
-	"Visual_DataPointsLabels": "Data Labels"
+	"Visual_DataPointsLabels": "Data Labels",
+	"Visual_ShowValues": "Show Values"
 }
