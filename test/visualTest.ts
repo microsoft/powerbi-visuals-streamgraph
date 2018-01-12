@@ -450,6 +450,20 @@ module powerbi.extensibility.visual.test {
                     visualBuilder.visualHost);
             });
 
+            describe("isNumber" , () => {
+                it("should define number values", () => {
+                    const valueNumber = 100,
+                        valueNull = null,
+                        valueUndefined = undefined,
+                        valueNan = NaN;
+
+                    expect(VisualClass.isNumber(valueNumber)).toBeTruthy();
+                    expect(VisualClass.isNumber(valueNull)).toBeFalsy();
+                    expect(VisualClass.isNumber(valueUndefined)).toBeFalsy();
+                    expect(VisualClass.isNumber(valueNan)).toBeFalsy();
+                });
+            });
+
             describe("streamData", () => {
                 let streamData: StreamData;
 
