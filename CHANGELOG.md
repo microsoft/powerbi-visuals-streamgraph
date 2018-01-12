@@ -1,3 +1,6 @@
+## 1.4.1
+* Fixed breaking issue if string value used instead of number in Values field bucket
+
 ## 1.4.0
 * Stream Graph: Community suggestions
 * Data Labels option can now displays measure *field name* measure *value*.

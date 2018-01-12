@@ -189,6 +189,10 @@ module powerbi.extensibility.visual {
             };
         }
 
+        public static isNumber(value: PrimitiveValue) {
+            return !isNaN(value as number) && isFinite(value as number) && value !== null;
+        }
+
         public static converter(
             dataView: DataView,
             colorPalette: IColorPalette,
@@ -296,9 +300,9 @@ module powerbi.extensibility.visual {
                     }
                     let streamDataPoint: StreamDataPoint = {
                         x: dataPointValueIndex,
-                        y: isNaN(y)
-                            ? StreamGraph.DefaultValue
-                            : y,
+                        y: StreamGraph.isNumber(y)
+                            ? y
+                            : StreamGraph.DefaultValue,
                         text: label,
                         labelFontSize: fontSizeInPx
                     };
@@ -987,7 +991,7 @@ module powerbi.extensibility.visual {
                 .x((dataPoint: StreamDataPoint) => xScale(dataPoint.x))
                 .y0((dataPoint: StreamDataPoint) => yScale(dataPoint.y0))
                 .y1((dataPoint: StreamDataPoint) => yScale(dataPoint.y0 + dataPoint.y))
-                .defined((dataPoint: StreamDataPoint) => !isNaN(dataPoint.y0) && !isNaN(dataPoint.y));
+                .defined((dataPoint: StreamDataPoint) => StreamGraph.isNumber(dataPoint.y0) && StreamGraph.isNumber(dataPoint.y));
 
             const selection: UpdateSelection<StreamGraphSeries> = this.dataPointsContainer
                 .selectAll(StreamGraph.LayerSelector.selectorName)
