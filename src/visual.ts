@@ -90,6 +90,8 @@ module powerbi.extensibility.visual {
     import ITooltipServiceWrapper = powerbi.extensibility.utils.tooltip.ITooltipServiceWrapper;
     import createTooltipServiceWrapper = powerbi.extensibility.utils.tooltip.createTooltipServiceWrapper;
 
+    const ColumnDisplayName: string = "Visual_Column";
+
     export class StreamGraph implements IVisual {
         private static VisualClassName = "streamGraph";
         private static AnimationDuration: number = 0;
@@ -174,6 +176,8 @@ module powerbi.extensibility.visual {
         private clearCatcher: Selection<any>;
         private dataPointsContainer: Selection<any>;
 
+        private localizationManager: ILocalizationManager;
+
         constructor(options: VisualConstructorOptions) {
             this.init(options);
         }
@@ -256,6 +260,7 @@ module powerbi.extensibility.visual {
                 const tooltipInfo: VisualTooltipDataItem[] = createTooltipInfo(
                     dataView,
                     {categories: null, values: values },
+                    visualHost.createLocalizationManager(),
                     valueIndex);
                 if (!label) {
                     if (tooltipInfo
@@ -418,6 +423,7 @@ module powerbi.extensibility.visual {
 
             this.visualHost = options.host;
             this.colorPalette = options.host.colorPalette;
+            this.localizationManager = options.host.createLocalizationManager();
 
             const element: HTMLElement = options.element;
 
@@ -566,7 +572,7 @@ module powerbi.extensibility.visual {
             let effectiveWidth: number = Math.max(0, this.viewport.width - this.margin.left - (this.margin.right + this.data.xAxisValueMaxTextHalfSize));
             let effectiveHeight: number = Math.max(0, this.viewport.height - (this.margin.top + this.data.yAxisFontHalfSize) - this.margin.bottom + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0));
             let metaDataColumnPercent: powerbi.DataViewMetadataColumn = {
-                displayName: "Column",
+                displayName: this.localizationManager.getDisplayName(ColumnDisplayName),
                 type: ValueType.fromDescriptor({ numeric: true }),
                 objects: {
                     general: {
