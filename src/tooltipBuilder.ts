@@ -28,8 +28,9 @@ module powerbi.extensibility.visual.tooltipBuilder {
     // powerbi.extensibility.utils.formatting
     import valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
 
-    const HighlightedValueDisplayName: string = "Highlighted",
-        DefaultSeriesIndex: number = 0;
+    const HighlightedValueDisplayName: string = "Visual_Tooltips_Highlighted";
+    const VisualTooltipsValues: string = "Visual_Tooltips_Values";
+    const DefaultSeriesIndex: number = 0;
 
     export interface TooltipSeriesDataItem {
         value?: any;
@@ -40,6 +41,7 @@ module powerbi.extensibility.visual.tooltipBuilder {
     export function createTooltipInfo(
         dataView: DataView,
         dataViewCat: DataViewCategorical,
+        localizationManager: ILocalizationManager,
         seriesIndex?: number): VisualTooltipDataItem[] {
 
         let seriesSource: TooltipSeriesDataItem[] = [],
@@ -65,13 +67,14 @@ module powerbi.extensibility.visual.tooltipBuilder {
             }
         }
 
-        return createTooltipData(dataView, valuesSource, seriesSource);
+        return createTooltipData(dataView, valuesSource, seriesSource, localizationManager);
     }
 
     export function createTooltipData(
         dataView: DataView,
         valuesSource: DataViewMetadataColumn,
-        seriesValues: TooltipSeriesDataItem[]): VisualTooltipDataItem[] {
+        seriesValues: TooltipSeriesDataItem[],
+        localizationManager: ILocalizationManager): VisualTooltipDataItem[] {
 
         const items: VisualTooltipDataItem[] = [];
 
@@ -118,7 +121,7 @@ module powerbi.extensibility.visual.tooltipBuilder {
                         highlightedValue);
 
                     items.push({
-                        displayName: HighlightedValueDisplayName,
+                        displayName: localizationManager.getDisplayName(HighlightedValueDisplayName),
                         value: formattedHighlightedValue
                     });
                 }
@@ -130,7 +133,7 @@ module powerbi.extensibility.visual.tooltipBuilder {
                     else
                         valuesList = seriesData.metadata.values.join(" ");
                     items.push({
-                        displayName: "values",
+                        displayName: localizationManager.getDisplayName(VisualTooltipsValues),
                         value: valuesList
                     });
                 }

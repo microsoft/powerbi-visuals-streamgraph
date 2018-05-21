@@ -1,3 +1,12 @@
+## 1.5.0
+* UPD: powerbi-visuals-tools has been updated to 1.11.2 to support Bookmarks
+* UPD: API has been updated to 1.11.0 to support Bookmarks
+* UPD: powerbi-visuals-utils-interactivityutils has been updated to 3.1.0 to support Bookmarks
+* UPD: powerbi-visuals-utils-testutils has been updated to "1.2.0" to support Bookmarks
+
+## 1.4.1
+* Fixed breaking issue if string value used instead of number in Values field bucket
+
 ## 1.4.0
 * Stream Graph: Community suggestions
 * Data Labels option can now displays measure *field name* measure *value*.
