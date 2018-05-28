@@ -450,6 +450,20 @@ module powerbi.extensibility.visual.test {
                     visualBuilder.visualHost);
             });
 
+            describe("isNumber" , () => {
+                it("should define number values", () => {
+                    const valueNumber = 100,
+                        valueNull = null,
+                        valueUndefined = undefined,
+                        valueNan = NaN;
+
+                    expect(VisualClass.isNumber(valueNumber)).toBeTruthy();
+                    expect(VisualClass.isNumber(valueNull)).toBeFalsy();
+                    expect(VisualClass.isNumber(valueUndefined)).toBeFalsy();
+                    expect(VisualClass.isNumber(valueNan)).toBeFalsy();
+                });
+            });
+
             describe("streamData", () => {
                 let streamData: StreamData;
 
@@ -547,6 +561,30 @@ module powerbi.extensibility.visual.test {
 
                 return streamData;
             }
+        });
+
+        describe("Capabilities tests", () => {
+            it("all items having displayName should have displayNameKey property", () => {
+                jasmine.getJSONFixtures().fixturesPath = "base";
+
+                let jsonData = getJSONFixture("capabilities.json");
+
+                let objectsChecker: Function = (obj) => {
+                    for (let property in obj) {
+                        let value: any = obj[property];
+
+                        if (value.displayName) {
+                            expect(value.displayNameKey).toBeDefined();
+                        }
+
+                        if (typeof value === "object") {
+                            objectsChecker(value);
+                        }
+                    }
+                };
+
+                objectsChecker(jsonData);
+            });
         });
     });
 }
