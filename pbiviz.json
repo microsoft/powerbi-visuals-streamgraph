@@ -4,12 +4,12 @@
     "displayName": "Stream Graph",
     "guid": "StreamGraph1446659696222",
     "visualClassName": "StreamGraph",
-    "version": "1.6.0",
+    "version": "1.7.0",
     "description": "A stacked area chart with smooth interpolation. Often used to display values over time.",
     "supportUrl": "https://aka.ms/customvisualscommunity",
     "gitHubUrl": "https://github.com/Microsoft/powerbi-visuals-streamgraph"
   },
-  "apiVersion": "1.11.0",
+  "apiVersion": "1.13.0",
   "author": {
     "name": "Microsoft",
     "email": "pbicvsupport@microsoft.com"
@@ -25,6 +25,7 @@
     "node_modules/powerbi-visuals-utils-typeutils/lib/index.js",
     "node_modules/powerbi-visuals-utils-svgutils/lib/index.js",
     "node_modules/powerbi-visuals-utils-formattingutils/lib/index.js",
+    "node_modules/powerbi-visuals-utils-colorutils/lib/index.js",
     "node_modules/powerbi-visuals-utils-interactivityutils/lib/index.js",
     "node_modules/powerbi-visuals-utils-chartutils/lib/index.js",
     "node_modules/powerbi-visuals-utils-tooltiputils/lib/index.js"
