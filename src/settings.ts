@@ -46,8 +46,7 @@ module powerbi.extensibility.visual.settings {
         public fontSize: number = BaseAxisSettings.DefaultAxisFontSizeInPoints;
     }
 
-    export class XAxisSettings extends BaseAxisSettings {
-    }
+    export class XAxisSettings extends BaseAxisSettings { }
 
     export class LegendSettings {
         public static DefaultLegendLabelFillColor: string = "#666666";

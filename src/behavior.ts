@@ -66,7 +66,7 @@ module powerbi.extensibility.visual.behavior {
         public renderSelection(hasSelection: boolean): void {
             const hasHighlights: boolean = this.interactivityService.hasSelection();
 
-            this.selection.style("fill-opacity", (series: StreamGraphSeries) => {
+            this.selection.style("opacity", (series: StreamGraphSeries) => {
                 return utils.getFillOpacity(
                     series.selected,
                     series.highlight,

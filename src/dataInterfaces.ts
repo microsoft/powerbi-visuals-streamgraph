@@ -76,6 +76,7 @@ module powerbi.extensibility.visual {
     }
 
     export interface StreamGraphSeries extends SelectableDataPoint {
+        color: string;
         dataPoints: StreamDataPoint[];
         tooltipInfo?: VisualTooltipDataItem[];
         highlight?: boolean;

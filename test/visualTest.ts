@@ -153,9 +153,9 @@ module powerbi.extensibility.visual.test {
                 clickElement(firstLayer);
                 clickElement(secondLayer, true);
 
-                expect(parseFloat(firstLayer.css("fill-opacity"))).toBe(1);
-                expect(parseFloat(secondLayer.css("fill-opacity"))).toBe(1);
-                expect(parseFloat(thirdLayer.css("fill-opacity"))).toBeLessThan(1);
+                expect(parseFloat(firstLayer.css("opacity"))).toBe(1);
+                expect(parseFloat(secondLayer.css("opacity"))).toBe(1);
+                expect(parseFloat(thirdLayer.css("opacity"))).toBeLessThan(1);
             });
         });
 
