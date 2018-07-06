@@ -75,6 +75,7 @@ module powerbi.extensibility.visual {
     import dataLabelUtils = powerbi.extensibility.utils.chart.dataLabel.utils;
     import ILabelLayout = powerbi.extensibility.utils.chart.dataLabel.ILabelLayout;
     import IAxisProperties = powerbi.extensibility.utils.chart.axis.IAxisProperties;
+    import LegendDataPoint = powerbi.extensibility.utils.chart.legend.LegendDataPoint;
 
     // powerbi.extensibility.utils.formatting
     import valueFormatter = powerbi.extensibility.utils.formatting.valueFormatter;
@@ -1145,9 +1146,14 @@ module powerbi.extensibility.visual {
                 ? legendSettings.titleText || streamGraphData.legendData.title
                 : undefined;
 
+            const dataPoints: LegendDataPoint[] = legendSettings.show
+                ? streamGraphData.legendData.dataPoints
+                : [];
+
             const legendData: LegendData = {
                 ...streamGraphData.legendData,
                 title,
+                dataPoints,
                 fontSize: legendSettings.fontSize,
                 labelColor: legendSettings.labelColor,
             };
