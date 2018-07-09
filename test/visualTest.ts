@@ -32,6 +32,7 @@ module powerbi.extensibility.visual.test {
 
     // powerbi.extensibility.visual.test
     import StreamGraphBuilder = powerbi.extensibility.visual.test.StreamGraphBuilder;
+    import areColorsEqual = powerbi.extensibility.visual.test.helpers.areColorsEqual;
     import ProductSalesByDateData = powerbi.extensibility.visual.test.ProductSalesByDateData;
     import getSolidColorStructuralObject = powerbi.extensibility.visual.test.helpers.getSolidColorStructuralObject;
 
@@ -153,9 +154,9 @@ module powerbi.extensibility.visual.test {
                 clickElement(firstLayer);
                 clickElement(secondLayer, true);
 
-                expect(parseFloat(firstLayer.css("fill-opacity"))).toBe(1);
-                expect(parseFloat(secondLayer.css("fill-opacity"))).toBe(1);
-                expect(parseFloat(thirdLayer.css("fill-opacity"))).toBeLessThan(1);
+                expect(parseFloat(firstLayer.css("opacity"))).toBe(1);
+                expect(parseFloat(secondLayer.css("opacity"))).toBe(1);
+                expect(parseFloat(thirdLayer.css("opacity"))).toBeLessThan(1);
             });
         });
 
@@ -386,7 +387,6 @@ module powerbi.extensibility.visual.test {
             it("Selection state set on converter result including clear", () => {
                 let selectionIdIndex: number = 1,
                     series: StreamGraphSeries[],
-                    queryName: string = dataView.metadata.columns[1].queryName,
                     seriesSelectionId: ISelectionId = new MockISelectionId(selectionIdIndex.toString());
 
                 // We have to implement a simpler way to inject dependencies.
@@ -584,6 +584,56 @@ module powerbi.extensibility.visual.test {
                 };
 
                 objectsChecker(jsonData);
+            });
+        });
+
+        describe("Accessibility", () => {
+            describe("High contrast mode", () => {
+                const backgroundColor: string = "#000000";
+                const foregroundColor: string = "#ffff00";
+
+                beforeEach(() => {
+                    visualBuilder.visualHost.colorPalette.isHighContrast = true;
+
+                    visualBuilder.visualHost.colorPalette.background = { value: backgroundColor };
+                    visualBuilder.visualHost.colorPalette.foreground = { value: foregroundColor };
+                });
+
+                it("should not use fill style", (done) => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
+                        const layers: JQuery[] = visualBuilder.layers.toArray().map($);
+
+                        expect(isColorAppliedToElements(layers, null, "fill"));
+
+                        done();
+                    });
+                });
+
+                it("should use stroke style", (done) => {
+                    visualBuilder.updateRenderTimeout(dataView, () => {
+                        const layers: JQuery[] = visualBuilder.layers.toArray().map($);
+
+                        expect(isColorAppliedToElements(layers, foregroundColor, "stroke"));
+
+                        done();
+                    });
+                });
+
+                function isColorAppliedToElements(
+                    elements: JQuery[],
+                    color?: string,
+                    colorStyleName: string = "fill"
+                ): boolean {
+                    return elements.some((element: JQuery) => {
+                        const currentColor: string = element.css(colorStyleName);
+
+                        if (!currentColor || !color) {
+                            return currentColor === color;
+                        }
+
+                        return areColorsEqual(currentColor, color);
+                    });
+                }
             });
         });
     });

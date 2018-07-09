@@ -28,7 +28,18 @@
 
 module powerbi.extensibility.visual.test.helpers {
     // powerbi.extensibility.utils.test
+    import RgbColor = powerbi.extensibility.utils.test.helpers.color.RgbColor;
     import getRandomNumber = powerbi.extensibility.utils.test.helpers.getRandomNumber;
+    import parseColorString = powerbi.extensibility.utils.test.helpers.color.parseColorString;
+
+    export function areColorsEqual(firstColor: string, secondColor: string): boolean {
+        const firstConvertedColor: RgbColor = parseColorString(firstColor),
+            secondConvertedColor: RgbColor = parseColorString(secondColor);
+
+        return firstConvertedColor.R === secondConvertedColor.R
+            && firstConvertedColor.G === secondConvertedColor.G
+            && firstConvertedColor.B === secondConvertedColor.B;
+    }
 
     export function getSolidColorStructuralObject(color: string): any {
         return { solid: { color: color } };

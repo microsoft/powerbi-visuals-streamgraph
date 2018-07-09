@@ -43,14 +43,17 @@
     .axis {
         path,
         line {
-            fill: none;
-            stroke: black;
+            fill: none !important;
             shape-rendering: auto;
         }
 
         text {
-            font-size: @streamGraphFontSize;
+            stroke: transparent !important;
         }
+    }
+
+    .layer {
+        fill: transparent;
     }
 
     .xAxisLabel,
