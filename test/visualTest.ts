@@ -57,6 +57,18 @@ module powerbi.extensibility.visual.test {
     import StreamDataPoint = powerbi.extensibility.visual.StreamGraph1446659696222.StreamDataPoint;
     import StreamGraphSeries = powerbi.extensibility.visual.StreamGraph1446659696222.StreamGraphSeries;
 
+    let incr: number = 0;
+
+    const createSelectionIdWithCompareMeasure = (key?: number | string) => {
+        const selId: any = createSelectionId();
+        key = typeof key === "undefined" ? incr++ : key;
+        selId.measures = [key];
+        selId.compareMeasures = (current, others) => {
+            return current === others;
+        };
+        return selId;
+    };
+
     describe("StreamGraph", () => {
         let visualBuilder: StreamGraphBuilder,
             defaultDataViewBuilder: ProductSalesByDateData,
@@ -129,7 +141,7 @@ module powerbi.extensibility.visual.test {
                 let selectionIdIndex: number = 0;
 
                 powerbi.extensibility.utils.test.mocks.createSelectionId = function () {
-                    return new MockISelectionId((++selectionIdIndex).toString());
+                    return createSelectionIdWithCompareMeasure(++selectionIdIndex);
                 };
 
                 dataView.metadata.objects = {
@@ -387,7 +399,7 @@ module powerbi.extensibility.visual.test {
             it("Selection state set on converter result including clear", () => {
                 let selectionIdIndex: number = 1,
                     series: StreamGraphSeries[],
-                    seriesSelectionId: ISelectionId = new MockISelectionId(selectionIdIndex.toString());
+                    seriesSelectionId: ISelectionId = createSelectionIdWithCompareMeasure(selectionIdIndex.toString())//new MockISelectionId(selectionIdIndex.toString());
 
                 // We have to implement a simpler way to inject dependencies.
                 powerbi.extensibility.utils.test.mocks.createSelectionId = function () {
@@ -395,7 +407,7 @@ module powerbi.extensibility.visual.test {
                         return seriesSelectionId;
                     }
 
-                    return new MockISelectionId((selectionIdIndex++).toString());
+                    return createSelectionIdWithCompareMeasure((selectionIdIndex++).toString())//new MockISelectionId((selectionIdIndex++).toString());
                 };
 
                 interactivityService["selectedIds"] = [seriesSelectionId];
@@ -450,7 +462,7 @@ module powerbi.extensibility.visual.test {
                     visualBuilder.visualHost);
             });
 
-            describe("isNumber" , () => {
+            describe("isNumber", () => {
                 it("should define number values", () => {
                     const valueNumber = 100,
                         valueNull = null,
