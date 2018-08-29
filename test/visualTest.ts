@@ -33,6 +33,7 @@ module powerbi.extensibility.visual.test {
     // powerbi.extensibility.visual.test
     import StreamGraphBuilder = powerbi.extensibility.visual.test.StreamGraphBuilder;
     import areColorsEqual = powerbi.extensibility.visual.test.helpers.areColorsEqual;
+    import isColorAppliedToElements = powerbi.extensibility.visual.test.helpers.isColorAppliedToElements;
     import ProductSalesByDateData = powerbi.extensibility.visual.test.ProductSalesByDateData;
     import getSolidColorStructuralObject = powerbi.extensibility.visual.test.helpers.getSolidColorStructuralObject;
 
@@ -58,11 +59,11 @@ module powerbi.extensibility.visual.test {
     import StreamGraphSeries = powerbi.extensibility.visual.StreamGraph1446659696222.StreamGraphSeries;
 
     let incr: number = 0;
-
     const createSelectionIdWithCompareMeasure = (key?: number | string) => {
         const selId: any = createSelectionId();
         key = typeof key === "undefined" ? incr++ : key;
         selId.measures = [key];
+        selId.key = key;
         selId.compareMeasures = (current, others) => {
             return current === others;
         };
@@ -399,7 +400,7 @@ module powerbi.extensibility.visual.test {
             it("Selection state set on converter result including clear", () => {
                 let selectionIdIndex: number = 1,
                     series: StreamGraphSeries[],
-                    seriesSelectionId: ISelectionId = createSelectionIdWithCompareMeasure(selectionIdIndex.toString())//new MockISelectionId(selectionIdIndex.toString());
+                    seriesSelectionId: ISelectionId = createSelectionIdWithCompareMeasure(selectionIdIndex.toString());
 
                 // We have to implement a simpler way to inject dependencies.
                 powerbi.extensibility.utils.test.mocks.createSelectionId = function () {
@@ -407,7 +408,7 @@ module powerbi.extensibility.visual.test {
                         return seriesSelectionId;
                     }
 
-                    return createSelectionIdWithCompareMeasure((selectionIdIndex++).toString())//new MockISelectionId((selectionIdIndex++).toString());
+                    return createSelectionIdWithCompareMeasure((selectionIdIndex++).toString());
                 };
 
                 interactivityService["selectedIds"] = [seriesSelectionId];
@@ -630,22 +631,6 @@ module powerbi.extensibility.visual.test {
                         done();
                     });
                 });
-
-                function isColorAppliedToElements(
-                    elements: JQuery[],
-                    color?: string,
-                    colorStyleName: string = "fill"
-                ): boolean {
-                    return elements.some((element: JQuery) => {
-                        const currentColor: string = element.css(colorStyleName);
-
-                        if (!currentColor || !color) {
-                            return currentColor === color;
-                        }
-
-                        return areColorsEqual(currentColor, color);
-                    });
-                }
             });
         });
     });
