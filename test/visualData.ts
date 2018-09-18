@@ -23,112 +23,107 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+import powerbi from "powerbi-visuals-api";
+import DataView = powerbi.DataView;
 
-/// <reference path="_references.ts"/>
+// powerbi.extensibility.utils.type
+import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
 
-module powerbi.extensibility.visual.test {
-    // powerbi.extensibility.utils.type
-    import ValueType = powerbi.extensibility.utils.type.ValueType;
+// powerbi.extensibility.utils.test
+import { getRandomNumbers } from "powerbi-visuals-utils-testutils";
+import { TestDataViewBuilder, TestDataViewBuilderCategoryColumnOptions } from "powerbi-visuals-utils-testutils/lib/dataViewBuilder/testDataViewBuilder";
+import { getRandomUniqueSortedDates } from "./helpers/helpers";
 
-    // powerbi.extensibility.utils.test
-    import getRandomNumbers = powerbi.extensibility.utils.test.helpers.getRandomNumbers;
-    import TestDataViewBuilder = powerbi.extensibility.utils.test.dataViewBuilder.TestDataViewBuilder;
-    import TestDataViewBuilderCategoryColumnOptions = powerbi.extensibility.utils.test.dataViewBuilder.TestDataViewBuilderCategoryColumnOptions;
+export class ProductSalesByDateData extends TestDataViewBuilder {
+    private static DefaultFormat: string = "$0,000.00";
+    private static DefaultDateFormat: string = "dddd MMMM d yyyy";
+    private static DefaultGroupName: string = "Product";
 
-    // powerbi.extensibility.visual.test
-    import getRandomUniqueSortedDates = powerbi.extensibility.visual.test.helpers.getRandomUniqueSortedDates;
+    public static ColumnCategory: string = "Date";
+    public static GroupCategory: string = "Group";
+    public static ColumnValues1: string = "Product sales 1";
+    public static ColumnValues2: string = "Product sales 2";
+    public static ColumnValues3: string = "Product sales 3";
+    public static ColumnValues4: string = "Product sales 4";
 
-    export class ProductSalesByDateData extends TestDataViewBuilder {
-        private static DefaultFormat: string = "$0,000.00";
-        private static DefaultDateFormat: string = "dddd MMMM d yyyy";
-        private static DefaultGroupName: string = "Product";
+    public valuesDate: Date[] = getRandomUniqueSortedDates(
+        50,
+        new Date(2014, 0, 1),
+        new Date(2015, 5, 10));
 
-        public static ColumnCategory: string = "Date";
-        public static GroupCategory: string = "Group";
-        public static ColumnValues1: string = "Product sales 1";
-        public static ColumnValues2: string = "Product sales 2";
-        public static ColumnValues3: string = "Product sales 3";
-        public static ColumnValues4: string = "Product sales 4";
+    public valuesSales1: number[] = getRandomNumbers(this.valuesDate.length);
+    public valuesSales2: number[] = getRandomNumbers(this.valuesDate.length);
+    public valuesSales3: number[] = getRandomNumbers(this.valuesDate.length);
+    public valuesSales4: number[] = getRandomNumbers(this.valuesDate.length);
 
-        public valuesDate: Date[] = getRandomUniqueSortedDates(
-            50,
-            new Date(2014, 0, 1),
-            new Date(2015, 5, 10));
+    public groups: string[] = [
+        "FirstGroup",
+        "SecondGroup"
+    ];
 
-        public valuesSales1: number[] = getRandomNumbers(this.valuesDate.length);
-        public valuesSales2: number[] = getRandomNumbers(this.valuesDate.length);
-        public valuesSales3: number[] = getRandomNumbers(this.valuesDate.length);
-        public valuesSales4: number[] = getRandomNumbers(this.valuesDate.length);
+    public getDataView(columnNames?: string[], isGroupsEnabled: boolean = false): DataView {
+        const categoriesColumn: TestDataViewBuilderCategoryColumnOptions[] = [{
+            source: {
+                displayName: ProductSalesByDateData.ColumnCategory,
+                format: ProductSalesByDateData.DefaultDateFormat,
+                type: ValueType.fromDescriptor({ dateTime: true })
+            },
+            values: this.valuesDate
+        }];
 
-        public groups: string[] = [
-            "FirstGroup",
-            "SecondGroup"
-        ];
-
-        public getDataView(columnNames?: string[], isGroupsEnabled: boolean = false): DataView {
-            const categoriesColumn: TestDataViewBuilderCategoryColumnOptions[] = [{
+        if (isGroupsEnabled) {
+            categoriesColumn.push({
+                isGroup: true,
                 source: {
-                    displayName: ProductSalesByDateData.ColumnCategory,
-                    format: ProductSalesByDateData.DefaultDateFormat,
-                    type: ValueType.fromDescriptor({ dateTime: true })
+                    displayName: ProductSalesByDateData.GroupCategory,
+                    type: ValueType.fromDescriptor({ text: true })
                 },
-                values: this.valuesDate
-            }];
-
-            if (isGroupsEnabled) {
-                categoriesColumn.push({
-                    isGroup: true,
-                    source: {
-                        displayName: ProductSalesByDateData.GroupCategory,
-                        type: ValueType.fromDescriptor({ text: true })
-                    },
-                    values: this.groups
-                });
-            }
-
-            return this.createCategoricalDataViewBuilder(
-                categoriesColumn, [
-                    {
-                        source: {
-                            displayName: ProductSalesByDateData.ColumnValues1,
-                            isMeasure: true,
-                            format: ProductSalesByDateData.DefaultFormat,
-                            groupName: ProductSalesByDateData.DefaultGroupName,
-                            type: ValueType.fromDescriptor({ numeric: true })
-                        },
-                        values: this.valuesSales1
-                    },
-                    {
-                        source: {
-                            displayName: ProductSalesByDateData.ColumnValues2,
-                            isMeasure: true,
-                            format: ProductSalesByDateData.DefaultFormat,
-                            groupName: ProductSalesByDateData.DefaultGroupName,
-                            type: ValueType.fromDescriptor({ numeric: true })
-                        },
-                        values: this.valuesSales1
-                    },
-                    {
-                        source: {
-                            displayName: ProductSalesByDateData.ColumnValues3,
-                            isMeasure: true,
-                            format: ProductSalesByDateData.DefaultFormat,
-                            groupName: ProductSalesByDateData.DefaultGroupName,
-                            type: ValueType.fromDescriptor({ numeric: true })
-                        },
-                        values: this.valuesSales2
-                    },
-                    {
-                        source: {
-                            displayName: ProductSalesByDateData.ColumnValues4,
-                            isMeasure: true,
-                            format: ProductSalesByDateData.DefaultFormat,
-                            groupName: ProductSalesByDateData.DefaultGroupName,
-                            type: ValueType.fromDescriptor({ numeric: true })
-                        },
-                        values: this.valuesSales3
-                    }
-                ], columnNames).build();
+                values: this.groups
+            });
         }
+
+        return this.createCategoricalDataViewBuilder(
+            categoriesColumn, [
+                {
+                    source: {
+                        displayName: ProductSalesByDateData.ColumnValues1,
+                        isMeasure: true,
+                        format: ProductSalesByDateData.DefaultFormat,
+                        groupName: ProductSalesByDateData.DefaultGroupName,
+                        type: ValueType.fromDescriptor({ numeric: true })
+                    },
+                    values: this.valuesSales1
+                },
+                {
+                    source: {
+                        displayName: ProductSalesByDateData.ColumnValues2,
+                        isMeasure: true,
+                        format: ProductSalesByDateData.DefaultFormat,
+                        groupName: ProductSalesByDateData.DefaultGroupName,
+                        type: ValueType.fromDescriptor({ numeric: true })
+                    },
+                    values: this.valuesSales1
+                },
+                {
+                    source: {
+                        displayName: ProductSalesByDateData.ColumnValues3,
+                        isMeasure: true,
+                        format: ProductSalesByDateData.DefaultFormat,
+                        groupName: ProductSalesByDateData.DefaultGroupName,
+                        type: ValueType.fromDescriptor({ numeric: true })
+                    },
+                    values: this.valuesSales2
+                },
+                {
+                    source: {
+                        displayName: ProductSalesByDateData.ColumnValues4,
+                        isMeasure: true,
+                        format: ProductSalesByDateData.DefaultFormat,
+                        groupName: ProductSalesByDateData.DefaultGroupName,
+                        type: ValueType.fromDescriptor({ numeric: true })
+                    },
+                    values: this.valuesSales3
+                }
+            ], columnNames).build();
     }
 }

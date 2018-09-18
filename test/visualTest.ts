@@ -24,614 +24,607 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="_references.ts"/>
+import powerbi from "powerbi-visuals-api";
 
-module powerbi.extensibility.visual.test {
-    // powerbi.visuals
-    import ISelectionId = powerbi.visuals.ISelectionId;
+// powerbi.visuals
+import ISelectionId = powerbi.visuals.ISelectionId;
 
-    // powerbi.extensibility.visual.test
-    import StreamGraphBuilder = powerbi.extensibility.visual.test.StreamGraphBuilder;
-    import areColorsEqual = powerbi.extensibility.visual.test.helpers.areColorsEqual;
-    import isColorAppliedToElements = powerbi.extensibility.visual.test.helpers.isColorAppliedToElements;
-    import ProductSalesByDateData = powerbi.extensibility.visual.test.ProductSalesByDateData;
-    import getSolidColorStructuralObject = powerbi.extensibility.visual.test.helpers.getSolidColorStructuralObject;
+// powerbi.extensibility.utils
+import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import IColorPalette = powerbi.extensibility.IColorPalette;
+import DataView = powerbi.DataView;
 
-    // powerbi.extensibility.utils.chart
-    import legendPosition = powerbi.extensibility.utils.chart.legend.position;
-    import LegendDataPoint = powerbi.extensibility.utils.chart.legend.LegendDataPoint;
+// powerbi.extensibility.utils.chart
+import { legendPosition } from "powerbi-visuals-utils-chartutils";
+import { LegendDataPoint } from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfaces";
 
-    // powerbi.extensibility.utils.test
-    import clickElement = powerbi.extensibility.utils.test.helpers.clickElement;
-    import createColorPalette = powerbi.extensibility.utils.test.mocks.createColorPalette;
-    import assertColorsMatch = powerbi.extensibility.utils.test.helpers.color.assertColorsMatch;
-    import MockISelectionId = powerbi.extensibility.utils.test.mocks.MockISelectionId;
-    import createSelectionId = powerbi.extensibility.utils.test.mocks.createSelectionId;
+// powerbi.extensibility.utils.test
+import { clickElement, createSelectionId, assertColorsMatch, createColorPalette } from "powerbi-visuals-utils-testutils";
 
-    // powerbi.extensibility.utils.interactivity
-    import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
-    import createInteractivityService = powerbi.extensibility.utils.interactivity.createInteractivityService;
+// powerbi.extensibility.utils.interactivity
+import { interactivityService } from "powerbi-visuals-utils-interactivityutils";
+import IInteractivityService = interactivityService.IInteractivityService;
+import createInteractivityService = interactivityService.createInteractivityService;
 
-    // StreamGraph1446659696222
-    import StreamData = powerbi.extensibility.visual.StreamGraph1446659696222.StreamData;
-    import VisualClass = powerbi.extensibility.visual.StreamGraph1446659696222.StreamGraph;
-    import StreamDataPoint = powerbi.extensibility.visual.StreamGraph1446659696222.StreamDataPoint;
-    import StreamGraphSeries = powerbi.extensibility.visual.StreamGraph1446659696222.StreamGraphSeries;
+import { StreamGraphBuilder } from "./visualBuilder";
+import { isColorAppliedToElements, getSolidColorStructuralObject } from "./helpers/helpers";
+import { ProductSalesByDateData } from "./visualData";
+import { StreamGraphSeries, StreamData, StreamDataPoint } from "../src/dataInterfaces";
+import { StreamGraph } from "../src/visual";
 
-    let incr: number = 0;
-    const createSelectionIdWithCompareMeasure = (key?: number | string) => {
-        const selId: any = createSelectionId();
-        key = typeof key === "undefined" ? incr++ : key;
-        selId.measures = [key];
-        selId.key = key;
-        selId.compareMeasures = (current, others) => {
-            return current === others;
-        };
-        return selId;
+let incr: number = 0;
+const createSelectionIdWithCompareMeasure = (key?: number | string) => {
+    const selId: any = createSelectionId();
+    key = typeof key === "undefined" ? incr++ : key;
+    selId.measures = [key];
+    selId.key = key;
+    selId.compareMeasures = (current, others) => {
+        return current === others;
     };
+    return selId;
+};
 
-    describe("StreamGraph", () => {
-        let visualBuilder: StreamGraphBuilder,
-            defaultDataViewBuilder: ProductSalesByDateData,
-            dataView: DataView;
+describe("StreamGraph", () => {
+    let visualBuilder: StreamGraphBuilder,
+        defaultDataViewBuilder: ProductSalesByDateData,
+        dataView: DataView;
 
-        beforeEach(() => {
-            visualBuilder = new StreamGraphBuilder(1000, 500);
-            defaultDataViewBuilder = new ProductSalesByDateData();
+    beforeEach(() => {
+        visualBuilder = new StreamGraphBuilder(1000, 500);
+        defaultDataViewBuilder = new ProductSalesByDateData();
 
-            dataView = defaultDataViewBuilder.getDataView();
+        dataView = defaultDataViewBuilder.getDataView();
+    });
+
+    describe("DOM tests", () => {
+        it("path is not throwing exceptions (NaN values)", () => {
+            dataView.categorical.values[0].values = [NaN];
+            dataView.categorical.values[1].values = [NaN];
+            dataView.categorical.values[2].values = [NaN];
+            dataView.categorical.values[3].values = [NaN];
+
+            visualBuilder.updateFlushAllD3Transitions(dataView);
+
+            $(".streamGraph .dataPointsContainer")
+                .children("path")
+                .each(function (index: number, element: Element) {
+                    let nanLocation: number = ($(element).attr("d")).indexOf("NaN");
+
+                    expect(nanLocation !== -1).toBeFalsy();
+                });
         });
 
-        describe("DOM tests", () => {
-            it("path is not throwing exceptions (NaN values)", () => {
-                dataView.categorical.values[0].values = [NaN];
-                dataView.categorical.values[1].values = [NaN];
-                dataView.categorical.values[2].values = [NaN];
-                dataView.categorical.values[3].values = [NaN];
+        it("should display text in x-axis and not values", () => {
+            dataView.categorical.categories[0].values = [
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec"
+            ];
 
-                visualBuilder.updateFlushAllD3Transitions(dataView);
+            visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                $(".streamGraph .dataPointsContainer")
-                    .children("path")
-                    .each(function (index: number, element: Element) {
-                        let nanLocation: number = ($(element).attr("d")).indexOf("NaN");
+            const isNumberRegExp: RegExp = /\d/;
 
-                        expect(nanLocation !== -1).toBeFalsy();
-                    });
-            });
+            visualBuilder.xAxisTicks
+                .children("text")
+                .each(function (index: number, element: Element) {
+                    expect(isNumberRegExp.test($(element).text())).toBeFalsy();
+                });
+        });
 
-            it("should display text in x-axis and not values", () => {
-                dataView.categorical.categories[0].values = [
-                    "Jan",
-                    "Feb",
-                    "Mar",
-                    "Apr",
-                    "May",
-                    "Jun",
-                    "Jul",
-                    "Aug",
-                    "Sep",
-                    "Oct",
-                    "Nov",
-                    "Dec"
-                ];
+        it("svg element created", () => {
+            expect(visualBuilder.mainElement[0]).toBeInDOM();
+        });
 
-                visualBuilder.updateFlushAllD3Transitions(dataView);
+        it("update", () => {
+            visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                const isNumberRegExp: RegExp = /\d/;
+            expect(visualBuilder.layers.length)
+                .toBe(dataView.categorical.values.length);
+        });
 
-                visualBuilder.xAxisTicks
-                    .children("text")
-                    .each(function (index: number, element: Element) {
-                        expect(isNumberRegExp.test($(element).text())).toBeFalsy();
-                    });
-            });
+        it("Should add right amount of legend items", () => {
+            let selectionIdIndex: number = 0;
 
-            it("svg element created", () => {
-                expect(visualBuilder.mainElement[0]).toBeInDOM();
-            });
+            //powerbi.extensibility.utils.test.mocks.createSelectionId = function () {
+            //    return createSelectionIdWithCompareMeasure(++selectionIdIndex);
+            //};
 
-            it("update", () => {
-                visualBuilder.updateFlushAllD3Transitions(dataView);
+            dataView.metadata.objects = {
+                legend: {
+                    show: true
+                }
+            };
 
-                expect(visualBuilder.layers.length)
-                    .toBe(dataView.categorical.values.length);
-            });
+            visualBuilder.updateFlushAllD3Transitions(dataView);
 
-            it("Should add right amount of legend items", () => {
-                let selectionIdIndex: number = 0;
+            expect(visualBuilder.legendItemText.length)
+                .toBe(dataView.categorical.values.length);
+        });
 
-                powerbi.extensibility.utils.test.mocks.createSelectionId = function () {
-                    return createSelectionIdWithCompareMeasure(++selectionIdIndex);
-                };
+        it("multi-selection test", () => {
+            visualBuilder.updateFlushAllD3Transitions(dataView);
 
+            const firstLayer: JQuery = visualBuilder.layers.eq(0),
+                secondLayer: JQuery = visualBuilder.layers.eq(1),
+                thirdLayer: JQuery = visualBuilder.layers.eq(2);
+
+            clickElement(firstLayer);
+            clickElement(secondLayer, true);
+
+            expect(parseFloat(firstLayer.css("opacity"))).toBe(1);
+            expect(parseFloat(secondLayer.css("opacity"))).toBe(1);
+            expect(parseFloat(thirdLayer.css("opacity"))).toBeLessThan(1);
+        });
+    });
+
+    describe("Format settings test", () => {
+        describe("Legend", () => {
+            beforeEach(() => {
                 dataView.metadata.objects = {
                     legend: {
                         show: true
                     }
                 };
+            });
+
+            it("show", () => {
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                expect(visualBuilder.legendGroup.children()).toBeInDOM();
+
+                (dataView.metadata.objects as any).legend.show = false;
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                expect(visualBuilder.legendGroup.children()).not.toBeInDOM();
+            });
+
+            it("position", () => {
+                (dataView.metadata.objects as any).legend.show = true;
+                (dataView.metadata.objects as any).legend.position = legendPosition.top;
 
                 visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                expect(visualBuilder.legendItemText.length)
-                    .toBe(dataView.categorical.values.length);
-            });
+                expect(visualBuilder.legendOrientation).toEqual("0");
+                expect(visualBuilder.legendWidth).toBeGreaterThan(200);
 
-            it("multi-selection test", () => {
+                (dataView.metadata.objects as any).legend.position = legendPosition.rightCenter;
+
                 visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                const firstLayer: JQuery = visualBuilder.layers.eq(0),
-                    secondLayer: JQuery = visualBuilder.layers.eq(1),
-                    thirdLayer: JQuery = visualBuilder.layers.eq(2);
-
-                clickElement(firstLayer);
-                clickElement(secondLayer, true);
-
-                expect(parseFloat(firstLayer.css("opacity"))).toBe(1);
-                expect(parseFloat(secondLayer.css("opacity"))).toBe(1);
-                expect(parseFloat(thirdLayer.css("opacity"))).toBeLessThan(1);
+                expect(visualBuilder.legendOrientation).toEqual("7");
+                expect(visualBuilder.legendWidth).toBeLessThan(200);
             });
         });
 
-        describe("Format settings test", () => {
-            describe("Legend", () => {
-                beforeEach(() => {
-                    dataView.metadata.objects = {
-                        legend: {
-                            show: true
-                        }
-                    };
-                });
-
-                it("show", () => {
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.legendGroup.children()).toBeInDOM();
-
-                    (dataView.metadata.objects as any).legend.show = false;
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.legendGroup.children()).not.toBeInDOM();
-                });
-
-                it("position", () => {
-                    (dataView.metadata.objects as any).legend.show = true;
-                    (dataView.metadata.objects as any).legend.position = legendPosition.top;
-
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.legendOrientation).toEqual("0");
-                    expect(visualBuilder.legendWidth).toBeGreaterThan(200);
-
-                    (dataView.metadata.objects as any).legend.position = legendPosition.rightCenter;
-
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.legendOrientation).toEqual("7");
-                    expect(visualBuilder.legendWidth).toBeLessThan(200);
-                });
-            });
-
-            describe("Data labels", () => {
-                beforeEach(() => {
-                    dataView.metadata.objects = {
-                        labels: {
-                            show: true
-                        }
-                    };
-                });
-
-                it("show", () => {
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.dataLabelsText).toBeInDOM();
-
-                    (dataView.metadata.objects as any).labels.show = false;
-
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.dataLabelsText).not.toBeInDOM();
-                });
-
-                it("showValues", () => {
-                    const expectedTextWithValue: string = "Product";
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-                    (dataView.metadata.objects as any).labels.showValue = true;
-
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-                    expect(visualBuilder.dataLabelsText["0"].childNodes["0"].data.length).toBeGreaterThan(expectedTextWithValue.length);
-                });
-
-                it("color", () => {
-                    const color: string = "#ABCDEF";
-
-                    (dataView.metadata.objects as any).labels.color = getSolidColorStructuralObject(color);
-
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    visualBuilder.dataLabelsText
-                        .toArray()
-                        .forEach((element: Element) => {
-                            assertColorsMatch($(element).css("fill"), color);
-                        });
-                });
-
-                it("font size", () => {
-                    const fontSize: number = 22,
-                        expectedFontSize: string = "29.3333px";
-
-                    (dataView.metadata.objects as any).labels.fontSize = fontSize;
-
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    visualBuilder.dataLabelsText
-                        .toArray()
-                        .forEach((element: Element) => {
-                            expect($(element).css("font-size")).toBe(expectedFontSize);
-                        });
-                });
-            });
-
-            describe("X-axis", () => {
-                beforeEach(() => {
-                    dataView.metadata.objects = {
-                        categoryAxis: {
-                            show: true
-                        }
-                    };
-                });
-
-                it("show", () => {
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.xAxisTicks).toBeInDOM();
-
-                    (dataView.metadata.objects as any).categoryAxis.show = false;
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.xAxisTicks).not.toBeInDOM();
-                });
-
-                it("show title", () => {
-                    (dataView.metadata.objects as any).categoryAxis.showAxisTitle = true;
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.xAxisLabel).toBeInDOM();
-
-                    (dataView.metadata.objects as any).categoryAxis.showAxisTitle = false;
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.xAxisLabel).not.toBeInDOM();
-                });
-
-                it("color", () => {
-                    const color: string = "#ABCDEF";
-
-                    (dataView.metadata.objects as any).categoryAxis.labelColor = getSolidColorStructuralObject(color);
-
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    visualBuilder.xAxisTicks.children("text")
-                        .toArray()
-                        .forEach((element: Element) => {
-                            assertColorsMatch($(element).css("fill"), color);
-                        });
-                });
-
-                it("font size", () => {
-                    const fontSize: number = 22,
-                        expectedFontSize: string = "22px";
-                    (dataView.metadata.objects as any).categoryAxis.fontSize = fontSize;
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-                    expect($(visualBuilder.xAxisTicks["0"].children["0"].lastChild).css("font-size")).toBe(expectedFontSize);
-                });
-
-            });
-
-            describe("Y-axis", () => {
-                beforeEach(() => {
-                    dataView.metadata.objects = {
-                        valueAxis: {
-                            show: true
-                        }
-                    };
-                });
-
-                it("show", () => {
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.yAxisTicks).toBeInDOM();
-
-                    (dataView.metadata.objects as any).valueAxis.show = false;
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.yAxisTicks).not.toBeInDOM();
-                });
-
-                it("show title", () => {
-                    (dataView.metadata.objects as any).valueAxis.showAxisTitle = true;
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.yAxisLabel).toBeInDOM();
-
-                    (dataView.metadata.objects as any).valueAxis.showAxisTitle = false;
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect(visualBuilder.yAxisLabel).not.toBeInDOM();
-                });
-
-                it("color", () => {
-                    const color: string = "#ABCDEF";
-
-                    (dataView.metadata.objects as any).valueAxis.labelColor = getSolidColorStructuralObject(color);
-
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    visualBuilder.yAxisTicks.children("text")
-                        .toArray()
-                        .forEach((element: Element) => {
-                            assertColorsMatch($(element).css("fill"), color);
-                        });
-                });
-
-                it("font size", () => {
-                    const fontSize: number = 22,
-                        expectedFontSize: string = "22px";
-
-                    (dataView.metadata.objects as any).valueAxis.fontSize = fontSize;
-
-                    visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                    expect($(visualBuilder.yAxisTicks["0"].children["0"].lastChild).css("font-size")).toBe(expectedFontSize);
-                });
-            });
-        });
-
-        describe("interactivityService", () => {
-            let colorPalette: IColorPalette,
-                interactivityService: IInteractivityService;
-
+        describe("Data labels", () => {
             beforeEach(() => {
-                interactivityService = createInteractivityService(visualBuilder.visualHost);
-
-                colorPalette = createColorPalette();
-            });
-
-            it("Selection state set on converter result including clear", () => {
-                let selectionIdIndex: number = 1,
-                    series: StreamGraphSeries[],
-                    seriesSelectionId: ISelectionId = createSelectionIdWithCompareMeasure(selectionIdIndex.toString());
-
-                // We have to implement a simpler way to inject dependencies.
-                powerbi.extensibility.utils.test.mocks.createSelectionId = function () {
-                    if (selectionIdIndex++ === 1) {
-                        return seriesSelectionId;
+                dataView.metadata.objects = {
+                    labels: {
+                        show: true
                     }
-
-                    return createSelectionIdWithCompareMeasure((selectionIdIndex++).toString());
                 };
+            });
 
-                interactivityService["selectedIds"] = [seriesSelectionId];
+            it("show", () => {
+                visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                series = VisualClass.converter(
-                    dataView,
-                    colorPalette,
-                    interactivityService,
-                    visualBuilder.visualHost).series;
+                expect(visualBuilder.dataLabelsText).toBeInDOM();
 
-                // We should see the selection state applied to resulting data
-                expect(series[0].selected).toBe(true);
-                expect(series[1].selected).toBe(false);
-                expect(series[2].selected).toBe(false);
-                expect(series[3].selected).toBe(false);
+                (dataView.metadata.objects as any).labels.show = false;
 
-                interactivityService.clearSelection();
+                visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                series = VisualClass.converter(
-                    dataView,
-                    colorPalette,
-                    interactivityService,
-                    visualBuilder.visualHost).series;
+                expect(visualBuilder.dataLabelsText).not.toBeInDOM();
+            });
 
-                // Verify the selection has been cleared
-                expect(series[0].selected).toBe(false);
-                expect(series[1].selected).toBe(false);
-                expect(series[2].selected).toBe(false);
-                expect(series[3].selected).toBe(false);
+            it("showValues", () => {
+                const expectedTextWithValue: string = "Product";
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+                (dataView.metadata.objects as any).labels.showValue = true;
+
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+                expect(visualBuilder.dataLabelsText["0"].childNodes["0"].data.length).toBeGreaterThan(expectedTextWithValue.length);
+            });
+
+            it("color", () => {
+                const color: string = "#ABCDEF";
+
+                (dataView.metadata.objects as any).labels.color = getSolidColorStructuralObject(color);
+
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                visualBuilder.dataLabelsText
+                    .toArray()
+                    .forEach((element: Element) => {
+                        assertColorsMatch($(element).css("fill"), color);
+                    });
+            });
+
+            it("font size", () => {
+                const fontSize: number = 22,
+                    expectedFontSize: string = "29.3333px";
+
+                (dataView.metadata.objects as any).labels.fontSize = fontSize;
+
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                visualBuilder.dataLabelsText
+                    .toArray()
+                    .forEach((element: Element) => {
+                        expect($(element).css("font-size")).toBe(expectedFontSize);
+                    });
             });
         });
 
-        describe("converter", () => {
-            let colorPalette: IColorPalette;
+        describe("X-axis", () => {
+            beforeEach(() => {
+                dataView.metadata.objects = {
+                    categoryAxis: {
+                        show: true
+                    }
+                };
+            });
+
+            it("show", () => {
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                expect(visualBuilder.xAxisTicks).toBeInDOM();
+
+                (dataView.metadata.objects as any).categoryAxis.show = false;
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                expect(visualBuilder.xAxisTicks).not.toBeInDOM();
+            });
+
+            it("show title", () => {
+                (dataView.metadata.objects as any).categoryAxis.showAxisTitle = true;
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                expect(visualBuilder.xAxisLabel).toBeInDOM();
+
+                (dataView.metadata.objects as any).categoryAxis.showAxisTitle = false;
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                expect(visualBuilder.xAxisLabel).not.toBeInDOM();
+            });
+
+            it("color", () => {
+                const color: string = "#ABCDEF";
+
+                (dataView.metadata.objects as any).categoryAxis.labelColor = getSolidColorStructuralObject(color);
+
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                visualBuilder.xAxisTicks.children("text")
+                    .toArray()
+                    .forEach((element: Element) => {
+                        assertColorsMatch($(element).css("fill"), color);
+                    });
+            });
+
+            it("font size", () => {
+                const fontSize: number = 22,
+                    expectedFontSize: string = "22px";
+                (dataView.metadata.objects as any).categoryAxis.fontSize = fontSize;
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+                expect($(visualBuilder.xAxisTicks["0"].children["0"].lastChild).css("font-size")).toBe(expectedFontSize);
+            });
+
+        });
+
+        describe("Y-axis", () => {
+            beforeEach(() => {
+                dataView.metadata.objects = {
+                    valueAxis: {
+                        show: true
+                    }
+                };
+            });
+
+            it("show", () => {
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                expect(visualBuilder.yAxisTicks).toBeInDOM();
+
+                (dataView.metadata.objects as any).valueAxis.show = false;
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                expect(visualBuilder.yAxisTicks).not.toBeInDOM();
+            });
+
+            it("show title", () => {
+                (dataView.metadata.objects as any).valueAxis.showAxisTitle = true;
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                expect(visualBuilder.yAxisLabel).toBeInDOM();
+
+                (dataView.metadata.objects as any).valueAxis.showAxisTitle = false;
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                expect(visualBuilder.yAxisLabel).not.toBeInDOM();
+            });
+
+            it("color", () => {
+                const color: string = "#ABCDEF";
+
+                (dataView.metadata.objects as any).valueAxis.labelColor = getSolidColorStructuralObject(color);
+
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                visualBuilder.yAxisTicks.children("text")
+                    .toArray()
+                    .forEach((element: Element) => {
+                        assertColorsMatch($(element).css("fill"), color);
+                    });
+            });
+
+            it("font size", () => {
+                const fontSize: number = 22,
+                    expectedFontSize: string = "22px";
+
+                (dataView.metadata.objects as any).valueAxis.fontSize = fontSize;
+
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                expect($(visualBuilder.yAxisTicks["0"].children["0"].lastChild).css("font-size")).toBe(expectedFontSize);
+            });
+        });
+    });
+
+    describe("interactivityService", () => {
+        let colorPalette: IColorPalette,
+            interactivityService: IInteractivityService;
+
+        beforeEach(() => {
+            interactivityService = createInteractivityService(visualBuilder.visualHost);
+
+            colorPalette = createColorPalette();
+        });
+
+        it("Selection state set on converter result including clear", () => {
+            let selectionIdIndex: number = 1,
+                series: StreamGraphSeries[],
+                seriesSelectionId: ISelectionId = createSelectionIdWithCompareMeasure(selectionIdIndex.toString());
+
+            // We have to implement a simpler way to inject dependencies.
+            // powerbi.extensibility.utils.test.mocks.createSelectionId = function () {
+            //     if (selectionIdIndex++ === 1) {
+            //         return seriesSelectionId;
+            //     }
+
+            //     return createSelectionIdWithCompareMeasure((selectionIdIndex++).toString());
+            // };
+
+            interactivityService["selectedIds"] = [seriesSelectionId];
+
+            series = StreamGraph.converter(
+                dataView,
+                colorPalette,
+                interactivityService,
+                visualBuilder.visualHost).series;
+
+            // We should see the selection state applied to resulting data
+            expect(series[0].selected).toBe(true);
+            expect(series[1].selected).toBe(false);
+            expect(series[2].selected).toBe(false);
+            expect(series[3].selected).toBe(false);
+
+            interactivityService.clearSelection();
+
+            series = StreamGraph.converter(
+                dataView,
+                colorPalette,
+                interactivityService,
+                visualBuilder.visualHost).series;
+
+            // Verify the selection has been cleared
+            expect(series[0].selected).toBe(false);
+            expect(series[1].selected).toBe(false);
+            expect(series[2].selected).toBe(false);
+            expect(series[3].selected).toBe(false);
+        });
+    });
+
+    describe("converter", () => {
+        let colorPalette: IColorPalette;
+
+        beforeEach(() => {
+            colorPalette = createColorPalette();
+        });
+
+        it("arguments are null", () => {
+            callConverterAndExpectExceptions(null, null, null);
+        });
+
+        it("arguments are undefined", () => {
+            callConverterAndExpectExceptions(undefined, undefined, undefined);
+        });
+
+        it("dataView is correct", () => {
+            callConverterAndExpectExceptions(
+                dataView,
+                colorPalette,
+                visualBuilder.visualHost);
+        });
+
+        describe("isNumber", () => {
+            it("should define number values", () => {
+                const valueNumber = 100,
+                    valueNull = null,
+                    valueUndefined = undefined,
+                    valueNan = NaN;
+
+                expect(StreamGraph.isNumber(valueNumber)).toBeTruthy();
+                expect(StreamGraph.isNumber(valueNull)).toBeFalsy();
+                expect(StreamGraph.isNumber(valueUndefined)).toBeFalsy();
+                expect(StreamGraph.isNumber(valueNan)).toBeFalsy();
+            });
+        });
+
+        describe("streamData", () => {
+            let streamData: StreamData;
 
             beforeEach(() => {
-                colorPalette = createColorPalette();
-            });
-
-            it("arguments are null", () => {
-                callConverterAndExpectExceptions(null, null, null);
-            });
-
-            it("arguments are undefined", () => {
-                callConverterAndExpectExceptions(undefined, undefined, undefined);
-            });
-
-            it("dataView is correct", () => {
-                callConverterAndExpectExceptions(
+                streamData = callConverterAndExpectExceptions(
                     dataView,
                     colorPalette,
                     visualBuilder.visualHost);
             });
 
-            describe("isNumber", () => {
-                it("should define number values", () => {
-                    const valueNumber = 100,
-                        valueNull = null,
-                        valueUndefined = undefined,
-                        valueNan = NaN;
+            it("streamData is defined", () => {
+                expect(streamData).toBeDefined();
+                expect(streamData).not.toBeNull();
+            });
 
-                    expect(VisualClass.isNumber(valueNumber)).toBeTruthy();
-                    expect(VisualClass.isNumber(valueNull)).toBeFalsy();
-                    expect(VisualClass.isNumber(valueUndefined)).toBeFalsy();
-                    expect(VisualClass.isNumber(valueNan)).toBeFalsy();
+            it("series are defined", () => {
+                expect(streamData.series).toBeDefined();
+                expect(streamData.series).not.toBeNull();
+            });
+
+            it("every series is defined", () => {
+                streamData.series.forEach((series: StreamGraphSeries) => {
+                    expect(series).toBeDefined();
+                    expect(series).not.toBeNull();
                 });
             });
 
-            describe("streamData", () => {
-                let streamData: StreamData;
+            it("every identity is defined", () => {
+                streamData.series.forEach((series: StreamGraphSeries) => {
+                    let identity: ISelectionId = series.identity as ISelectionId;
 
-                beforeEach(() => {
-                    streamData = callConverterAndExpectExceptions(
-                        dataView,
-                        colorPalette,
-                        visualBuilder.visualHost);
+                    expect(identity).toBeDefined();
+                    expect(identity).not.toBeNull();
                 });
+            });
 
-                it("streamData is defined", () => {
-                    expect(streamData).toBeDefined();
-                    expect(streamData).not.toBeNull();
+            it("dataPoints are defined", () => {
+                streamData.series.forEach((series: StreamGraphSeries) => {
+                    expect(series.dataPoints).toBeDefined();
+                    expect(series.dataPoints).not.toBeNull();
+                    expect(series.dataPoints.length).toBeGreaterThan(0);
                 });
+            });
 
-                it("series are defined", () => {
-                    expect(streamData.series).toBeDefined();
-                    expect(streamData.series).not.toBeNull();
-                });
-
-                it("every series is defined", () => {
-                    streamData.series.forEach((series: StreamGraphSeries) => {
-                        expect(series).toBeDefined();
-                        expect(series).not.toBeNull();
-                    });
-                });
-
-                it("every identity is defined", () => {
-                    streamData.series.forEach((series: StreamGraphSeries) => {
-                        let identity: ISelectionId = series.identity as ISelectionId;
-
-                        expect(identity).toBeDefined();
-                        expect(identity).not.toBeNull();
-                    });
-                });
-
-                it("dataPoints are defined", () => {
-                    streamData.series.forEach((series: StreamGraphSeries) => {
-                        expect(series.dataPoints).toBeDefined();
-                        expect(series.dataPoints).not.toBeNull();
-                        expect(series.dataPoints.length).toBeGreaterThan(0);
-                    });
-                });
-
-                it("every dataPoint is defined", () => {
-                    streamData.series.forEach((series: StreamGraphSeries) => {
-                        series.dataPoints.forEach((dataPoint: StreamDataPoint) => {
-                            expect(dataPoint).toBeDefined();
-                            expect(dataPoint).not.toBeNull();
-                        });
-                    });
-                });
-
-                describe("legendData", () => {
-                    it("legendData should be defined", () => {
-                        expect(streamData.legendData).toBeDefined();
-                    });
-
-                    it("legendData.dataPoints should be defined", () => {
-                        expect(streamData.legendData.dataPoints).toBeDefined();
-                    });
-
-                    it("name of the legend data points and name of the groups should be the same", () => {
-                        const dataView: DataView = defaultDataViewBuilder.getDataView(undefined, true),
-                            expectedGroups: string[] = defaultDataViewBuilder.groups,
-                            streamData: StreamData = callConverterAndExpectExceptions(
-                                dataView,
-                                colorPalette,
-                                visualBuilder.visualHost),
-                            actualLegendDataPoints: LegendDataPoint[] = streamData.legendData.dataPoints,
-                            groupOffset: number = actualLegendDataPoints.length / expectedGroups.length;
-
-                        actualLegendDataPoints.forEach((dataPoint: LegendDataPoint, index: number) => {
-                            expect(dataPoint.label).toBe(expectedGroups[Math.floor(index / groupOffset)]);
-                        });
+            it("every dataPoint is defined", () => {
+                streamData.series.forEach((series: StreamGraphSeries) => {
+                    series.dataPoints.forEach((dataPoint: StreamDataPoint) => {
+                        expect(dataPoint).toBeDefined();
+                        expect(dataPoint).not.toBeNull();
                     });
                 });
             });
 
-            function callConverterAndExpectExceptions(
-                dataView: DataView,
-                colorPalette: IColorPalette,
-                visualHost: IVisualHost,
-                interactivityService?: IInteractivityService): StreamData {
+            describe("legendData", () => {
+                it("legendData should be defined", () => {
+                    expect(streamData.legendData).toBeDefined();
+                });
 
-                let streamData: StreamData;
+                it("legendData.dataPoints should be defined", () => {
+                    expect(streamData.legendData.dataPoints).toBeDefined();
+                });
 
-                expect(() => {
-                    streamData = VisualClass.converter(
-                        dataView,
-                        colorPalette,
-                        interactivityService,
-                        visualHost);
-                }).not.toThrow();
+                it("name of the legend data points and name of the groups should be the same", () => {
+                    const dataView: DataView = defaultDataViewBuilder.getDataView(undefined, true),
+                        expectedGroups: string[] = defaultDataViewBuilder.groups,
+                        streamData: StreamData = callConverterAndExpectExceptions(
+                            dataView,
+                            colorPalette,
+                            visualBuilder.visualHost),
+                        actualLegendDataPoints: LegendDataPoint[] = streamData.legendData.dataPoints,
+                        groupOffset: number = actualLegendDataPoints.length / expectedGroups.length;
 
-                return streamData;
-            }
+                    actualLegendDataPoints.forEach((dataPoint: LegendDataPoint, index: number) => {
+                        expect(dataPoint.label).toBe(expectedGroups[Math.floor(index / groupOffset)]);
+                    });
+                });
+            });
         });
 
-        describe("Capabilities tests", () => {
-            it("all items having displayName should have displayNameKey property", () => {
-                jasmine.getJSONFixtures().fixturesPath = "base";
+        function callConverterAndExpectExceptions(
+            dataView: DataView,
+            colorPalette: IColorPalette,
+            visualHost: IVisualHost,
+            interactivityService?: IInteractivityService): StreamData {
 
-                let jsonData = getJSONFixture("capabilities.json");
+            let streamData: StreamData;
 
-                let objectsChecker: Function = (obj) => {
-                    for (let property in obj) {
-                        let value: any = obj[property];
+            expect(() => {
+                streamData = StreamGraph.converter(
+                    dataView,
+                    colorPalette,
+                    interactivityService,
+                    visualHost);
+            }).not.toThrow();
 
-                        if (value.displayName) {
-                            expect(value.displayNameKey).toBeDefined();
-                        }
+            return streamData;
+        }
+    });
 
-                        if (typeof value === "object") {
-                            objectsChecker(value);
-                        }
+    describe("Capabilities tests", () => {
+        it("all items having displayName should have displayNameKey property", () => {
+            jasmine.getJSONFixtures().fixturesPath = "base";
+
+            let jsonData = getJSONFixture("capabilities.json");
+
+            let objectsChecker: Function = (obj) => {
+                for (let property in obj) {
+                    let value: any = obj[property];
+
+                    if (value.displayName) {
+                        expect(value.displayNameKey).toBeDefined();
                     }
-                };
 
-                objectsChecker(jsonData);
-            });
+                    if (typeof value === "object") {
+                        objectsChecker(value);
+                    }
+                }
+            };
+
+            objectsChecker(jsonData);
         });
+    });
 
-        describe("Accessibility", () => {
-            describe("High contrast mode", () => {
-                const backgroundColor: string = "#000000";
-                const foregroundColor: string = "#ffff00";
+    describe("Accessibility", () => {
+        describe("High contrast mode", () => {
+            const backgroundColor: string = "#000000";
+            const foregroundColor: string = "#ffff00";
 
-                beforeEach(() => {
-                    visualBuilder.visualHost.colorPalette.isHighContrast = true;
+            beforeEach(() => {
+                visualBuilder.visualHost.colorPalette.isHighContrast = true;
 
-                    visualBuilder.visualHost.colorPalette.background = { value: backgroundColor };
-                    visualBuilder.visualHost.colorPalette.foreground = { value: foregroundColor };
+                visualBuilder.visualHost.colorPalette.background = { value: backgroundColor };
+                visualBuilder.visualHost.colorPalette.foreground = { value: foregroundColor };
+            });
+
+            it("should not use fill style", (done) => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    const layers: JQuery[] = visualBuilder.layers.toArray().map($);
+
+                    expect(isColorAppliedToElements(layers, null, "fill"));
+
+                    done();
                 });
+            });
 
-                it("should not use fill style", (done) => {
-                    visualBuilder.updateRenderTimeout(dataView, () => {
-                        const layers: JQuery[] = visualBuilder.layers.toArray().map($);
+            it("should use stroke style", (done) => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    const layers: JQuery[] = visualBuilder.layers.toArray().map($);
 
-                        expect(isColorAppliedToElements(layers, null, "fill"));
+                    expect(isColorAppliedToElements(layers, foregroundColor, "stroke"));
 
-                        done();
-                    });
-                });
-
-                it("should use stroke style", (done) => {
-                    visualBuilder.updateRenderTimeout(dataView, () => {
-                        const layers: JQuery[] = visualBuilder.layers.toArray().map($);
-
-                        expect(isColorAppliedToElements(layers, foregroundColor, "stroke"));
-
-                        done();
-                    });
+                    done();
                 });
             });
         });
     });
-}
+});

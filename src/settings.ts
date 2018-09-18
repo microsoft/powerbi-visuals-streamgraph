@@ -24,63 +24,63 @@
  *  THE SOFTWARE.
  */
 
-module powerbi.extensibility.visual.settings {
-    // powerbi.extensibility.utils.chart
-    import legendPosition = powerbi.extensibility.utils.chart.legend.position;
-    import getDefaultPointLabelSettings = powerbi.extensibility.utils.chart.dataLabel.utils.getDefaultPointLabelSettings;
+// powerbi.extensibility.utils.chart
+import * as ChartUtils from "powerbi-visuals-utils-chartutils";
+import LegendPosition = ChartUtils.legendInterfaces.LegendPosition;
+import getDefaultPointLabelSettings = ChartUtils.dataLabelUtils.getDefaultPointLabelSettings;
 
-    // powerbi.extensibility.utils.dataview
-    import DataViewObjectsParser = powerbi.extensibility.utils.dataview.DataViewObjectsParser;
+// powerbi.extensibility.utils.dataview
+import { dataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";
+import DataViewObjectsParser = dataViewObjectsParser.DataViewObjectsParser;
 
-    export class GeneralSettings {
-        public wiggle: boolean = true;
+export class GeneralSettings {
+    public wiggle: boolean = true;
+}
+
+export class BaseAxisSettings {
+    public static DefaultColor: string = "#777";
+    public static DefaultAxisFontSizeInPoints: number = 8;
+
+    public show: boolean = true;
+    public showAxisTitle: boolean = false;
+    public labelColor: string = BaseAxisSettings.DefaultColor;
+    public fontSize: number = BaseAxisSettings.DefaultAxisFontSizeInPoints;
+}
+
+export class XAxisSettings extends BaseAxisSettings { }
+
+export class LegendSettings {
+    public static DefaultLegendLabelFillColor: string = "#666666";
+    public static DefaultFontSizeInPoints: number = 8;
+
+    public static DefaultTitleText: string = "";
+
+    public show: boolean = true;
+    public position: string = LegendPosition[LegendPosition.Top];
+    public showTitle: boolean = true;
+    public titleText: string = LegendSettings.DefaultTitleText;
+    public labelColor: string = LegendSettings.DefaultLegendLabelFillColor;
+    public fontSize: number = LegendSettings.DefaultFontSizeInPoints;
+}
+
+export class LabelsSettings {
+    public show: boolean;
+    public color: string;
+    public fontSize: number;
+    public showValue: boolean = false;
+    constructor() {
+        const defaultSettings = getDefaultPointLabelSettings();
+
+        this.show = defaultSettings.show;
+        this.color = defaultSettings.labelColor;
+        this.fontSize = defaultSettings.fontSize;
     }
+}
 
-    export class BaseAxisSettings {
-        public static DefaultColor: string = "#777";
-        public static DefaultAxisFontSizeInPoints: number = 8;
-
-        public show: boolean = true;
-        public showAxisTitle: boolean = false;
-        public labelColor: string = BaseAxisSettings.DefaultColor;
-        public fontSize: number = BaseAxisSettings.DefaultAxisFontSizeInPoints;
-    }
-
-    export class XAxisSettings extends BaseAxisSettings { }
-
-    export class LegendSettings {
-        public static DefaultLegendLabelFillColor: string = "#666666";
-        public static DefaultFontSizeInPoints: number = 8;
-
-        public static DefaultTitleText: string = "";
-
-        public show: boolean = true;
-        public position: string = legendPosition.top;
-        public showTitle: boolean = true;
-        public titleText: string = LegendSettings.DefaultTitleText;
-        public labelColor: string = LegendSettings.DefaultLegendLabelFillColor;
-        public fontSize: number = LegendSettings.DefaultFontSizeInPoints;
-    }
-
-    export class LabelsSettings {
-        public show: boolean;
-        public color: string;
-        public fontSize: number;
-        public showValue: boolean = false;
-        constructor() {
-            const defaultSettings = getDefaultPointLabelSettings();
-
-            this.show = defaultSettings.show;
-            this.color = defaultSettings.labelColor;
-            this.fontSize = defaultSettings.fontSize;
-        }
-    }
-
-    export class VisualSettings extends DataViewObjectsParser {
-        public general: GeneralSettings = new GeneralSettings();
-        public categoryAxis: XAxisSettings = new XAxisSettings();
-        public valueAxis: BaseAxisSettings = new BaseAxisSettings();
-        public legend: LegendSettings = new LegendSettings();
-        public labels: LabelsSettings = new LabelsSettings();
-    }
+export class VisualSettings extends DataViewObjectsParser {
+    public general: GeneralSettings = new GeneralSettings();
+    public categoryAxis: XAxisSettings = new XAxisSettings();
+    public valueAxis: BaseAxisSettings = new BaseAxisSettings();
+    public legend: LegendSettings = new LegendSettings();
+    public labels: LabelsSettings = new LabelsSettings();
 }

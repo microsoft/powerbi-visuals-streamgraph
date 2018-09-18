@@ -24,76 +24,70 @@
  *  THE SOFTWARE.
  */
 
-/// <reference path="../_references.ts"/>
+import { RgbColor, parseColorString } from "powerbi-visuals-utils-colorutils";
+import { getRandomNumber } from "powerbi-visuals-utils-testutils";
 
-module powerbi.extensibility.visual.test.helpers {
-    // powerbi.extensibility.utils.test
-    import RgbColor = powerbi.extensibility.utils.test.helpers.color.RgbColor;
-    import getRandomNumber = powerbi.extensibility.utils.test.helpers.getRandomNumber;
-    import parseColorString = powerbi.extensibility.utils.test.helpers.color.parseColorString;
+export function areColorsEqual(firstColor: string, secondColor: string): boolean {
+    const firstConvertedColor: RgbColor = parseColorString(firstColor),
+        secondConvertedColor: RgbColor = parseColorString(secondColor);
 
-    export function areColorsEqual(firstColor: string, secondColor: string): boolean {
-        const firstConvertedColor: RgbColor = parseColorString(firstColor),
-            secondConvertedColor: RgbColor = parseColorString(secondColor);
+    return firstConvertedColor.R === secondConvertedColor.R
+        && firstConvertedColor.G === secondConvertedColor.G
+        && firstConvertedColor.B === secondConvertedColor.B;
+}
 
-        return firstConvertedColor.R === secondConvertedColor.R
-            && firstConvertedColor.G === secondConvertedColor.G
-            && firstConvertedColor.B === secondConvertedColor.B;
-    }
+export function isColorAppliedToElements(
+    elements: JQuery[],
+    color?: string,
+    colorStyleName: string = "fill"
+): boolean {
+    return elements.some((element: JQuery) => {
+        const currentColor: string = element.css(colorStyleName);
 
-    export function isColorAppliedToElements(
-        elements: JQuery[],
-        color?: string,
-        colorStyleName: string = "fill"
-    ): boolean {
-        return elements.some((element: JQuery) => {
-            const currentColor: string = element.css(colorStyleName);
-
-            if (!currentColor || !color) {
-                return currentColor === color;
-            }
-
-            return areColorsEqual(currentColor, color);
-        });
-    }
-
-    export function getSolidColorStructuralObject(color: string): any {
-        return { solid: { color: color } };
-    }
-
-    export function getRandomUniqueSortedDates(
-        count: number,
-        start: Date,
-        end: Date): Date[] {
-
-        return getRandomUniqueDates(count, start, end)
-            .sort((firstDate: Date, secondDate: Date) => {
-                return firstDate.getTime() - secondDate.getTime();
-            });
-    }
-
-    export function getRandomUniqueDates(
-        count: number,
-        start: Date,
-        end: Date): Date[] {
-
-        return getRandomUniqueNumbers(count, start.getTime(), end.getTime())
-            .map((milliseconds: number) => {
-                return new Date(milliseconds);
-            });
-    }
-
-    export function getRandomUniqueNumbers(
-        count: number,
-        min: number = 0,
-        max: number = 1): number[] {
-
-        let resultNumbers: number[] = [];
-
-        for (let i: number = 0; i < count; i++) {
-            resultNumbers.push(getRandomNumber(min, max, resultNumbers));
+        if (!currentColor || !color) {
+            return currentColor === color;
         }
 
-        return resultNumbers;
+        return areColorsEqual(currentColor, color);
+    });
+}
+
+export function getSolidColorStructuralObject(color: string): any {
+    return { solid: { color: color } };
+}
+
+export function getRandomUniqueSortedDates(
+    count: number,
+    start: Date,
+    end: Date): Date[] {
+
+    return getRandomUniqueDates(count, start, end)
+        .sort((firstDate: Date, secondDate: Date) => {
+            return firstDate.getTime() - secondDate.getTime();
+        });
+}
+
+export function getRandomUniqueDates(
+    count: number,
+    start: Date,
+    end: Date): Date[] {
+
+    return getRandomUniqueNumbers(count, start.getTime(), end.getTime())
+        .map((milliseconds: number) => {
+            return new Date(milliseconds);
+        });
+}
+
+export function getRandomUniqueNumbers(
+    count: number,
+    min: number = 0,
+    max: number = 1): number[] {
+
+    let resultNumbers: number[] = [];
+
+    for (let i: number = 0; i < count; i++) {
+        resultNumbers.push(getRandomNumber(min, max, resultNumbers));
     }
+
+    return resultNumbers;
 }
