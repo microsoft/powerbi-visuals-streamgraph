@@ -40,6 +40,7 @@ export interface BehaviorOptions {
     selection: Selection<d3.BaseType, StreamGraphSeries, any, any>;
     clearCatcher: Selection<d3.BaseType, any, any, any>;
     interactivityService: IInteractivityService;
+    series: StreamGraphSeries[];
 }
 
 const getEvent = () => require("d3-selection").event;
@@ -48,6 +49,7 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
     private selection: Selection<d3.BaseType, StreamGraphSeries, any, any>;
     private clearCatcher: Selection<d3.BaseType, any, any, any>;
     private interactivityService: IInteractivityService;
+    private series: any = null;
 
     public bindEvents(
         options: BehaviorOptions,
@@ -57,9 +59,11 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
         this.clearCatcher = options.clearCatcher;
         this.interactivityService = options.interactivityService;
 
+        this.series = options.series;
+
         this.selection.on("click", (series: StreamGraphSeries) => {
             selectionHandler.handleSelection(
-                series,
+                this.series[(<any>series).index],
                 (getEvent() as MouseEvent).ctrlKey);
         });
 
@@ -71,7 +75,9 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
     public renderSelection(hasSelection: boolean): void {
         const hasHighlights: boolean = this.interactivityService.hasSelection();
 
-        this.selection.style("opacity", (series: StreamGraphSeries) => {
+        this.selection.style("opacity", (stackedSeries: StreamGraphSeries) => {
+            const series = this.series[(<any>stackedSeries).index];
+
             return utils.getFillOpacity(
                 series.selected,
                 series.highlight,

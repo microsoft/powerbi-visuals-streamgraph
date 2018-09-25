@@ -33,22 +33,23 @@ import SelectableDataPoint = interactivityService.SelectableDataPoint;
 
 
 // powerbi.extensibility.utils.chart
-import {legendInterfaces, dataLabelInterfaces} from "powerbi-visuals-utils-chartutils";
+import { legendInterfaces, dataLabelInterfaces } from "powerbi-visuals-utils-chartutils";
 import LegendData = legendInterfaces.LegendData;
 import IDataLabelInfo = dataLabelInterfaces.IDataLabelInfo;
 
 // powerbi.extensibility.utils.formatting
-import {valueFormatter} from "powerbi-visuals-utils-formattingutils";
+import { valueFormatter } from "powerbi-visuals-utils-formattingutils";
 import IValueFormatter = valueFormatter.IValueFormatter;
 
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
 // powerbi.extensibility.visual
-import {VisualSettings} from "./settings";
+import { VisualSettings } from "./settings";
 
 export interface StreamData {
     metadata: DataViewMetadataColumn;
     series: StreamGraphSeries[];
+    stackedSeries: d3.Series<any, any>[];
     legendData: LegendData;
     valueFormatter: IValueFormatter;
     categoryFormatter: IValueFormatter;
@@ -88,4 +89,9 @@ export interface StreamGraphSeries extends SelectableDataPoint {
     dataPoints: StreamDataPoint[];
     tooltipInfo?: VisualTooltipDataItem[];
     highlight?: boolean;
+}
+
+export interface StackValue {
+    x: number;
+    [key: string]: number;
 }

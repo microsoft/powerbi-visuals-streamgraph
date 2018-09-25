@@ -135,9 +135,9 @@ describe("StreamGraph", () => {
         it("Should add right amount of legend items", () => {
             let selectionIdIndex: number = 0;
 
-            //powerbi.extensibility.utils.test.mocks.createSelectionId = function () {
-            //    return createSelectionIdWithCompareMeasure(++selectionIdIndex);
-            //};
+            // powerbi.extensibility.utils.test.mocks.createSelectionId = function () {
+            //     return createSelectionIdWithCompareMeasure(++selectionIdIndex);
+            // };
 
             dataView.metadata.objects = {
                 legend: {

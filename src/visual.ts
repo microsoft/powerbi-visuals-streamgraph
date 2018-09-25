@@ -55,9 +55,10 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 
 import { DefaultOpacity } from "./utils";
 import { VisualSettings, LabelsSettings, LegendSettings, BaseAxisSettings } from "./settings";
-import { BehaviorOptions, StreamGraphBehavior } from "./behavior"
+import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
 import { createTooltipInfo } from "./tooltipBuilder";
-import { StreamData, StreamGraphSeries, StreamDataPoint } from "./dataInterfaces";
+import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue } from "./dataInterfaces";
+
 
 // powerbi.extensibility.utils.svg
 import * as SvgUtils from "powerbi-visuals-utils-svgutils";
@@ -120,16 +121,6 @@ export class StreamGraph implements IVisual {
     };
     private static ValuesFormat: string = "g";
     private static DefaultValue: number = 0;
-    private static LineLinearPoints: number = 3;
-    private static TangentsLineLinear: number = 1;
-    private static TangentsOffset: number = 2;
-    private static FirstPi: number = 1;
-    private static SecondPi: number = 2;
-    private static TangentsSplitter: number = 5;
-    private static PathPointDuplicator: number = 2;
-    private static PathPointDelimiter: number = 3;
-    private static MinLineSlope: number = 1e-6;
-    private static LineSlopeS: number = 9;
     private static TickHeight: number = 6;
     private static EmptyDisplayName: string = "";
     private static MinLabelSize: number = 0;
@@ -166,7 +157,6 @@ export class StreamGraph implements IVisual {
         bottom: StreamGraph.XAxisOnSize,
         top: 0
     };
-    private static DefaultMaxNumberOfAxisXValues: number = 5;
 
     private static XAxisLabelSelector: ClassAndSelector = createClassAndSelector("xAxisLabel");
     private static YAxisLabelSelector: ClassAndSelector = createClassAndSelector("yAxisLabel");
@@ -192,6 +182,8 @@ export class StreamGraph implements IVisual {
     private dataPointsContainer: Selection<d3.BaseType, any, any, any>;
 
     private localizationManager: ILocalizationManager;
+
+    private YMaxAdjustment: number = 1.5;
 
     constructor(options: VisualConstructorOptions) {
         this.init(options);
@@ -257,6 +249,8 @@ export class StreamGraph implements IVisual {
         const settings: VisualSettings = StreamGraph.parseSettings(dataView, colorHelper);
 
         const fontSizeInPx: string = PixelConverter.fromPoint(settings.labels.fontSize);
+
+        const stackValues: StackValue[] = [];
 
         for (let valueIndex: number = 0; valueIndex < values.length; valueIndex++) {
             let label: string = values[valueIndex].source.groupName as string,
@@ -338,7 +332,18 @@ export class StreamGraph implements IVisual {
                     text: label,
                     labelFontSize: fontSizeInPx
                 };
+
                 series[valueIndex].dataPoints.push(streamDataPoint);
+
+                /* Adding values for d3.stack V5 */
+
+                if (!stackValues[dataPointValueIndex]) {
+                    stackValues[dataPointValueIndex] = {
+                        x: streamDataPoint.x
+                    };
+                }
+                stackValues[dataPointValueIndex][label] = streamDataPoint.y;
+
                 if (streamDataPoint.x > xMaxValue) {
                     xMaxValue = streamDataPoint.x;
                 }
@@ -401,8 +406,25 @@ export class StreamGraph implements IVisual {
         let xAxisFontSize: number = +settings.categoryAxis.fontSize;
         let xAxisFontHalfSize: number = xAxisFontSize / 2;
 
+
+
+        /* Generate stack values for d3.stack V5 */
+        const allLabels = legendData.dataPoints.map((dataPoint) => dataPoint.label);
+
+        const stack: d3.Stack<any, any, any> = d3.stack()
+            .keys(allLabels)
+            .offset(d3.stackOffsetNone);
+
+        if (settings.general.wiggle) {
+            stack.offset(d3.stackOffsetWiggle);
+        }
+
+        /* Adding values for d3.stack V5 */
+        let stackedSeries = stack(stackValues);
+
         return {
             series,
+            stackedSeries,
             metadata,
             settings,
             legendData,
@@ -553,6 +575,7 @@ export class StreamGraph implements IVisual {
 
         const selection: Selection<d3.BaseType, StreamGraphSeries, any, any> = this.renderChart(
             this.data.series,
+            this.data.stackedSeries,
             StreamGraph.AnimationDuration
         );
 
@@ -560,8 +583,9 @@ export class StreamGraph implements IVisual {
 
         this.tooltipServiceWrapper.addTooltip(
             selection,
-            (tooltipEvent: TooltipEventArgs<StreamGraphSeries>) => {
-                const tooltipInfo: VisualTooltipDataItem[] = tooltipEvent.data.tooltipInfo;
+            (tooltipEvent: TooltipEventArgs<d3.Series<any, any>>) => {
+                const index: number = tooltipEvent.data.index;
+                const tooltipInfo: VisualTooltipDataItem[] = this.data.series[index].tooltipInfo;
 
                 return tooltipInfo.length > 0
                     ? tooltipInfo
@@ -574,7 +598,8 @@ export class StreamGraph implements IVisual {
             const behaviorOptions: BehaviorOptions = {
                 selection,
                 interactivityService,
-                clearCatcher: this.clearCatcher
+                clearCatcher: this.clearCatcher,
+                series: this.data.series
             };
 
             interactivityService.bind(
@@ -585,6 +610,7 @@ export class StreamGraph implements IVisual {
 
             this.behavior.renderSelection(false);
         }
+
     }
 
     private setTextNodesPosition(xAxisTextNodes: Selection<d3.BaseType, any, any, any>,
@@ -654,7 +680,7 @@ export class StreamGraph implements IVisual {
                     }
                     return value;
                 }
-            }
+            };
 
             this.xAxisProperties = AxisHelper.createAxis(axisOptions);
 
@@ -848,13 +874,13 @@ export class StreamGraph implements IVisual {
         const fontSize: string = PixelConverter.fromPoint(labelsSettings.fontSize);
 
         return {
-            labelText: (dataPoint: StreamDataPoint) => dataPoint.text + (labelsSettings.showValue ? " " + dataPoint.y : ""),
+            labelText: (d) => d.text + (labelsSettings.showValue ? " " + d.value : ""),
             labelLayout: {
-                x: (dataPoint: StreamDataPoint) => xScale(dataPoint.x),
-                y: (dataPoint: StreamDataPoint) => yScale(dataPoint.y0)
+                x: (d) => xScale(d.x),
+                y: (d) => yScale(d.y0)
             },
-            filter: (dataPoint: StreamDataPoint) => {
-                return dataPoint != null && dataPoint.text != null;
+            filter: (d: StreamDataPoint) => {
+                return d != null && d.text != null;
             },
             style: {
                 "fill": labelsSettings.color,
@@ -863,155 +889,13 @@ export class StreamGraph implements IVisual {
         };
     }
 
-    /**
-     * d3 line monotone interpolation with reduced tangents Y. Fixes bug 7322.
-     * @param points
-     */
-    private static d3_svg_lineMonotone(points: number[]) {
-        if (points.length < StreamGraph.LineLinearPoints) {
-            return d3_svg_lineLinear(points);
-        }
-
-        let tangents: number[][] = d3_svg_lineMonotoneTangents(points);
-
-        if (tangents.length < StreamGraph.TangentsLineLinear
-            || points.length !== tangents.length
-            && points.length !== tangents.length + StreamGraph.TangentsOffset) {
-
-            return d3_svg_lineLinear(points);
-        }
-
-        tangents.forEach((tangentsGroup: number[]) => {
-            tangentsGroup[1] = tangentsGroup[1] / StreamGraph.TangentsSplitter;
-        });
-
-        let quad: boolean = points.length !== tangents.length,
-            path: string = "",
-            p0: number = points[0],
-            p: number = points[1],
-            t0: number[] = tangents[0],
-            t: number[] = t0,
-            pi: number = StreamGraph.FirstPi;
-
-        if (quad) {
-            path += `Q${p[0] - t0[0] * StreamGraph.PathPointDuplicator / StreamGraph.PathPointDelimiter},${p[1] - t0[1] * StreamGraph.PathPointDuplicator / StreamGraph.PathPointDelimiter},${p[0]},${p[1]}`;
-
-            p0 = points[1];
-            pi = StreamGraph.SecondPi;
-        }
-
-        if (tangents.length > 1) {
-            t = tangents[1];
-            p = points[pi];
-
-            pi++;
-
-            path += `C${p0[0] + t0[0]},${p0[1] + t0[1]},${p[0] - t[0]},${p[1] - t[1]},${p[0]},${p[1]}`;
-
-            for (let i: number = 2; i < tangents.length; i++ , pi++) {
-                p = points[pi];
-                t = tangents[i];
-
-                path += `S${p[0] - t[0]},${p[1] - t[1]},${p[0]},${p[1]}`;
-            }
-        }
-
-        if (quad) {
-            let lp: number = points[pi];
-
-            path += `Q${p[0] + t[0] * StreamGraph.PathPointDuplicator / StreamGraph.PathPointDelimiter},${p[1] + t[1] * StreamGraph.PathPointDuplicator / StreamGraph.PathPointDelimiter},${lp[0]},${lp[1]}`;
-        }
-
-        return points[0] + path;
-
-        function d3_svg_lineMonotoneTangents(points: number[]) {
-            let tangents: number[][] = [],
-                d: number,
-                a: number,
-                b: number,
-                s: number,
-                m: number[] = d3_svg_lineFiniteDifferences(points),
-                i: number = -1,
-                j: number = points.length - 1;
-
-            while (++i < j) {
-                d = d3_svg_lineSlope(points[i], points[i + 1]);
-
-                if (Math.abs(d) < StreamGraph.MinLineSlope) {
-                    m[i] = m[i + 1] = 0;
-                } else {
-                    a = m[i] / d;
-                    b = m[i + 1] / d;
-                    s = a * a + b * b;
-
-                    if (s > StreamGraph.LineSlopeS) {
-                        s = d * StreamGraph.PathPointDelimiter / Math.sqrt(s);
-
-                        m[i] = s * a;
-                        m[i + 1] = s * b;
-                    }
-                }
-            }
-
-            i = -1;
-
-            while (++i <= j) {
-                s = (points[Math.min(j, i + 1)][0] - points[Math.max(0, i - 1)][0])
-                    / (StreamGraph.PathPointDuplicator * StreamGraph.PathPointDelimiter * (1 + m[i] * m[i]));
-
-                tangents.push([s || 0, m[i] * s || 0]);
-            }
-
-            return tangents;
-        }
-
-        function d3_svg_lineFiniteDifferences(points: number[]): number[] {
-            let i: number = 0,
-                j: number = points.length - 1,
-                m: number[] = [],
-                p0: number = points[0],
-                p1: number = points[1],
-                d: number = m[0] = d3_svg_lineSlope(p0, p1);
-
-            while (++i < j) {
-                m[i] = (d + (d = d3_svg_lineSlope(p0 = p1, p1 = points[i + 1])))
-                    / StreamGraph.PathPointDuplicator;
-            }
-
-            m[i] = d;
-
-            return m;
-        }
-
-        function d3_svg_lineSlope(p0: number, p1: number): number {
-            return (p1[1] - p0[1]) / (p1[0] - p0[0]);
-        }
-
-        function d3_svg_lineLinear(points: number[]): string {
-            return points.join("L");
-        }
-    }
-
     private renderChart(
         series: StreamGraphSeries[],
+        stackedSeries: d3.Series<any, any>[],
         duration: number
     ): Selection<d3.BaseType, StreamGraphSeries, any, any> {
 
         const { width, height } = this.viewport;
-
-        const stack: d3.Stack<any, StreamGraphSeries, StreamDataPoint> = d3
-            .stack<StreamGraphSeries, StreamDataPoint>()
-        // .value((series: StreamGraphSeries, k: StreamDataPoint) => {}
-        // )
-        //.values((series: StreamGraphSeries) => {
-        //    return series.dataPoints;
-        //});
-
-        if (this.data.settings.general.wiggle) {
-            stack.offset(d3.stackOffsetWiggle);
-        }
-
-        stack(series);
 
         this.margin.left = this.data.settings.valueAxis.show
             ? StreamGraph.YAxisOnSize + this.data.yAxisValueMaxTextSize
@@ -1029,41 +913,31 @@ export class StreamGraph implements IVisual {
             this.margin.bottom += StreamGraph.XAxisLabelSize;
         }
 
-        const layers: any[] = stack(series),
+        const
             margin: IMargin = this.margin,
             xScale: LinearScale<number, number> = d3.scaleLinear()
                 .domain([0, series[0].dataPoints.length - 1])
                 .range([margin.left, width - (margin.right + this.data.xAxisValueMaxTextHalfSize)]);
 
-        const yMax: number = d3.max(layers, (series: StreamGraphSeries) => {
-            return d3.max(series.dataPoints, (dataPoint: StreamDataPoint) => {
-                return dataPoint.y0 + dataPoint.y;
-            });
-        });
-
-        const yMin: number = d3.min(layers, (series: StreamGraphSeries) => {
-            return d3.min(series.dataPoints, (dataPoint: StreamDataPoint) => {
-                return dataPoint.y0 + dataPoint.y;
-            });
-        });
+        const yMin: number = d3.min(stackedSeries, serie => d3.min(serie, d => d[0]));
+        const yMax: number = d3.max(stackedSeries, serie => d3.max(serie, d => d[1])) + this.YMaxAdjustment;
 
         const yScale: LinearScale<number, number> = d3.scaleLinear()
             .domain([Math.min(yMin, 0), yMax])
-            .range([height - (margin.bottom + StreamGraph.TickHeight), (this.margin.top - this.data.yAxisFontHalfSize)])
-            .nice();
+            .range([height - (margin.bottom + StreamGraph.TickHeight), (this.margin.top - this.data.yAxisFontHalfSize)]);
 
-        const area: d3.Area<StreamDataPoint> = d3.area<StreamDataPoint>()
-            .curve(<any>StreamGraph.d3_svg_lineMonotone)
-            .x((dataPoint: StreamDataPoint) => xScale(dataPoint.x))
-            .y0((dataPoint: StreamDataPoint) => yScale(dataPoint.y0))
-            .y1((dataPoint: StreamDataPoint) => yScale(dataPoint.y0 + dataPoint.y))
-            .defined((dataPoint: StreamDataPoint) => StreamGraph.isNumber(dataPoint.y0) && StreamGraph.isNumber(dataPoint.y));
+        const area: d3.Area<any> = d3.area<StreamDataPoint>()
+            .curve(d3.curveCatmullRom.alpha(0.5))
+            .x((d, i) => xScale(i))
+            .y0(d => yScale(d[0]))
+            .y1(d => yScale(d[1]))
+            .defined(d => StreamGraph.isNumber(d[0]) && StreamGraph.isNumber(d[1]));
 
         const isHighContrast: boolean = this.colorPalette.isHighContrast;
 
-        let selection: Selection<d3.BaseType, StreamGraphSeries, any, any> = this.dataPointsContainer
+        let selection: Selection<d3.BaseType, any, any, any> = this.dataPointsContainer
             .selectAll(StreamGraph.LayerSelector.selectorName)
-            .data(layers);
+            .data(stackedSeries);
 
         selection
             .exit()
@@ -1075,19 +949,13 @@ export class StreamGraph implements IVisual {
             .classed(StreamGraph.LayerSelector.className, true)
             .merge(selection)
             .style("opacity", DefaultOpacity)
-            .style("fill", isHighContrast
-                ? null
-                : (series: StreamGraphSeries) => series.color)
-            .style("stroke", isHighContrast
-                ? (series: StreamGraphSeries) => series.color
-                : null);
+            .style("fill", (d, index) => isHighContrast ? null : series[index].color)
+            .style("stroke", (d, index) => isHighContrast ? series[index].color : null);
 
         selection
             .transition()
             .duration(duration)
-            .attr("d", (series: StreamGraphSeries) => {
-                return area(series.dataPoints);
-            });
+            .attr("d", area);
 
         selection
             .selectAll("path")
@@ -1107,11 +975,19 @@ export class StreamGraph implements IVisual {
             // Merge all points into a single array
             let dataPointsArray: StreamDataPoint[] = [];
 
-            series.forEach((seriesItem: StreamGraphSeries) => {
-                let filteredDataPoints: StreamDataPoint[];
+            stackedSeries.forEach((seriesItem: d3.Series<any, any>) => {
+                let filteredDataPoints: any[];
 
-                filteredDataPoints = seriesItem.dataPoints.filter((dataPoint: StreamDataPoint) => {
-                    return dataPoint && dataPoint.y !== null && dataPoint.y !== undefined;
+                filteredDataPoints = seriesItem.filter((dataPoint: any) => {
+                    return dataPoint && dataPoint[0] !== null && dataPoint[0] !== undefined;
+                }).map((dataPoint: any) => {
+                    return {
+                        x: dataPoint.data.x,
+                        y0: dataPoint[0],
+                        y: dataPoint[1],
+                        text: seriesItem.key,
+                        value: dataPoint.data[seriesItem.key]
+                    };
                 });
 
                 if (filteredDataPoints.length > 0) {
@@ -1167,7 +1043,7 @@ export class StreamGraph implements IVisual {
             labelColor: legendSettings.labelColor,
         };
 
-        debugger;
+
         this.legend.changeOrientation(LegendPosition[legendSettings.position]);
 
         this.legend.drawLegend(legendData, { ...this.viewport });
