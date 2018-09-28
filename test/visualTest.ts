@@ -28,6 +28,7 @@ import powerbi from "powerbi-visuals-api";
 
 // powerbi.visuals
 import ISelectionId = powerbi.visuals.ISelectionId;
+import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 
 // powerbi.extensibility.utils
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
@@ -39,7 +40,7 @@ import { legendPosition } from "powerbi-visuals-utils-chartutils";
 import { LegendDataPoint } from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfaces";
 
 // powerbi.extensibility.utils.test
-import { clickElement, createSelectionId, assertColorsMatch, createColorPalette } from "powerbi-visuals-utils-testutils";
+import { clickElement, createSelectionId, assertColorsMatch, createColorPalette, MockISelectionIdBuilder } from "powerbi-visuals-utils-testutils";
 
 // powerbi.extensibility.utils.interactivity
 import { interactivityService } from "powerbi-visuals-utils-interactivityutils";
@@ -121,10 +122,6 @@ describe("StreamGraph", () => {
         });
 
         it("Should add right amount of legend items", () => {
-            let selectionIdIndex: number = 0;
-           
-            visualBuilder.injectCreateSelectionId(() => createSelectionId((++selectionIdIndex).toString()));
-
             dataView.metadata.objects = {
                 legend: {
                     show: true
@@ -369,34 +366,37 @@ describe("StreamGraph", () => {
 
     describe("interactivityService", () => {
         let colorPalette: IColorPalette,
-            interactivityService: IInteractivityService;
+            interactivityService: IInteractivityService,
+            selectionIdIndex: number = 1,
+            seriesSelectionId: ISelectionId = createSelectionId(selectionIdIndex.toString());
 
         beforeEach(() => {
+            const customMockISelectionIdBuilder = new MockISelectionIdBuilder();
+            customMockISelectionIdBuilder.createSelectionId = () => {
+                if (selectionIdIndex++ === 1) {
+                    return seriesSelectionId;
+                }
+
+                return createSelectionId((++selectionIdIndex).toString());
+            };
+            visualBuilder.visualHost.createSelectionIdBuilder = () => customMockISelectionIdBuilder;
             interactivityService = createInteractivityService(visualBuilder.visualHost);
 
             colorPalette = createColorPalette();
         });
 
         it("Selection state set on converter result including clear", () => {
-            let selectionIdIndex: number = 1,
-                series: StreamGraphSeries[],
-                seriesSelectionId: ISelectionId = createSelectionId(selectionIdIndex.toString());
-
-            visualBuilder.injectCreateSelectionId(() => {
-                if (selectionIdIndex++ === 1) {
-                    return seriesSelectionId;
-                }
-
-                return createSelectionId((++selectionIdIndex).toString())
-            });
+            let series: StreamGraphSeries[];
 
             interactivityService["selectedIds"] = [seriesSelectionId];
 
-            series = StreamGraph.converter(
+            const data = StreamGraph.converter(
                 dataView,
                 colorPalette,
                 interactivityService,
-                visualBuilder.visualHost).series;
+                visualBuilder.visualHost);
+
+            series = data.series;
 
             // We should see the selection state applied to resulting data
             expect(series[0].selected).toBe(true);
