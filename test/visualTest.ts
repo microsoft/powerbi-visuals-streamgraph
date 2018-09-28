@@ -52,18 +52,6 @@ import { ProductSalesByDateData } from "./visualData";
 import { StreamGraphSeries, StreamData, StreamDataPoint } from "../src/dataInterfaces";
 import { StreamGraph } from "../src/visual";
 
-let incr: number = 0;
-const createSelectionIdWithCompareMeasure = (key?: number | string) => {
-    const selId: any = createSelectionId();
-    key = typeof key === "undefined" ? incr++ : key;
-    selId.measures = [key];
-    selId.key = key;
-    selId.compareMeasures = (current, others) => {
-        return current === others;
-    };
-    return selId;
-};
-
 describe("StreamGraph", () => {
     let visualBuilder: StreamGraphBuilder,
         defaultDataViewBuilder: ProductSalesByDateData,
@@ -134,10 +122,8 @@ describe("StreamGraph", () => {
 
         it("Should add right amount of legend items", () => {
             let selectionIdIndex: number = 0;
-
-            // powerbi.extensibility.utils.test.mocks.createSelectionId = function () {
-            //     return createSelectionIdWithCompareMeasure(++selectionIdIndex);
-            // };
+           
+            visualBuilder.injectCreateSelectionId(() => createSelectionId((++selectionIdIndex).toString()));
 
             dataView.metadata.objects = {
                 legend: {
@@ -316,8 +302,9 @@ describe("StreamGraph", () => {
                 const fontSize: number = 22,
                     expectedFontSize: string = "22px";
                 (dataView.metadata.objects as any).categoryAxis.fontSize = fontSize;
+
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                expect($(visualBuilder.xAxisTicks["0"].children["0"].lastChild).css("font-size")).toBe(expectedFontSize);
+                expect($(visualBuilder.xAxisTicks.children("g")["0"].lastChild).css("font-size")).toBe(expectedFontSize);
             });
 
         });
@@ -375,8 +362,7 @@ describe("StreamGraph", () => {
                 (dataView.metadata.objects as any).valueAxis.fontSize = fontSize;
 
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-
-                expect($(visualBuilder.yAxisTicks["0"].children["0"].lastChild).css("font-size")).toBe(expectedFontSize);
+                expect($(visualBuilder.yAxisTicks.children("g")["0"].lastChild).css("font-size")).toBe(expectedFontSize);
             });
         });
     });
@@ -394,16 +380,15 @@ describe("StreamGraph", () => {
         it("Selection state set on converter result including clear", () => {
             let selectionIdIndex: number = 1,
                 series: StreamGraphSeries[],
-                seriesSelectionId: ISelectionId = createSelectionIdWithCompareMeasure(selectionIdIndex.toString());
+                seriesSelectionId: ISelectionId = createSelectionId(selectionIdIndex.toString());
 
-            // We have to implement a simpler way to inject dependencies.
-            // powerbi.extensibility.utils.test.mocks.createSelectionId = function () {
-            //     if (selectionIdIndex++ === 1) {
-            //         return seriesSelectionId;
-            //     }
+            visualBuilder.injectCreateSelectionId(() => {
+                if (selectionIdIndex++ === 1) {
+                    return seriesSelectionId;
+                }
 
-            //     return createSelectionIdWithCompareMeasure((selectionIdIndex++).toString());
-            // };
+                return createSelectionId((++selectionIdIndex).toString())
+            });
 
             interactivityService["selectedIds"] = [seriesSelectionId];
 
