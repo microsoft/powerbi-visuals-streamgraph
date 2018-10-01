@@ -24,55 +24,64 @@
  *  THE SOFTWARE.
  */
 
-module powerbi.extensibility.visual.behavior {
-    // d3
-    import Selection = d3.Selection;
+// d3
+import Selection = d3.Selection;
 
-    // powerbi.extensibility.utils.interactivity
-    import ISelectionHandler = powerbi.extensibility.utils.interactivity.ISelectionHandler;
-    import IInteractiveBehavior = powerbi.extensibility.utils.interactivity.IInteractiveBehavior;
-    import IInteractivityService = powerbi.extensibility.utils.interactivity.IInteractivityService;
+// powerbi.extensibility.utils.interactivity
+import {interactivityService} from "powerbi-visuals-utils-interactivityutils";
+import IInteractiveBehavior = interactivityService.IInteractiveBehavior;
+import ISelectionHandler = interactivityService.ISelectionHandler;
+import IInteractivityService = interactivityService.IInteractivityService;
+import { StreamGraphSeries } from "./dataInterfaces";
+import {getFillOpacity} from "./utils";
 
-    export interface BehaviorOptions {
-        selection: Selection<StreamGraphSeries>;
-        clearCatcher: Selection<any>;
-        interactivityService: IInteractivityService;
+export interface BehaviorOptions {
+    selection: Selection<d3.BaseType, StreamGraphSeries, any, any>;
+    clearCatcher: Selection<d3.BaseType, any, any, any>;
+    interactivityService: IInteractivityService;
+    series: StreamGraphSeries[];
+}
+
+const getEvent = () => require("d3-selection").event;
+
+export class StreamGraphBehavior implements IInteractiveBehavior {
+    private selection: Selection<d3.BaseType, StreamGraphSeries, any, any>;
+    private clearCatcher: Selection<d3.BaseType, any, any, any>;
+    private interactivityService: IInteractivityService;
+    private series: any = null;
+
+    public bindEvents(
+        options: BehaviorOptions,
+        selectionHandler: ISelectionHandler): void {
+
+        this.selection = options.selection;
+        this.clearCatcher = options.clearCatcher;
+        this.interactivityService = options.interactivityService;
+
+        this.series = options.series;
+
+        this.selection.on("click", (series: StreamGraphSeries) => {
+            selectionHandler.handleSelection(
+                this.series[(<any>series).index],
+                (getEvent() as MouseEvent).ctrlKey);
+        });
+
+        this.clearCatcher.on("click", () => {
+            selectionHandler.handleClearSelection();
+        });
     }
 
-    export class StreamGraphBehavior implements IInteractiveBehavior {
-        private selection: Selection<StreamGraphSeries>;
-        private clearCatcher: Selection<any>;
-        private interactivityService: IInteractivityService;
+    public renderSelection(hasSelection: boolean): void {
+        const hasHighlights: boolean = this.interactivityService.hasSelection();
 
-        public bindEvents(
-            options: BehaviorOptions,
-            selectionHandler: ISelectionHandler): void {
+        this.selection.style("opacity", (stackedSeries: StreamGraphSeries) => {
+            const series = this.series[(<any>stackedSeries).index];
 
-            this.selection = options.selection;
-            this.clearCatcher = options.clearCatcher;
-            this.interactivityService = options.interactivityService;
-
-            this.selection.on("click", (series: StreamGraphSeries) => {
-                selectionHandler.handleSelection(
-                    series,
-                    (d3.event as MouseEvent).ctrlKey);
-            });
-
-            this.clearCatcher.on("click", () => {
-                selectionHandler.handleClearSelection();
-            });
-        }
-
-        public renderSelection(hasSelection: boolean): void {
-            const hasHighlights: boolean = this.interactivityService.hasSelection();
-
-            this.selection.style("opacity", (series: StreamGraphSeries) => {
-                return utils.getFillOpacity(
-                    series.selected,
-                    series.highlight,
-                    !series.highlight && hasSelection,
-                    !series.selected && hasHighlights);
-            });
-        }
+            return getFillOpacity(
+                series.selected,
+                series.highlight,
+                !series.highlight && hasSelection,
+                !series.selected && hasHighlights);
+        });
     }
 }

@@ -23,62 +23,75 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+import powerbi from "powerbi-visuals-api";
+import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
+import PrimitiveValue = powerbi.PrimitiveValue;
 
-module powerbi.extensibility.visual {
-    // powerbi.extensibility.utils.interactivity
-    import SelectableDataPoint = powerbi.extensibility.utils.interactivity.SelectableDataPoint;
+// powerbi.extensibility.utils.interactivity
+import { interactivityService } from "powerbi-visuals-utils-interactivityutils";
+import SelectableDataPoint = interactivityService.SelectableDataPoint;
 
-    // powerbi.extensibility.utils.chart
-    import LegendData = powerbi.extensibility.utils.chart.legend.LegendData;
-    import IDataLabelInfo = powerbi.extensibility.utils.chart.dataLabel.IDataLabelInfo;
 
-    // powerbi.extensibility.utils.formatting
-    import IValueFormatter = powerbi.extensibility.utils.formatting.IValueFormatter;
+// powerbi.extensibility.utils.chart
+import { legendInterfaces, dataLabelInterfaces } from "powerbi-visuals-utils-chartutils";
+import LegendData = legendInterfaces.LegendData;
+import IDataLabelInfo = dataLabelInterfaces.IDataLabelInfo;
 
-    // powerbi.extensibility.visual
-    import VisualSettings = settings.VisualSettings;
+// powerbi.extensibility.utils.formatting
+import { valueFormatter } from "powerbi-visuals-utils-formattingutils";
+import IValueFormatter = valueFormatter.IValueFormatter;
 
-    export interface StreamData {
-        metadata: DataViewMetadataColumn;
-        series: StreamGraphSeries[];
-        legendData: LegendData;
-        valueFormatter: IValueFormatter;
-        categoryFormatter: IValueFormatter;
-        settings: VisualSettings;
-        categoriesText: PrimitiveValue[];
-        xMinValue: number;
-        xMaxValue: number;
-        yMinValue: number;
-        yMaxValue: number;
-        yAxisValueMaxTextSize: number;
-        yAxisValueMaxTextHalfSize: number;
-        xAxisValueMaxTextSize: number;
-        xAxisValueMaxTextHalfSize: number;
-        yAxisFontSize: number;
-        yAxisFontHalfSize: number;
-        xAxisFontSize: number;
-        xAxisFontHalfSize: number;
-    }
+import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
-    export interface AxisLabelProperties {
-        maxTextWidth: number;
-        needToRotate: boolean;
-        marginBottom: number;
-        marginLeft: number;
-    }
+// powerbi.extensibility.visual
+import { VisualSettings } from "./settings";
 
-    export interface StreamDataPoint extends IDataLabelInfo {
-        x: number;
-        y: number;
-        y0?: number;
-        text: string;
-        labelFontSize: string;
-    }
+export interface StreamData {
+    metadata: DataViewMetadataColumn;
+    series: StreamGraphSeries[];
+    stackedSeries: d3.Series<any, any>[];
+    legendData: LegendData;
+    valueFormatter: IValueFormatter;
+    categoryFormatter: IValueFormatter;
+    settings: VisualSettings;
+    categoriesText: PrimitiveValue[];
+    xMinValue: number;
+    xMaxValue: number;
+    yMinValue: number;
+    yMaxValue: number;
+    yAxisValueMaxTextSize: number;
+    yAxisValueMaxTextHalfSize: number;
+    xAxisValueMaxTextSize: number;
+    xAxisValueMaxTextHalfSize: number;
+    yAxisFontSize: number;
+    yAxisFontHalfSize: number;
+    xAxisFontSize: number;
+    xAxisFontHalfSize: number;
+}
 
-    export interface StreamGraphSeries extends SelectableDataPoint {
-        color: string;
-        dataPoints: StreamDataPoint[];
-        tooltipInfo?: VisualTooltipDataItem[];
-        highlight?: boolean;
-    }
+export interface AxisLabelProperties {
+    maxTextWidth: number;
+    needToRotate: boolean;
+    marginBottom: number;
+    marginLeft: number;
+}
+
+export interface StreamDataPoint extends IDataLabelInfo {
+    x: number;
+    y: number;
+    y0?: number;
+    text: string;
+    labelFontSize: string;
+}
+
+export interface StreamGraphSeries extends SelectableDataPoint {
+    color: string;
+    dataPoints: StreamDataPoint[];
+    tooltipInfo?: VisualTooltipDataItem[];
+    highlight?: boolean;
+}
+
+export interface StackValue {
+    x: number;
+    [key: string]: number;
 }

@@ -23,89 +23,85 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
+import powerbi from "powerbi-visuals-api";
 
-/// <reference path="_references.ts"/>
+// powerbi.extensibility.utils.test
+import { VisualBuilderBase } from "powerbi-visuals-utils-testutils";
+import { StreamGraph } from "../src/visual";
+import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
 
-module powerbi.extensibility.visual.test {
-    // powerbi.extensibility.utils.test
-    import VisualBuilderBase = powerbi.extensibility.utils.test.VisualBuilderBase;
+export class StreamGraphBuilder extends VisualBuilderBase<StreamGraph> {
+    constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+        super(width, height, "StreamGraph1446659696222");
+    }
 
-    // StreamGraph1446659696222
-    import VisualClass = powerbi.extensibility.visual.StreamGraph1446659696222.StreamGraph;
+    protected build(options: VisualConstructorOptions): StreamGraph {
+        return new StreamGraph(options);
+    }
 
-    export class StreamGraphBuilder extends VisualBuilderBase<VisualClass> {
-        constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
-            super(width, height, "StreamGraph1446659696222");
-        }
+    public get mainElement(): JQuery {
+        return this.element.children("svg.streamGraph");
+    }
 
-        protected build(options: VisualConstructorOptions): VisualClass {
-            return new VisualClass(options);
-        }
+    public get axisGraphicsContext(): JQuery {
+        return this.mainElement.children("g.axisGraphicsContext");
+    }
 
-        public get mainElement(): JQuery {
-            return this.element.children("svg.streamGraph");
-        }
+    public get xAxisTicks(): JQuery {
+        return this.axisGraphicsContext
+            .children("g.xAxis");
+    }
 
-        public get axisGraphicsContext(): JQuery {
-            return this.mainElement.children("g.axisGraphicsContext");
-        }
+    public get yAxisTicks(): JQuery {
+        return this.axisGraphicsContext
+            .children("g.yAxis");
+    }
 
-        public get xAxisTicks(): JQuery {
-            return this.axisGraphicsContext
-                .children("g.xAxis");
-        }
+    public get xAxisLabel(): JQuery {
+        return this.axisGraphicsContext.children("text.xAxisLabel");
+    }
 
-        public get yAxisTicks(): JQuery {
-            return this.axisGraphicsContext
-                .children("g.yAxis");
-        }
+    public get yAxisLabel(): JQuery {
+        return this.axisGraphicsContext.children("text.yAxisLabel");
+    }
 
-        public get xAxisLabel(): JQuery {
-            return this.axisGraphicsContext.children("text.xAxisLabel");
-        }
+    public get dataLabelsText(): JQuery {
+        return this.mainElement
+            .children("g.labels")
+            .children("text.data-labels");
+    }
 
-        public get yAxisLabel(): JQuery {
-            return this.axisGraphicsContext.children("text.yAxisLabel");
-        }
+    public get layers(): JQuery {
+        return this.mainElement
+            .children("g.dataPointsContainer")
+            .children("path.layer");
+    }
 
-        public get dataLabelsText(): JQuery {
-            return this.mainElement
-                .children("g.labels")
-                .children("text.data-labels");
-        }
+    public get legendGroup(): JQuery {
+        return this.element
+            .children("svg.legend")
+            .children("g#legendGroup");
+    }
 
-        public get layers(): JQuery {
-            return this.mainElement
-                .children("g.dataPointsContainer")
-                .children("path.layer");
-        }
+    public get legendOrientation(): string {
+        return this.element
+            .children("svg.legend")
+            .attr("orientation");
+    }
 
-        public get legendGroup(): JQuery {
-            return this.element
-                .children("svg.legend")
-                .children("g#legendGroup");
-        }
+    public get legendWidth(): number {
+        return this.element
+            .children("svg.legend")
+            .width();
+    }
 
-        public get legendOrientation(): string {
-            return this.element
-                .children("svg.legend")
-                .attr("orientation");
-        }
+    public get legendTitle(): JQuery {
+        return this.legendGroup.children(".legendTitle");
+    }
 
-        public get legendWidth(): number {
-            return this.element
-                .children("svg.legend")
-                .width();
-        }
-
-        public get legendTitle(): JQuery {
-            return this.legendGroup.children(".legendTitle");
-        }
-
-        public get legendItemText(): JQuery {
-            return this.legendGroup
-                .children(".legendItem")
-                .children("text.legendText");
-        }
+    public get legendItemText(): JQuery {
+        return this.legendGroup
+            .children(".legendItem")
+            .children("text.legendText");
     }
 }
