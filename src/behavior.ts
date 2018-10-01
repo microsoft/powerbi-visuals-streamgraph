@@ -33,8 +33,7 @@ import IInteractiveBehavior = interactivityService.IInteractiveBehavior;
 import ISelectionHandler = interactivityService.ISelectionHandler;
 import IInteractivityService = interactivityService.IInteractivityService;
 import { StreamGraphSeries } from "./dataInterfaces";
-
-import * as utils from "./utils";
+import {getFillOpacity} from "./utils";
 
 export interface BehaviorOptions {
     selection: Selection<d3.BaseType, StreamGraphSeries, any, any>;
@@ -78,7 +77,7 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
         this.selection.style("opacity", (stackedSeries: StreamGraphSeries) => {
             const series = this.series[(<any>stackedSeries).index];
 
-            return utils.getFillOpacity(
+            return getFillOpacity(
                 series.selected,
                 series.highlight,
                 !series.highlight && hasSelection,

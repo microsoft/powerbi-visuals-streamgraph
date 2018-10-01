@@ -25,9 +25,9 @@
  */
 
 // powerbi.extensibility.utils.chart
-import * as ChartUtils from "powerbi-visuals-utils-chartutils";
-import LegendPosition = ChartUtils.legendInterfaces.LegendPosition;
-import getDefaultPointLabelSettings = ChartUtils.dataLabelUtils.getDefaultPointLabelSettings;
+import {dataLabelUtils, legendInterfaces} from "powerbi-visuals-utils-chartutils";
+import LegendPosition = legendInterfaces.LegendPosition;
+import getDefaultPointLabelSettings = dataLabelUtils.getDefaultPointLabelSettings;
 
 // powerbi.extensibility.utils.dataview
 import { dataViewObjectsParser } from "powerbi-visuals-utils-dataviewutils";

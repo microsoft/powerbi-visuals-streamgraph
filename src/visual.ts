@@ -61,11 +61,10 @@ import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue } from "./da
 
 
 // powerbi.extensibility.utils.svg
-import * as SvgUtils from "powerbi-visuals-utils-svgutils";
-import IMargin = SvgUtils.IMargin;
-import translate = SvgUtils.manipulation.translate;
-import ClassAndSelector = SvgUtils.CssConstants.ClassAndSelector;
-import createClassAndSelector = SvgUtils.CssConstants.createClassAndSelector;
+import { IMargin, manipulation, CssConstants } from "powerbi-visuals-utils-svgutils";
+import translate = manipulation.translate;
+import ClassAndSelector = CssConstants.ClassAndSelector;
+import createClassAndSelector = CssConstants.createClassAndSelector;
 
 // powerbi.extensibility.utils.color
 import { ColorHelper } from "powerbi-visuals-utils-colorutils";
@@ -78,26 +77,25 @@ import IInteractiveBehavior = interactivityService.IInteractiveBehavior;
 import createInteractivityService = interactivityService.createInteractivityService;
 
 // powerbi.extensibility.utils.chart
-import * as ChartUtils from "powerbi-visuals-utils-chartutils";
-import ILegend = ChartUtils.legendInterfaces.ILegend;
-import LegendIcon = ChartUtils.legendInterfaces.LegendIcon;
-import LegendData = ChartUtils.legendInterfaces.LegendData;
-import createLegend = ChartUtils.legend.createLegend;
-import LegendPosition = ChartUtils.legendInterfaces.LegendPosition;
-import AxisHelper = ChartUtils.axis;
-import dataLabelUtils = ChartUtils.dataLabelUtils;
-import ILabelLayout = ChartUtils.dataLabelInterfaces.ILabelLayout;
-import IAxisProperties = ChartUtils.axisInterfaces.IAxisProperties;
-import LegendDataPoint = ChartUtils.legendInterfaces.LegendDataPoint;
+import { legendInterfaces, axis, legend, dataLabelUtils, dataLabelInterfaces, axisInterfaces } from "powerbi-visuals-utils-chartutils";
+import ILegend = legendInterfaces.ILegend;
+import LegendIcon = legendInterfaces.LegendIcon;
+import LegendData = legendInterfaces.LegendData;
+import createLegend = legend.createLegend;
+import LegendPosition = legendInterfaces.LegendPosition;
+import AxisHelper = axis;
+import ILabelLayout = dataLabelInterfaces.ILabelLayout;
+import IAxisProperties = axisInterfaces.IAxisProperties;
+import LegendDataPoint = legendInterfaces.LegendDataPoint;
 import { positionChartArea } from "powerbi-visuals-utils-chartutils/lib/legend/legend";
 import { CreateAxisOptions } from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
 
 // powerbi.extensibility.utils.formatting
-import * as FormattingUtils from "powerbi-visuals-utils-formattingutils";
-import valueFormatter = FormattingUtils.valueFormatter.valueFormatter;
-import TextProperties = FormattingUtils.textMeasurementService.TextProperties;
-import IValueFormatter = FormattingUtils.valueFormatter.IValueFormatter;
-import textMeasurementService = FormattingUtils.textMeasurementService.textMeasurementService;
+import { valueFormatter as ValueFormatter, textMeasurementService as TextMeasurementService } from "powerbi-visuals-utils-formattingutils";
+import valueFormatter = ValueFormatter.valueFormatter;
+import TextProperties = TextMeasurementService.TextProperties;
+import IValueFormatter = ValueFormatter.IValueFormatter;
+import textMeasurementService = TextMeasurementService.textMeasurementService;
 
 // powerbi.extensibility.utils.type
 import { pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutils";
@@ -107,6 +105,15 @@ import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
 import { TooltipEventArgs, ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
 
 const ColumnDisplayName: string = "Visual_Column";
+
+enum VisualUpdateType {
+    Data = 2,
+    Resize = 4,
+    ViewMode = 8,
+    Style = 16,
+    ResizeEnd = 32,
+    All = 62,
+}
 
 export class StreamGraph implements IVisual {
     private static VisualClassName = "streamGraph";
@@ -200,7 +207,7 @@ export class StreamGraph implements IVisual {
         };
     }
 
-    public static isNumber(value: PrimitiveValue) {
+    public static isNumber(value: PrimitiveValue): boolean {
         return !isNaN(value as number) && isFinite(value as number) && value !== null;
     }
 
@@ -550,7 +557,7 @@ export class StreamGraph implements IVisual {
         this.viewport = StreamGraph.getViewport(options.viewport);
         this.dataView = options.dataViews[0];
 
-        if (options.type !== 4 && options.type !== 32) {
+        if (options.type !== VisualUpdateType.Data && options.type !== VisualUpdateType.ResizeEnd) {
             this.data = StreamGraph.converter(
                 this.dataView,
                 this.colorPalette,
