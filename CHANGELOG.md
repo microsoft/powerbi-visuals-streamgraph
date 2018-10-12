@@ -1,3 +1,9 @@
+## 2.1.0
+* New test coverage tools
+
+## 2.0.0
+* Webpack migration
+
 ## 1.8.0
 * API 2.1.0
 
