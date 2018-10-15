@@ -1,6 +1,6 @@
 {
   "name": "powerbi-visuals-streamgraph",
-  "version": "2.1.0",
+  "version": "2.0.0",
   "description": "A stacked area chart with smooth interpolation. Often used to display values over time.",
   "repository": {
     "type": "git",
@@ -46,7 +46,6 @@
     "karma-coverage": "1.1.2",
     "karma-coverage-istanbul-reporter": "^2.0.4",
     "karma-jasmine": "1.1.2",
-    "karma-remap-istanbul": "0.6.0",
     "karma-sourcemap-loader": "0.3.7",
     "karma-typescript": "^3.0.13",
     "karma-typescript-preprocessor": "0.3.1",
