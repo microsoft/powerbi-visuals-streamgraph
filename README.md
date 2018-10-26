@@ -1,5 +1,5 @@
 # powerbi-visuals-streamgraph
-[![Build Status](https://travis-ci.org/Microsoft/powerbi-visuals-streamgraph.svg?branch=master)](https://travis-ci.org/Microsoft/powerbi-visuals-streamgraph) [![Coverage Status](https://coveralls.io/repos/github/Microsoft/powerbi-visuals-streamgraph/badge.svg?branch=master)](https://coveralls.io/github/Microsoft/powerbi-visuals-streamgraph?branch=master)
+[![Build Status](https://travis-ci.org/Microsoft/powerbi-visuals-streamgraph.svg?branch=master)](https://travis-ci.org/Microsoft/powerbi-visuals-streamgraph) [![Coverage Status](https://coveralls.io/repos/github/Microsoft/powerbi-visuals-streamgraph/badge.svg?branch=master)](https://coveralls.io/github/Microsoft/powerbi-visuals-streamgraph?branch=master) [![Build Status](https://dev.azure.com/customvisuals/public/_apis/build/status/Microsoft.powerbi-visuals-chord)](https://dev.azure.com/customvisuals/public/_build/latest?definitionId=5)
 
 > A stacked area chart with smooth interpolation. Often used to display values over time.
 
