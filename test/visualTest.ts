@@ -593,7 +593,7 @@ describe("StreamGraph", () => {
 
             it("should not use fill style", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    const layers: JQuery[] = visualBuilder.layers.toArray().map($);
+                    const layers: JQuery<any>[] = visualBuilder.layers.toArray().map($);
 
                     expect(isColorAppliedToElements(layers, null, "fill"));
 
@@ -603,7 +603,7 @@ describe("StreamGraph", () => {
 
             it("should use stroke style", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    const layers: JQuery[] = visualBuilder.layers.toArray().map($);
+                    const layers: JQuery<any>[] = visualBuilder.layers.toArray().map($);
 
                     expect(isColorAppliedToElements(layers, foregroundColor, "stroke"));
 
