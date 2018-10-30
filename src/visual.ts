@@ -106,7 +106,7 @@ import { TooltipEventArgs, ITooltipServiceWrapper, createTooltipServiceWrapper }
 
 const ColumnDisplayName: string = "Visual_Column";
 
-enum VisualUpdateType {
+export enum VisualUpdateType {
     Data = 2,
     Resize = 4,
     ViewMode = 8,
@@ -540,7 +540,7 @@ export class StreamGraph implements IVisual {
             element,
             false,
             this.interactivityService,
-            true,
+            true
         );
     }
 
@@ -557,7 +557,7 @@ export class StreamGraph implements IVisual {
         this.viewport = StreamGraph.getViewport(options.viewport);
         this.dataView = options.dataViews[0];
 
-        if (options.type !== VisualUpdateType.Data && options.type !== VisualUpdateType.ResizeEnd) {
+        if (options.type !== VisualUpdateType.Resize && options.type !== VisualUpdateType.ResizeEnd) {
             this.data = StreamGraph.converter(
                 this.dataView,
                 this.colorPalette,
@@ -946,28 +946,30 @@ export class StreamGraph implements IVisual {
             .selectAll(StreamGraph.LayerSelector.selectorName)
             .data(stackedSeries);
 
-        selection
-            .exit()
-            .remove();
-
-        selection = selection
+        const selectionMerged = selection
             .enter()
             .append("path")
+            .merge(selection);
+
+        selectionMerged
             .classed(StreamGraph.LayerSelector.className, true)
-            .merge(selection)
             .style("opacity", DefaultOpacity)
             .style("fill", (d, index) => isHighContrast ? null : series[index].color)
             .style("stroke", (d, index) => isHighContrast ? series[index].color : null);
 
-        selection
+        selectionMerged
             .transition()
             .duration(duration)
             .attr("d", area);
 
-        selection
+        selectionMerged
             .selectAll("path")
             .append("g")
             .classed(StreamGraph.DataPointsContainer, true);
+
+        selection
+            .exit()
+            .remove();
 
         if (this.data.settings.labels.show) {
             const labelsXScale: LinearScale<number, number> = d3.scaleLinear()
@@ -1028,7 +1030,7 @@ export class StreamGraph implements IVisual {
             dataLabelUtils.cleanDataLabels(this.svg);
         }
 
-        return selection;
+        return selectionMerged;
     }
 
     private renderLegend(streamGraphData: StreamData): void {
