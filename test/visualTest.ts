@@ -28,11 +28,11 @@ import powerbi from "powerbi-visuals-api";
 
 // powerbi.visuals
 import ISelectionId = powerbi.visuals.ISelectionId;
-import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 
 // powerbi.extensibility.utils
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 import IColorPalette = powerbi.extensibility.IColorPalette;
+import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import DataView = powerbi.DataView;
 
 // powerbi.extensibility.utils.chart
@@ -51,7 +51,7 @@ import { StreamGraphBuilder } from "./visualBuilder";
 import { isColorAppliedToElements, getSolidColorStructuralObject } from "./helpers/helpers";
 import { ProductSalesByDateData } from "./visualData";
 import { StreamGraphSeries, StreamData, StreamDataPoint } from "../src/dataInterfaces";
-import { StreamGraph } from "../src/visual";
+import { StreamGraph, VisualUpdateType } from "../src/visual";
 
 describe("StreamGraph", () => {
     let visualBuilder: StreamGraphBuilder,
@@ -112,6 +112,19 @@ describe("StreamGraph", () => {
 
         it("svg element created", () => {
             expect(visualBuilder.mainElement[0]).toBeInDOM();
+        });
+
+        it("Layers are not empty on first data initialization", () => {
+            const visualUpdateOptions: VisualUpdateOptions = {
+                dataViews: [dataView],
+                viewport: visualBuilder.viewport,
+                type: VisualUpdateType.Data
+            } as VisualUpdateOptions;
+
+            visualBuilder.updateVisual(visualUpdateOptions);
+
+            const layers: JQuery<any>[] = visualBuilder.layers.toArray().map($);
+            expect(layers.length).toBeGreaterThan(0);
         });
 
         it("update", () => {
@@ -593,7 +606,7 @@ describe("StreamGraph", () => {
 
             it("should not use fill style", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    const layers: JQuery[] = visualBuilder.layers.toArray().map($);
+                    const layers: JQuery<any>[] = visualBuilder.layers.toArray().map($);
 
                     expect(isColorAppliedToElements(layers, null, "fill"));
 
@@ -603,7 +616,7 @@ describe("StreamGraph", () => {
 
             it("should use stroke style", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    const layers: JQuery[] = visualBuilder.layers.toArray().map($);
+                    const layers: JQuery<any>[] = visualBuilder.layers.toArray().map($);
 
                     expect(isColorAppliedToElements(layers, foregroundColor, "stroke"));
 

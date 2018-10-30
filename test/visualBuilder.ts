@@ -29,6 +29,7 @@ import powerbi from "powerbi-visuals-api";
 import { VisualBuilderBase } from "powerbi-visuals-utils-testutils";
 import { StreamGraph } from "../src/visual";
 import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructorOptions;
+import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 
 export class StreamGraphBuilder extends VisualBuilderBase<StreamGraph> {
     constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
@@ -37,6 +38,10 @@ export class StreamGraphBuilder extends VisualBuilderBase<StreamGraph> {
 
     protected build(options: VisualConstructorOptions): StreamGraph {
         return new StreamGraph(options);
+    }
+
+    public updateVisual(options: VisualUpdateOptions): void {
+        this.visual.update(options);
     }
 
     public get mainElement(): JQuery {
