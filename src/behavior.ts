@@ -28,12 +28,12 @@
 import Selection = d3.Selection;
 
 // powerbi.extensibility.utils.interactivity
-import {interactivityService} from "powerbi-visuals-utils-interactivityutils";
+import { interactivityService } from "powerbi-visuals-utils-interactivityutils";
 import IInteractiveBehavior = interactivityService.IInteractiveBehavior;
 import ISelectionHandler = interactivityService.ISelectionHandler;
 import IInteractivityService = interactivityService.IInteractivityService;
 import { StreamGraphSeries } from "./dataInterfaces";
-import {getFillOpacity} from "./utils";
+import { getFillOpacity } from "./utils";
 
 export interface BehaviorOptions {
     selection: Selection<d3.BaseType, StreamGraphSeries, any, any>;

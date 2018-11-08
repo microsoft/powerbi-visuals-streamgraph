@@ -337,7 +337,8 @@ export class StreamGraph implements IVisual {
                         ? y
                         : StreamGraph.DefaultValue,
                     text: label,
-                    labelFontSize: fontSizeInPx
+                    labelFontSize: fontSizeInPx,
+                    highlight: hasHighlights && values[valueIndex].highlights[dataPointValueIndex] !== null
                 };
 
                 series[valueIndex].dataPoints.push(streamDataPoint);
@@ -350,6 +351,10 @@ export class StreamGraph implements IVisual {
                     };
                 }
                 stackValues[dataPointValueIndex][label] = streamDataPoint.y;
+
+                if (!stackValues[dataPointValueIndex]["highlight"]) {
+                    stackValues[dataPointValueIndex]["highlight"] = streamDataPoint.highlight ? 1 : 0;
+                }
 
                 if (streamDataPoint.x > xMaxValue) {
                     xMaxValue = streamDataPoint.x;
@@ -412,8 +417,6 @@ export class StreamGraph implements IVisual {
         let yAxisFontHalfSize: number = yAxisFontSize / 2;
         let xAxisFontSize: number = +settings.categoryAxis.fontSize;
         let xAxisFontHalfSize: number = xAxisFontSize / 2;
-
-
 
         /* Generate stack values for d3.stack V5 */
         const allLabels = legendData.dataPoints.map((dataPoint) => dataPoint.label);
@@ -514,6 +517,10 @@ export class StreamGraph implements IVisual {
 
         this.clearCatcher = appendClearCatcher(this.svg);
 
+        this.dataPointsContainer = this.svg
+            .insert("g")
+            .classed(StreamGraph.DataPointsContainer, true);
+
         this.axes = this.svg
             .append("g")
             .classed(StreamGraph.Axes.className, true)
@@ -527,10 +534,6 @@ export class StreamGraph implements IVisual {
             .append("g")
             .classed(StreamGraph.Axis.className, true)
             .classed(StreamGraph.YAxis.className, true);
-
-        this.dataPointsContainer = this.svg
-            .append("g")
-            .classed(StreamGraph.DataPointsContainer, true);
 
         this.behavior = new StreamGraphBehavior();
 
@@ -580,10 +583,14 @@ export class StreamGraph implements IVisual {
         this.svg.attr("width", PixelConverter.toString(this.viewport.width));
         this.svg.attr("height", PixelConverter.toString(this.viewport.height));
 
+        const values: DataViewValueColumns = this.dataView.categorical.values;
+        const hasHighlights: boolean = !!(values.length > 0 && values[0].highlights);
+
         const selection: Selection<d3.BaseType, StreamGraphSeries, any, any> = this.renderChart(
             this.data.series,
             this.data.stackedSeries,
-            StreamGraph.AnimationDuration
+            StreamGraph.AnimationDuration,
+            hasHighlights
         );
 
         this.calculateAxes();
@@ -899,7 +906,8 @@ export class StreamGraph implements IVisual {
     private renderChart(
         series: StreamGraphSeries[],
         stackedSeries: d3.Series<any, any>[],
-        duration: number
+        duration: number,
+        hasHighlights: boolean = false
     ): Selection<d3.BaseType, StreamGraphSeries, any, any> {
 
         const { width, height } = this.viewport;
@@ -995,7 +1003,8 @@ export class StreamGraph implements IVisual {
                         y0: dataPoint[0],
                         y: dataPoint[1],
                         text: seriesItem.key,
-                        value: dataPoint.data[seriesItem.key]
+                        value: dataPoint.data[seriesItem.key],
+                        highlight: dataPoint.data.highlight
                     };
                 });
 
@@ -1005,9 +1014,17 @@ export class StreamGraph implements IVisual {
             });
 
             const viewport: IViewport = {
-                height: height - (this.margin.top + this.data.yAxisFontHalfSize) - margin.bottom,
-                width: width - (this.margin.right + this.data.xAxisValueMaxTextHalfSize) - margin.left,
+                height: height - (this.margin.top + this.data.yAxisFontHalfSize),
+                width: width - (this.margin.right + this.data.xAxisValueMaxTextHalfSize),
             };
+
+            if (hasHighlights) {
+                const highlightedPointArray: StreamDataPoint[] = dataPointsArray.filter((d: any) => d.highlight && d.value != StreamGraph.DefaultValue);
+                const additionalPointsArray: StreamDataPoint[] = dataPointsArray.filter((d: any) => d.text === highlightedPointArray[0].text && d.x < highlightedPointArray[0].x);
+                dataPointsArray = additionalPointsArray.concat(highlightedPointArray);
+            }
+
+            dataLabelUtils.cleanDataLabels(this.svg);
 
             const labels: Selection<d3.BaseType, StreamDataPoint, any, any> =
                 dataLabelUtils.drawDefaultLabelsForDataPointChart(
