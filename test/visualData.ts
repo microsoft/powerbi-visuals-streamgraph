@@ -30,9 +30,12 @@ import DataView = powerbi.DataView;
 import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
 
 // powerbi.extensibility.utils.test
-import { getRandomNumbers } from "powerbi-visuals-utils-testutils";
+import { getRandomNumbers, getRandomNumber } from "powerbi-visuals-utils-testutils";
 import { TestDataViewBuilder, TestDataViewBuilderCategoryColumnOptions } from "powerbi-visuals-utils-testutils/lib/dataViewBuilder/testDataViewBuilder";
+import { DataViewBuilderValuesColumnOptions } from "powerbi-visuals-utils-testutils/lib/dataViewBuilder/dataViewBuilder";
 import { getRandomUniqueSortedDates } from "./helpers/helpers";
+
+const seriesLenght: number = 50;
 
 export class ProductSalesByDateData extends TestDataViewBuilder {
     private static DefaultFormat: string = "$0,000.00";
@@ -61,7 +64,23 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
         "SecondGroup"
     ];
 
-    public getDataView(columnNames?: string[], isGroupsEnabled: boolean = false): DataView {
+    public generateHightLightedValues(valuesArray: number[], hightlightedElementNumber?: number): number[] {
+        let array: number[] = [];
+        const lenght: number = valuesArray.length;
+        for (let i: number = 0; i < lenght; i++) {
+            array[i] = null;
+        }
+        if (!hightlightedElementNumber)
+            return array;
+         if (hightlightedElementNumber >= length || hightlightedElementNumber < 0) {
+            array[0] = valuesArray[0];
+        } else {
+            array[hightlightedElementNumber] = valuesArray[hightlightedElementNumber];
+        }
+         return array;
+    }
+
+    public getDataView(columnNames?: string[], isGroupsEnabled: boolean = false, withHighlights: boolean = false, hightlightedIndex: number = 1, hightlightedElementNumber: number = 0): DataView {
         const categoriesColumn: TestDataViewBuilderCategoryColumnOptions[] = [{
             source: {
                 displayName: ProductSalesByDateData.ColumnCategory,
@@ -82,48 +101,74 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
             });
         }
 
+        let column1: DataViewBuilderValuesColumnOptions = {
+            source: {
+                displayName: ProductSalesByDateData.ColumnValues1,
+                isMeasure: true,
+                format: ProductSalesByDateData.DefaultFormat,
+                groupName: ProductSalesByDateData.DefaultGroupName,
+                type: ValueType.fromDescriptor({ numeric: true })
+            },
+            values: this.valuesSales1
+        };
+        let column2: DataViewBuilderValuesColumnOptions = {
+            source: {
+                displayName: ProductSalesByDateData.ColumnValues2,
+                isMeasure: true,
+                format: ProductSalesByDateData.DefaultFormat,
+                groupName: ProductSalesByDateData.DefaultGroupName,
+                type: ValueType.fromDescriptor({ numeric: true })
+            },
+            values: this.valuesSales1
+        };
+        let column3: DataViewBuilderValuesColumnOptions = {
+            source: {
+                displayName: ProductSalesByDateData.ColumnValues3,
+                isMeasure: true,
+                format: ProductSalesByDateData.DefaultFormat,
+                groupName: ProductSalesByDateData.DefaultGroupName,
+                type: ValueType.fromDescriptor({ numeric: true })
+            },
+            values: this.valuesSales2
+        };
+        let column4: DataViewBuilderValuesColumnOptions = {
+            source: {
+                displayName: ProductSalesByDateData.ColumnValues4,
+                isMeasure: true,
+                format: ProductSalesByDateData.DefaultFormat,
+                groupName: ProductSalesByDateData.DefaultGroupName,
+                type: ValueType.fromDescriptor({ numeric: true })
+            },
+            values: this.valuesSales3
+        };
+
+        if (withHighlights) {
+            column1.highlights = this.generateHightLightedValues(this.valuesSales1);
+            column2.highlights = this.generateHightLightedValues(this.valuesSales2);
+            column3.highlights = this.generateHightLightedValues(this.valuesSales3);
+            column4.highlights = this.generateHightLightedValues(this.valuesSales4);
+
+            switch(hightlightedIndex) {
+                case 2:
+                    column2.highlights = this.generateHightLightedValues(this.valuesSales2, hightlightedElementNumber);
+                    break;
+                case 3:
+                    column3.highlights = this.generateHightLightedValues(this.valuesSales3, hightlightedElementNumber);
+                    break;
+                case 4: 
+                    column4.highlights = this.generateHightLightedValues(this.valuesSales4, hightlightedElementNumber);
+                    break;
+                default:
+                    column1.highlights = this.generateHightLightedValues(this.valuesSales1, hightlightedElementNumber);
+            }
+        }
+
         return this.createCategoricalDataViewBuilder(
             categoriesColumn, [
-                {
-                    source: {
-                        displayName: ProductSalesByDateData.ColumnValues1,
-                        isMeasure: true,
-                        format: ProductSalesByDateData.DefaultFormat,
-                        groupName: ProductSalesByDateData.DefaultGroupName,
-                        type: ValueType.fromDescriptor({ numeric: true })
-                    },
-                    values: this.valuesSales1
-                },
-                {
-                    source: {
-                        displayName: ProductSalesByDateData.ColumnValues2,
-                        isMeasure: true,
-                        format: ProductSalesByDateData.DefaultFormat,
-                        groupName: ProductSalesByDateData.DefaultGroupName,
-                        type: ValueType.fromDescriptor({ numeric: true })
-                    },
-                    values: this.valuesSales1
-                },
-                {
-                    source: {
-                        displayName: ProductSalesByDateData.ColumnValues3,
-                        isMeasure: true,
-                        format: ProductSalesByDateData.DefaultFormat,
-                        groupName: ProductSalesByDateData.DefaultGroupName,
-                        type: ValueType.fromDescriptor({ numeric: true })
-                    },
-                    values: this.valuesSales2
-                },
-                {
-                    source: {
-                        displayName: ProductSalesByDateData.ColumnValues4,
-                        isMeasure: true,
-                        format: ProductSalesByDateData.DefaultFormat,
-                        groupName: ProductSalesByDateData.DefaultGroupName,
-                        type: ValueType.fromDescriptor({ numeric: true })
-                    },
-                    values: this.valuesSales3
-                }
+                column1,
+                column2,
+                column3,
+                column4
             ], columnNames).build();
     }
 }
