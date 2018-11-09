@@ -40,12 +40,12 @@ import { legendPosition } from "powerbi-visuals-utils-chartutils";
 import { LegendDataPoint } from "powerbi-visuals-utils-chartutils/lib/legend/legendInterfaces";
 
 // powerbi.extensibility.utils.test
-import { 
-    clickElement, 
-    createSelectionId, 
-    assertColorsMatch, 
-    createColorPalette, 
-    MockISelectionIdBuilder, 
+import {
+    clickElement,
+    createSelectionId,
+    assertColorsMatch,
+    createColorPalette,
+    MockISelectionIdBuilder,
     getRandomNumber
 } from "powerbi-visuals-utils-testutils";
 
@@ -640,27 +640,28 @@ describe("StreamGraph", () => {
 
     describe("highlight test", () => {
         const seriesCount: number = 4;
+        const seriesLenght: number = 50;
         let dataLabelsText: JQuery<any>[];
         let dataViewWithHighLighted: DataView;
         let highligtedSeriesNumber: number;
+        let hightlightedElementNumber: number;
 
         beforeEach(() => {
-            highligtedSeriesNumber = Math.ceil(getRandomNumber(1, seriesCount));
-            dataViewWithHighLighted = defaultDataViewBuilder.getDataView(undefined, true, true, highligtedSeriesNumber);
+            highligtedSeriesNumber = Math.ceil(getRandomNumber(0, seriesCount - 1));
+            hightlightedElementNumber = Math.ceil(getRandomNumber(0, seriesCount - 1));
+
+            dataViewWithHighLighted = defaultDataViewBuilder.getDataView(undefined, false, true, highligtedSeriesNumber, hightlightedElementNumber);
             dataViewWithHighLighted.metadata.objects = {
                 labels: {
                     show: true
                 }
             };
             visualBuilder.update(dataViewWithHighLighted);
-
             dataLabelsText = visualBuilder.dataLabelsText.toArray().map($);
         });
 
         it("should highligted elements labels count be similar to highlighted serie's previous elements count", (done) => {
             visualBuilder.updateRenderTimeout(dataViewWithHighLighted, () => {
-                const seriesLenght: number = 50;
-                const hightlightedElementNumber: number = Math.ceil(getRandomNumber(0, seriesLenght -1));
                 expect(dataLabelsText.length).toBeLessThan(seriesLenght);
                 expect(dataLabelsText.length).toBe(hightlightedElementNumber + 1);
                 done();
@@ -669,31 +670,20 @@ describe("StreamGraph", () => {
 
         it("should highligted elements labels has right names", (done) => {
             visualBuilder.updateRenderTimeout(dataViewWithHighLighted, () => {
-                let highlightedSeriesName: string;
-
-                switch (highligtedSeriesNumber) {
-                    case 2: 
-                        highlightedSeriesName = ProductSalesByDateData.ColumnValues2;
-                        break;
-                    case 3: 
-                        highlightedSeriesName = ProductSalesByDateData.ColumnValues3;
-                        break;
-                    case 4: 
-                        highlightedSeriesName = ProductSalesByDateData.ColumnValues4;
-                        break;
-                    default:
-                        highlightedSeriesName = ProductSalesByDateData.ColumnValues1;
-                }
+                dataLabelsText = visualBuilder.dataLabelsText.toArray().map($);
+                let highlightedSeriesName: string = ProductSalesByDateData.ColumnValues[highligtedSeriesNumber];
 
                 dataLabelsText.forEach((element: JQuery<any>, index: number) => {
                     const labelText: string = element.text();
                     const labelValue: number = Number(labelText.slice(-2));
-
+                    const expectedLastLabelValue: number = dataViewWithHighLighted.categorical.values[highligtedSeriesNumber].values[hightlightedElementNumber] as number;
+                    console.log(dataViewWithHighLighted.categorical.values[highligtedSeriesNumber].values[hightlightedElementNumber]);
+                    console.log(labelText);
                     expect(labelText.includes(highlightedSeriesName)).toBeTruthy;
                     if (index == dataLabelsText.length - 1) {
-                        expect(labelValue).toBe(0);
+                        expect(labelValue).toBe(expectedLastLabelValue);
                     } else {
-                        expect(labelValue).toBeGreaterThan(0);
+                        expect(labelValue).toBe(0);
                     }
                 });
                 done();

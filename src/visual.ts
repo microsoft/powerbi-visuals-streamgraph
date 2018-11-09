@@ -995,6 +995,7 @@ export class StreamGraph implements IVisual {
             stackedSeries.forEach((seriesItem: d3.Series<any, any>) => {
                 let filteredDataPoints: any[];
 
+
                 filteredDataPoints = seriesItem.filter((dataPoint: any) => {
                     return dataPoint && dataPoint[0] !== null && dataPoint[0] !== undefined;
                 }).map((dataPoint: any) => {
@@ -1015,12 +1016,13 @@ export class StreamGraph implements IVisual {
 
             const viewport: IViewport = {
                 height: height - (this.margin.top + this.data.yAxisFontHalfSize),
-                width: width - (this.margin.right + this.data.xAxisValueMaxTextHalfSize),
+                width: width - (this.margin.right + this.data.xAxisValueMaxTextHalfSize) - margin.left,
             };
 
             if (hasHighlights) {
                 const highlightedPointArray: StreamDataPoint[] = dataPointsArray.filter((d: any) => d.highlight && d.value != StreamGraph.DefaultValue);
-                const additionalPointsArray: StreamDataPoint[] = dataPointsArray.filter((d: any) => d.text === highlightedPointArray[0].text && d.x < highlightedPointArray[0].x);
+                debugger;
+                const additionalPointsArray: StreamDataPoint[] = dataPointsArray.filter((d: any) => highlightedPointArray[0] && d.text === highlightedPointArray[0].text && d.x < highlightedPointArray[0].x);
                 dataPointsArray = additionalPointsArray.concat(highlightedPointArray);
             }
 
