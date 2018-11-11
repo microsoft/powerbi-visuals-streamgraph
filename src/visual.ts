@@ -1020,8 +1020,7 @@ export class StreamGraph implements IVisual {
             };
 
             if (hasHighlights) {
-                const highlightedPointArray: StreamDataPoint[] = dataPointsArray.filter((d: any) => d.highlight && d.value != StreamGraph.DefaultValue);
-                debugger;
+                const highlightedPointArray: StreamDataPoint[] = dataPointsArray.filter((d: any) => d.highlight && d.value !== StreamGraph.DefaultValue);
                 const additionalPointsArray: StreamDataPoint[] = dataPointsArray.filter((d: any) => highlightedPointArray[0] && d.text === highlightedPointArray[0].text && d.x < highlightedPointArray[0].x);
                 dataPointsArray = additionalPointsArray.concat(highlightedPointArray);
             }

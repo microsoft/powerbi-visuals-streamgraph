@@ -53,14 +53,10 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
         new Date(2015, 5, 10));
 
     public valuesSales: [number[], number[], number[], number[]] = [
-        [0, 0, 16, 55, 4, 0, 8.6, 10],
-        [10, 12, 14, 22, 5, 0, 10, 25],
-        [10, 13, 18, 22, 0, 0, 15, 24],
-        [6, 3, 10, 9.3, 0, 0, 12, 26]
-        // getRandomNumbers(this.valuesDate.length, maxValue / 2, maxValue),
-        // getRandomNumbers(this.valuesDate.length, maxValue / 2, maxValue),
-        // getRandomNumbers(this.valuesDate.length, maxValue / 2, maxValue),
-        // getRandomNumbers(this.valuesDate.length, maxValue / 2, maxValue)
+        getRandomNumbers(this.valuesDate.length, -maxValue, maxValue),
+        getRandomNumbers(this.valuesDate.length, -maxValue, maxValue),
+        getRandomNumbers(this.valuesDate.length, -maxValue, maxValue),
+        getRandomNumbers(this.valuesDate.length, -maxValue, maxValue)
     ];
 
     public groups: string[] = [
@@ -76,7 +72,7 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
         }
         if (!hightlightedElementNumber)
             return array;
-        if (hightlightedElementNumber >= length || hightlightedElementNumber < 0) {
+        if (hightlightedElementNumber >= lenght || hightlightedElementNumber < 0) {
             array[0] = valuesArray[0];
         } else {
             array[hightlightedElementNumber] = valuesArray[hightlightedElementNumber];
@@ -144,14 +140,11 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
         }];
 
         if (withHighlights) {
-            categoriesColumn.values = <any>getRandomUniqueSortedDates(
-                8,
-                new Date(2014, 0, 1),
-                new Date(2015, 5, 10));
             columns[hightlightedIndex].highlights = this.generateHightLightedValues(this.valuesSales[hightlightedIndex], hightlightedElementNumber);
             columns[hightlightedIndex].source.groupName = ProductSalesByDateData.GroupNames[hightlightedIndex];
+
             for (let i = 0; i < columns.length; i++) {
-                if (i != hightlightedIndex) {
+                if (i !== hightlightedIndex) {
                     columns[i].highlights = this.generateHightLightedValues(this.valuesSales[i]);
                     columns[i].source.groupName = ProductSalesByDateData.GroupNames[i];
                 }
