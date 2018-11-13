@@ -666,6 +666,7 @@ describe("StreamGraph", () => {
                 expect(dataLabelsText.length).toBeLessThan(seriesLenght);
 
                 // depends on viewport and label width
+                expect(dataLabelsText.length).toBeGreaterThanOrEqual(1);
                 expect(dataLabelsText.length).toBeLessThanOrEqual(hightlightedElementNumber + 1);
                 done();
             });

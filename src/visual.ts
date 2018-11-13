@@ -338,7 +338,7 @@ export class StreamGraph implements IVisual {
                         : StreamGraph.DefaultValue,
                     text: label,
                     labelFontSize: fontSizeInPx,
-                    highlight: hasHighlights && values[valueIndex].highlights[dataPointValueIndex] !== null
+                    highlight: hasHighlights && values[valueIndex].highlights && values[valueIndex].highlights[dataPointValueIndex] !== null
                 };
 
                 series[valueIndex].dataPoints.push(streamDataPoint);
@@ -1020,8 +1020,8 @@ export class StreamGraph implements IVisual {
             };
 
             if (hasHighlights) {
-                const highlightedPointArray: StreamDataPoint[] = dataPointsArray.filter((d: any) => d.highlight && d.value !== StreamGraph.DefaultValue);
-                const additionalPointsArray: StreamDataPoint[] = dataPointsArray.filter((d: any) => highlightedPointArray[0] && d.text === highlightedPointArray[0].text && d.x < highlightedPointArray[0].x);
+                const highlightedPointArray: StreamDataPoint[] = dataPointsArray.filter((d: StreamDataPoint) => d.highlight && d.value !== StreamGraph.DefaultValue);
+                const additionalPointsArray: StreamDataPoint[] = dataPointsArray.filter((d: StreamDataPoint) => highlightedPointArray[0] && d.text === highlightedPointArray[0].text && d.x < highlightedPointArray[0].x);
                 dataPointsArray = additionalPointsArray.concat(highlightedPointArray);
             }
 
