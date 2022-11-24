@@ -656,6 +656,22 @@ export class StreamGraph implements IVisual {
 
     private static outerPadding: number = 0;
 
+    private static wordBreak(
+        text: Selection<any, any, any, any>,
+        axisProperties: IAxisProperties,
+        maxHeight: number): void {
+
+        text.each(function () {
+            let allowedLength: number = axisProperties.xLabelMaxWidth;
+
+            textMeasurementService.wordBreak(
+                this,
+                allowedLength,
+                axisProperties.willLabelsWordBreak
+                    ? maxHeight
+                    : 0);
+        });
+    }
     private calculateAxes() {
         let showAxisTitle: boolean = this.data.settings.categoryAxis.showAxisTitle,
             categoryAxisLabelColor: string = this.data.settings.categoryAxis.labelColor,
@@ -680,11 +696,11 @@ export class StreamGraph implements IVisual {
         if (xShow) {
             const axisOptions: CreateAxisOptions = {
                 pixelSpan: effectiveWidth,
-                dataDomain: [this.data.xMinValue, this.data.xMaxValue],
+                dataDomain: d3.range(this.data.xMaxValue + 1),
                 metaDataColumn: this.data.metadata,
                 outerPadding: StreamGraph.outerPadding,
                 formatString: null,
-                isScalar: true,
+                isScalar: false,
                 isVertical: false,
                 // todo fix types issue
                 getValueFn: (value, dataType): any => {
@@ -712,7 +728,9 @@ export class StreamGraph implements IVisual {
                 StreamGraph.AxisTextNodeDYForAngel0
             ];
 
-            const xAxisTextNodes: Selection<d3.BaseType, any, any, any> = this.axisX.selectAll("text");
+            const xAxisTextNodes: Selection<any, any, any, any> = this.axisX.selectAll("text");
+            
+            xAxisTextNodes.call(StreamGraph.wordBreak, this.xAxisProperties, StreamGraph.XAxisLabelSize);
 
             this.setTextNodesPosition.apply(this, [xAxisTextNodes].concat(transformParams));
         }
