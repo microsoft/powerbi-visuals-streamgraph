@@ -1,4 +1,5 @@
 {
+    "privileges": [],
     "dataRoles": [
         {
             "name": "Category",
@@ -71,183 +72,96 @@
         }
     ],
     "objects": {
-        "general": {
-            "displayName": "General",
-            "displayNameKey": "Visual_General",
+        "enableWiggle": {
             "properties": {
                 "wiggle": {
                     "type": {
                         "bool": true
+                    }
+                }
+            }
+        },
+        "enableCategoryAxis": {
+            "properties": {
+                "show": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showAxisTitle": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelColor": {
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "fontSize": {
+                    "type": {
+                        "integer": true
+                    }
+                }
+            }
+        },
+        "enableValueAxis": {
+            "properties": {
+                "show": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showAxisTitle": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelColor": {
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "fontSize": {
+                    "type": {
+                        "integer": true
+                    }
+                }
+            }
+        },
+        "enableLegend": {
+            "properties": {
+                "show": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showAxisTitle": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "legendName": {
+                    "type": {
+                        "text": true
                     },
-                    "displayName": "Wiggle",
-                    "displayNameKey": "Visual_Wiggle"
-                }
-            }
-        },
-        "categoryAxis": {
-            "displayName": "X-Axis",
-            "displayNameKey": "Visual_XAxis",
-            "properties": {
-                "show": {
-                    "displayName": "show",
-                    "displayNameKey": "Visual_Show",
-                    "type": {
-                        "bool": true
-                    }
+                    "suppressFormatPainterCopy": true
                 },
-                "rotateLabels": {
-                    "displayName": "Rotate labels",
-                    "displayNameKey": "Visual_LabelsRotate",
-                    "type": {
-                        "bool": true
-                    }
-                },
-                "showAxisTitle": {
-                    "displayName": "Title",
-                    "displayNameKey": "Visual_Title",
-                    "type": {
-                        "bool": true
-                    }
-                },
-                "labelColor": {
-                    "displayName": "Color",
-                    "displayNameKey": "Visual_LabelsFill",
-                    "type": {
-                        "fill": {
-                            "solid": {
-                                "color": true
-                            }
-                        }
-                    }
-                },
-                "fontSize": {
-                    "displayName": "Text Size",
-                    "displayNameKey": "Visual_TextSize",
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
-                    }
-                }
-            }
-        },
-        "valueAxis": {
-            "displayName": "Y-Axis",
-            "displayNameKey": "Visual_YAxis",
-            "properties": {
-                "show": {
-                    "displayName": "show",
-                    "displayNameKey": "Visual_Show",
-                    "type": {
-                        "bool": true
-                    }
-                },
-                "showAxisTitle": {
-                    "displayName": "Title",
-                    "displayNameKey": "Visual_Title",
-                    "type": {
-                        "bool": true
-                    }
-                },
-                "labelColor": {
-                    "displayName": "Color",
-                    "displayNameKey": "Visual_LabelsFill",
-                    "type": {
-                        "fill": {
-                            "solid": {
-                                "color": true
-                            }
-                        }
-                    }
-                },
-                "fontSize": {
-                    "displayName": "Text Size",
-                    "displayNameKey": "Visual_TextSize",
-                    "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
-                    }
-                }
-            }
-        },
-        "legend": {
-            "displayName": "Legend",
-            "displayNameKey": "Visual_Legend",
-            "properties": {
-                "show": {
-                    "displayName": "show",
-                    "displayNameKey": "Visual_Show",
-                    "type": {
-                        "bool": true
-                    }
-                },
-                "position": {
-                    "displayName": "Position",
-                    "displayNameKey": "Visual_LegendPosition",
-                    "type": {
-                        "enumeration": [
-                            {
-                                "value": "Top",
-                                "displayName": "Top",
-                                "displayNameKey": "Visual_LegendPosition_Top"
-                            },
-                            {
-                                "value": "Bottom",
-                                "displayName": "Bottom",
-                                "displayNameKey": "Visual_LegendPosition_Bottom"
-                            },
-                            {
-                                "value": "Left",
-                                "displayName": "Left",
-                                "displayNameKey": "Visual_LegendPosition_Left"
-                            },
-                            {
-                                "value": "Right",
-                                "displayName": "Right",
-                                "displayNameKey": "Visual_LegendPosition_Right"
-                            },
-                            {
-                                "value": "TopCenter",
-                                "displayName": "Top Center",
-                                "displayNameKey": "Visual_LegendPosition_TopCenter"
-                            },
-                            {
-                                "value": "BottomCenter",
-                                "displayName": "Bottom Center",
-                                "displayNameKey": "Visual_LegendPosition_BottomCenter"
-                            },
-                            {
-                                "value": "LeftCenter",
-                                "displayName": "Left Center",
-                                "displayNameKey": "Visual_LegendPosition_LeftCenter"
-                            },
-                            {
-                                "value": "RightCenter",
-                                "displayName": "Right center",
-                                "displayNameKey": "Visual_LegendPosition_RightCenter"
-                            }
-                        ]
-                    }
-                },
-                "showTitle": {
-                    "displayName": "Title",
-                    "displayNameKey": "Visual_Title",
-                    "type": {
-                        "bool": true
-                    }
-                },
-                "titleText": {
-                    "displayName": "Legend Name",
-                    "displayNameKey": "Visual_LegendName",
+                "positionDropDown": {
                     "type": {
                         "text": true
                     },
                     "suppressFormatPainterCopy": true
                 },
                 "labelColor": {
-                    "displayName": "Color",
-                    "displayNameKey": "Visual_LegendTitleColor",
                     "type": {
                         "fill": {
                             "solid": {
@@ -257,52 +171,36 @@
                     }
                 },
                 "fontSize": {
-                    "displayName": "Text Size",
-                    "displayNameKey": "Visual_TextSize",
                     "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
+                        "integer": true
                     }
                 }
             }
         },
-        "labels": {
-            "displayName": "Data Labels",
-            "displayNameKey": "Visual_DataPointsLabels",
+        "enableDataLabels": {
             "properties": {
                 "show": {
-                    "displayName": "Show",
-                    "displayNameKey": "Visual_Show",
                     "type": {
                         "bool": true
                     }
                 },
-              "color": {
-                "displayName": "Color",
-                "displayNameKey": "Visual_LabelsFill",
-                "type": {
-                  "fill": {
-                    "solid": {
-                      "color": true
-                    }
-                  }
-                }
-              },
-              "showValue": {
-                    "displayName": "Show Values",
-                    "displayNameKey": "Visual_ShowValues",
+                "showValues": {
                     "type": {
                         "bool": true
+                    }
+                },
+                "labelColor": {
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
                     }
                 },
                 "fontSize": {
-                    "displayName": "Text Size",
-                    "displayNameKey": "Visual_TextSize",
                     "type": {
-                        "formatting": {
-                            "fontSize": true
-                        }
+                        "integer": true
                     }
                 }
             }

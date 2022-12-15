@@ -28,17 +28,17 @@
 import Selection = d3.Selection;
 
 // powerbi.extensibility.utils.interactivity
-import { interactivityService } from "powerbi-visuals-utils-interactivityutils";
-import IInteractiveBehavior = interactivityService.IInteractiveBehavior;
-import ISelectionHandler = interactivityService.ISelectionHandler;
-import IInteractivityService = interactivityService.IInteractivityService;
+import { interactivityBaseService } from "powerbi-visuals-utils-interactivityutils";
+import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
+import ISelectionHandler = interactivityBaseService.ISelectionHandler;
+import IInteractivityService = interactivityBaseService.IInteractivityService;
 import { StreamGraphSeries } from "./dataInterfaces";
 import { getFillOpacity } from "./utils";
 
-export interface BehaviorOptions {
+export interface BehaviorOptions extends interactivityBaseService.IBehaviorOptions<StreamGraphSeries>{
     selection: Selection<d3.BaseType, StreamGraphSeries, any, any>;
     clearCatcher: Selection<d3.BaseType, any, any, any>;
-    interactivityService: IInteractivityService;
+    interactivityService: IInteractivityService<any>;
     series: StreamGraphSeries[];
 }
 
@@ -47,8 +47,11 @@ const getEvent = () => require("d3-selection").event;
 export class StreamGraphBehavior implements IInteractiveBehavior {
     private selection: Selection<d3.BaseType, StreamGraphSeries, any, any>;
     private clearCatcher: Selection<d3.BaseType, any, any, any>;
-    private interactivityService: IInteractivityService;
+    private interactivityService: IInteractivityService<any>;
     private series: any = null;
+
+    protected options: BehaviorOptions;
+    protected selectionHandler: ISelectionHandler;
 
     public bindEvents(
         options: BehaviorOptions,
@@ -57,13 +60,28 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
         this.selection = options.selection;
         this.clearCatcher = options.clearCatcher;
         this.interactivityService = options.interactivityService;
+        this.selectionHandler = selectionHandler;
 
         this.series = options.series;
 
-        this.selection.on("click", (series: StreamGraphSeries) => {
-            selectionHandler.handleSelection(
-                this.series[(<any>series).index],
-                (getEvent() as MouseEvent).ctrlKey);
+        this.selection.on("contextmenu", (datum) => {
+            const event: MouseEvent = (getEvent() as MouseEvent) || window.event as MouseEvent;
+            if (event) {
+                this.selectionHandler.handleContextMenu(
+                    datum,
+                    {
+                        x: event.clientX,
+                        y: event.clientY
+                    });
+                event.preventDefault();
+            }
+        });
+
+        this.selection.on("click", (datum) => {
+            const mouseEvent: MouseEvent = getEvent() as MouseEvent || window.event as MouseEvent;
+            mouseEvent && this.selectionHandler.handleSelection(
+                this.series[(<any>datum).target.__data__.index],
+                mouseEvent.ctrlKey);
         });
 
         this.clearCatcher.on("click", () => {

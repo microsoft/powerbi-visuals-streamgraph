@@ -40,8 +40,6 @@ import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 import DataViewValueColumns = powerbi.DataViewValueColumns;
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 import DataView = powerbi.DataView;
-import EnumerateVisualObjectInstancesOptions = powerbi.EnumerateVisualObjectInstancesOptions;
-import VisualObjectInstanceEnumeration = powerbi.VisualObjectInstanceEnumeration;
 
 // powerbi.extensibility
 import ISelectionId = powerbi.extensibility.ISelectionId;
@@ -55,7 +53,7 @@ import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 
 import { DefaultOpacity } from "./utils";
-import { VisualSettings, LabelsSettings, LegendSettings, BaseAxisSettings } from "./settings";
+import { StreamGraphSettingsModel, EnableValueAxisCardSettings, EnableCategoryAxisCardSettings, EnableDataLabelsCardSettings, EnableLegendCardSettings } from "./streamGraphSettingsModel";
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
 import { createTooltipInfo } from "./tooltipBuilder";
 import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue } from "./dataInterfaces";
@@ -71,16 +69,15 @@ import createClassAndSelector = CssConstants.createClassAndSelector;
 import { ColorHelper } from "powerbi-visuals-utils-colorutils";
 
 // powerbi.extensibility.utils.interactivity
-import { interactivityService } from "powerbi-visuals-utils-interactivityutils";
-import appendClearCatcher = interactivityService.appendClearCatcher;
-import IInteractivityService = interactivityService.IInteractivityService;
-import IInteractiveBehavior = interactivityService.IInteractiveBehavior;
-import createInteractivityService = interactivityService.createInteractivityService;
+import { interactivitySelectionService, interactivityBaseService } from "powerbi-visuals-utils-interactivityutils";
+import appendClearCatcher = interactivityBaseService.appendClearCatcher;
+import IInteractivityService = interactivityBaseService.IInteractivityService;
+import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
+import createInteractivitySelectionService = interactivitySelectionService.createInteractivitySelectionService;
 
 // powerbi.extensibility.utils.chart
 import { legendInterfaces, axis, legend, dataLabelUtils, dataLabelInterfaces, axisInterfaces } from "powerbi-visuals-utils-chartutils";
 import ILegend = legendInterfaces.ILegend;
-import LegendIcon = legendInterfaces.LegendIcon;
 import LegendData = legendInterfaces.LegendData;
 import createLegend = legend.createLegend;
 import LegendPosition = legendInterfaces.LegendPosition;
@@ -103,7 +100,10 @@ import { pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutil
 import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
 
 // powerbi.extensibility.utils.tooltip
-import { TooltipEventArgs, ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
+import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
+
+// powerbi.extensibility.utils.formattingModel
+import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
 
 const ColumnDisplayName: string = "Visual_Column";
 
@@ -182,7 +182,7 @@ export class StreamGraph implements IVisual {
     private viewport: IViewport;
     private colorPalette: ISandboxExtendedColorPalette;
     private behavior: IInteractiveBehavior;
-    private interactivityService: IInteractivityService;
+    private interactivityService: IInteractivityService<any>;
 
     private tooltipServiceWrapper: ITooltipServiceWrapper;
     private svg: Selection<d3.BaseType, any, any, any>;
@@ -192,6 +192,9 @@ export class StreamGraph implements IVisual {
     private localizationManager: ILocalizationManager;
 
     private YMaxAdjustment: number = 1.5;
+
+    private formattingSettingsService: FormattingSettingsService;
+    private formattingSettings: StreamGraphSettingsModel;
 
     constructor(options: VisualConstructorOptions) {
         this.init(options);
@@ -212,11 +215,12 @@ export class StreamGraph implements IVisual {
         return !isNaN(value as number) && isFinite(value as number) && value !== null;
     }
 
-    public static converter(
+    public converter(
         dataView: DataView,
         colorPalette: IColorPalette,
-        interactivityService: IInteractivityService,
-        visualHost: IVisualHost
+        interactivityService: IInteractivityService<any>,
+        visualHost: IVisualHost,
+        dataViews: DataView[]
     ): StreamData {
 
         if (!dataView
@@ -240,7 +244,7 @@ export class StreamGraph implements IVisual {
                 dataPoints: [],
                 title: values.source
                     ? values.source.displayName
-                    : LegendSettings.DefaultTitleText,
+                    : EnableLegendCardSettings.DefaultTitleText,
             },
             value: number = 0,
             valuesFormatter: IValueFormatter,
@@ -254,9 +258,9 @@ export class StreamGraph implements IVisual {
 
         const hasHighlights: boolean = !!(values.length > 0 && values[0].highlights);
 
-        const settings: VisualSettings = StreamGraph.parseSettings(dataView, colorHelper);
-
-        const fontSizeInPx: string = PixelConverter.fromPoint(settings.labels.fontSize);
+        this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(StreamGraphSettingsModel, dataViews);
+        const formattingSettings = this.formattingSettings;
+        const fontSizeInPx: string = PixelConverter.fromPoint(formattingSettings.enableDataLabelsCardSettings.fontSize.value);
 
         const stackValues: StackValue[] = [];
 
@@ -304,7 +308,6 @@ export class StreamGraph implements IVisual {
                     color,
                     label,
                     identity,
-                    icon: LegendIcon.Box,
                     selected: false
                 });
             }
@@ -403,20 +406,20 @@ export class StreamGraph implements IVisual {
         let textProperties: TextProperties = {
             text: xMaxValue.toString(),
             fontFamily: "sans-serif",
-            fontSize: PixelConverter.toString(settings.categoryAxis.fontSize)
+            fontSize: PixelConverter.toString(formattingSettings.enableCategoryAxisCardSettings.fontSize.value)
         };
         let xAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textProperties);
         let xAxisValueMaxTextHalfSize: number = xAxisValueMaxTextSize / 2;
         let textPropertiesY: TextProperties = {
             text: yMaxValue.toString(),
             fontFamily: "sans-serif",
-            fontSize: PixelConverter.toString(settings.valueAxis.fontSize)
+            fontSize: PixelConverter.toString(formattingSettings.enableValueAxisCardSettings.fontSize.value)
         };
         let yAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textPropertiesY);
         let yAxisValueMaxTextHalfSize: number = yAxisValueMaxTextSize / 2;
-        let yAxisFontSize: number = +settings.valueAxis.fontSize;
+        let yAxisFontSize: number = +formattingSettings.enableValueAxisCardSettings.fontSize.value;
         let yAxisFontHalfSize: number = yAxisFontSize / 2;
-        let xAxisFontSize: number = +settings.categoryAxis.fontSize;
+        let xAxisFontSize: number = +formattingSettings.enableCategoryAxisCardSettings.fontSize.value;
         let xAxisFontHalfSize: number = xAxisFontSize / 2;
 
         /* Generate stack values for d3.stack V5 */
@@ -426,7 +429,7 @@ export class StreamGraph implements IVisual {
             .keys(allLabels)
             .offset(d3.stackOffsetNone);
 
-        if (settings.general.wiggle) {
+        if (formattingSettings.enableWiggle.wiggle.value) {
             stack.offset(d3.stackOffsetWiggle);
         }
 
@@ -437,7 +440,7 @@ export class StreamGraph implements IVisual {
             series,
             stackedSeries,
             metadata,
-            settings,
+            formattingSettings,
             legendData,
             categoriesText,
             categoryFormatter,
@@ -457,46 +460,6 @@ export class StreamGraph implements IVisual {
         };
     }
 
-    private static parseSettings(dataView: DataView, colorHelper: ColorHelper): VisualSettings {
-        const settings: VisualSettings = VisualSettings.parse<VisualSettings>(dataView);
-
-        if (dataView
-            && dataView.categorical
-            && dataView.categorical.values
-            && !settings.legend.titleText
-        ) {
-
-            const valuesSource: DataViewMetadataColumn = dataView.categorical.values.source,
-                titleTextDefault: string = valuesSource
-                    ? valuesSource.displayName
-                    : settings.legend.titleText;
-
-            settings.legend.titleText = titleTextDefault; // Force a value (shouldn't be empty with show=true)
-        }
-
-        settings.categoryAxis.labelColor = colorHelper.getHighContrastColor(
-            "foreground",
-            settings.categoryAxis.labelColor,
-        );
-
-        settings.valueAxis.labelColor = colorHelper.getHighContrastColor(
-            "foreground",
-            settings.valueAxis.labelColor,
-        );
-
-        settings.legend.labelColor = colorHelper.getHighContrastColor(
-            "foreground",
-            settings.legend.labelColor,
-        );
-
-        settings.labels.color = colorHelper.getHighContrastColor(
-            "foreground",
-            settings.labels.color,
-        );
-
-        return settings;
-    }
-
     public init(options: VisualConstructorOptions): void {
         d3.select("html").style(
             "-webkit-tap-highlight-color", "transparent" // Turns off the blue highlighting at mobile browsers
@@ -505,6 +468,7 @@ export class StreamGraph implements IVisual {
         this.visualHost = options.host;
         this.colorPalette = options.host.colorPalette;
         this.localizationManager = options.host.createLocalizationManager();
+        this.formattingSettingsService = new FormattingSettingsService(this.localizationManager);
 
         const element: HTMLElement = options.element;
 
@@ -538,7 +502,7 @@ export class StreamGraph implements IVisual {
 
         this.behavior = new StreamGraphBehavior();
 
-        this.interactivityService = createInteractivityService(this.visualHost);
+        this.interactivityService = createInteractivitySelectionService(this.visualHost);
 
         this.legend = createLegend(
             element,
@@ -561,14 +525,14 @@ export class StreamGraph implements IVisual {
         this.viewport = StreamGraph.getViewport(options.viewport);
         this.dataView = options.dataViews[0];
 
-        if (options.type !== VisualUpdateType.Resize && options.type !== VisualUpdateType.ResizeEnd) {
-            this.data = StreamGraph.converter(
-                this.dataView,
-                this.colorPalette,
-                this.interactivityService,
-                this.visualHost
-            );
-        }
+        
+        this.data = this.converter(
+            this.dataView,
+            this.colorPalette,
+            this.interactivityService,
+            this.visualHost,
+            options.dataViews
+        );
 
         if (!this.data
             || !this.data.series
@@ -598,28 +562,31 @@ export class StreamGraph implements IVisual {
 
         this.tooltipServiceWrapper.addTooltip(
             selection,
-            (tooltipEvent: TooltipEventArgs<d3.Series<any, any>>) => {
-                const index: number = tooltipEvent.data.index;
-                const tooltipInfo: VisualTooltipDataItem[] = this.data.series[index].tooltipInfo;
-
-                return tooltipInfo.length > 0
-                    ? tooltipInfo
-                    : null;
+            (tooltipEvent: any) => {
+                const index: number = tooltipEvent.index;
+                return this.data.series[index].tooltipInfo;
+            },
+            (tooltipEvent: any) => {
+                const index: number = tooltipEvent.index;
+                return this.data.series[index].identity;
             });
 
-        const interactivityService: IInteractivityService = this.interactivityService;
+        const interactivityService: IInteractivityService<StreamGraphSeries> = this.interactivityService;
 
         if (interactivityService) {
             const behaviorOptions: BehaviorOptions = {
                 selection,
                 interactivityService,
+                behavior: this.behavior,
+                series: this.data.series,
                 clearCatcher: this.clearCatcher,
-                series: this.data.series
+                dataPoints: this.data.series,
+                interactivityServiceOptions: {
+                    overrideSelectionFromData: true
+                }
             };
 
             interactivityService.bind(
-                this.data.series,
-                this.behavior,
                 behaviorOptions
             );
 
@@ -673,12 +640,12 @@ export class StreamGraph implements IVisual {
         });
     }
     private calculateAxes() {
-        let showAxisTitle: boolean = this.data.settings.categoryAxis.showAxisTitle,
-            categoryAxisLabelColor: string = this.data.settings.categoryAxis.labelColor,
-            xShow: boolean = this.data.settings.categoryAxis.show,
+        let showAxisTitle: boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.showAxisTitle.value,
+            categoryAxisLabelColor: string = this.data.formattingSettings.enableCategoryAxisCardSettings.labelColor.value.value,
+            xShow: boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.show.value,
 
-            valueAxisLabelColor: string = this.data.settings.valueAxis.labelColor,
-            yShow: boolean = this.data.settings.valueAxis.show;
+            valueAxisLabelColor: string = this.data.formattingSettings.enableValueAxisCardSettings.labelColor.value.value,
+            yShow: boolean = this.data.formattingSettings.enableValueAxisCardSettings.show.value;
 
         this.viewport.height -= StreamGraph.TickHeight + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0);
         let effectiveWidth: number = Math.max(0, this.viewport.width - this.margin.left - (this.margin.right + this.data.xAxisValueMaxTextHalfSize));
@@ -720,7 +687,7 @@ export class StreamGraph implements IVisual {
             this.axisX
                 .style("fill", categoryAxisLabelColor)
                 .style("stroke", categoryAxisLabelColor)
-                .style("font-size", this.data.settings.categoryAxis.fontSize);
+                .style("font-size", this.data.formattingSettings.enableCategoryAxisCardSettings.fontSize.value);
 
             let transformParams: any[] = [
                 StreamGraph.AxisTextNodeTextAnchorForAngel0,
@@ -753,7 +720,7 @@ export class StreamGraph implements IVisual {
             this.axisY
                 .style("fill", valueAxisLabelColor)
                 .style("stroke", valueAxisLabelColor)
-                .style("font-size", this.data.settings.valueAxis.fontSize);
+                .style("font-size", this.data.formattingSettings.enableValueAxisCardSettings.fontSize.value);
         }
 
         this.renderXAxisLabels();
@@ -771,17 +738,17 @@ export class StreamGraph implements IVisual {
         this.axes
             .selectAll(StreamGraph.YAxisLabelSelector.selectorName)
             .remove();
-        const valueAxisSettings: BaseAxisSettings = this.data.settings.valueAxis;
-        this.margin.left = valueAxisSettings.show
+        const valueAxisSettings: EnableValueAxisCardSettings = this.data.formattingSettings.enableValueAxisCardSettings;
+        this.margin.left = valueAxisSettings.show.value
             ? StreamGraph.YAxisOnSize + this.data.yAxisValueMaxTextSize
             : StreamGraph.YAxisOffSize;
 
-        if (valueAxisSettings.showAxisTitle) {
+        if (valueAxisSettings.showAxisTitle.value) {
             this.margin.left += StreamGraph.YAxisLabelSize;
 
-            const categoryAxisSettings: BaseAxisSettings = this.data.settings.categoryAxis,
-                isXAxisOn: boolean = categoryAxisSettings.show,
-                isXTitleOn: boolean = categoryAxisSettings.showAxisTitle,
+            const categoryAxisSettings: EnableCategoryAxisCardSettings = this.data.formattingSettings.enableCategoryAxisCardSettings,
+                isXAxisOn: boolean = categoryAxisSettings.show.value,
+                isXTitleOn: boolean = categoryAxisSettings.showAxisTitle.value,
                 marginTop: number = (this.margin.top + this.data.yAxisFontHalfSize),
                 height: number = this.viewport.height
                     - marginTop
@@ -805,7 +772,7 @@ export class StreamGraph implements IVisual {
                 .style("font-style", textSettings.fontStyle)
                 .style("font-weight", textSettings.fontWeight)
                 .attr("transform", StreamGraph.YAxisLabelAngle)
-                .attr("fill", valueAxisSettings.labelColor)
+                .attr("fill", valueAxisSettings.labelColor.value.value)
                 .attr("x", -(marginTop + (height / StreamGraph.AxisLabelMiddle)))
                 .attr("y", PixelConverter.fromPoint(-(this.margin.left - StreamGraph.YAxisLabelDy)))
                 .classed(StreamGraph.YAxisLabelSelector.className, true)
@@ -851,20 +818,20 @@ export class StreamGraph implements IVisual {
             .selectAll(StreamGraph.XAxisLabelSelector.selectorName)
             .remove();
 
-        const categoryAxisSettings: BaseAxisSettings = this.data.settings.categoryAxis;
-        this.margin.bottom = categoryAxisSettings.show
-            ? StreamGraph.XAxisOnSize + parseInt(this.data.settings.categoryAxis.fontSize.toString())
+        const categoryAxisSettings: EnableCategoryAxisCardSettings = this.data.formattingSettings.enableCategoryAxisCardSettings;
+        this.margin.bottom = categoryAxisSettings.show.value
+            ? StreamGraph.XAxisOnSize + parseInt(this.data.formattingSettings.enableCategoryAxisCardSettings.fontSize.value.toString())
             : StreamGraph.XAxisOffSize;
 
-        if (!categoryAxisSettings.showAxisTitle
+        if (!categoryAxisSettings.showAxisTitle.value
             || !this.dataView.categorical.categories[0]
             || !this.dataView.categorical.categories[0].source) {
             return;
         }
 
-        const valueAxisSettings: BaseAxisSettings = this.data.settings.valueAxis,
-            isYAxisOn: boolean = valueAxisSettings.show,
-            isYTitleOn: boolean = valueAxisSettings.showAxisTitle,
+        const valueAxisSettings: EnableValueAxisCardSettings = this.data.formattingSettings.enableValueAxisCardSettings,
+            isYAxisOn: boolean = valueAxisSettings.show.value,
+            isYTitleOn: boolean = valueAxisSettings.showAxisTitle.value,
             leftMargin: number = (isYAxisOn
                 ? StreamGraph.YAxisOnSize
                 : StreamGraph.YAxisOffSize)
@@ -887,7 +854,7 @@ export class StreamGraph implements IVisual {
             .attr("transform", translate(
                 leftMargin + (width / StreamGraph.AxisLabelMiddle),
                 height))
-            .attr("fill", categoryAxisSettings.labelColor)
+            .attr("fill", categoryAxisSettings.labelColor.value.value)
             .attr("dy", StreamGraph.XAxisLabelDy)
             .classed(StreamGraph.XAxisLabelSelector.className, true)
             .text(xAxisText);
@@ -901,13 +868,13 @@ export class StreamGraph implements IVisual {
     private static getStreamGraphLabelLayout(
         xScale: LinearScale<number, number>,
         yScale: LinearScale<number, number>,
-        labelsSettings: LabelsSettings
+        enableDataLabelsCardSettings: EnableDataLabelsCardSettings
     ): ILabelLayout {
 
-        const fontSize: string = PixelConverter.fromPoint(labelsSettings.fontSize);
+        const fontSize: string = PixelConverter.fromPoint(enableDataLabelsCardSettings.fontSize.value);
 
         return {
-            labelText: (d) => d.text + (labelsSettings.showValue ? " " + d.value : ""),
+            labelText: (d) => d.text + (enableDataLabelsCardSettings.showValues.value ? " " + d.value : ""),
             labelLayout: {
                 x: (d) => xScale(d.x),
                 y: (d) => yScale(d.y0)
@@ -916,7 +883,7 @@ export class StreamGraph implements IVisual {
                 return d != null && d.text != null;
             },
             style: {
-                "fill": labelsSettings.color,
+                "fill": enableDataLabelsCardSettings.labelColor.value.value,
                 "font-size": fontSize,
             },
         };
@@ -931,19 +898,19 @@ export class StreamGraph implements IVisual {
 
         const { width, height } = this.viewport;
 
-        this.margin.left = this.data.settings.valueAxis.show
+        this.margin.left = this.data.formattingSettings.enableValueAxisCardSettings.show.value
             ? StreamGraph.YAxisOnSize + this.data.yAxisValueMaxTextSize
             : StreamGraph.YAxisOffSize;
 
-        if (this.data.settings.valueAxis.showAxisTitle) {
+        if (this.data.formattingSettings.enableValueAxisCardSettings.showAxisTitle.value) {
             this.margin.left += StreamGraph.YAxisLabelSize;
         }
 
-        this.margin.bottom = this.data.settings.categoryAxis.show
+        this.margin.bottom = this.data.formattingSettings.enableCategoryAxisCardSettings.show.value
             ? StreamGraph.XAxisOnSize + this.data.xAxisFontSize
             : StreamGraph.XAxisOffSize;
 
-        if (this.data.settings.categoryAxis.showAxisTitle) {
+        if (this.data.formattingSettings.enableCategoryAxisCardSettings.showAxisTitle.value) {
             this.margin.bottom += StreamGraph.XAxisLabelSize;
         }
 
@@ -998,7 +965,7 @@ export class StreamGraph implements IVisual {
             .exit()
             .remove();
 
-        if (this.data.settings.labels.show) {
+        if (this.data.formattingSettings.enableDataLabelsCardSettings.show.value) {
             const labelsXScale: LinearScale<number, number> = d3.scaleLinear()
                 .domain([0, series[0].dataPoints.length - 1])
                 .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxTextHalfSize]);
@@ -1006,7 +973,7 @@ export class StreamGraph implements IVisual {
             const layout: ILabelLayout = StreamGraph.getStreamGraphLabelLayout(
                 labelsXScale,
                 yScale,
-                this.data.settings.labels);
+                this.data.formattingSettings.enableDataLabelsCardSettings);
 
             // Merge all points into a single array
             let dataPointsArray: StreamDataPoint[] = [];
@@ -1071,13 +1038,13 @@ export class StreamGraph implements IVisual {
     }
 
     private renderLegend(streamGraphData: StreamData): void {
-        const legendSettings: LegendSettings = streamGraphData.settings.legend;
+        const enableLegendCardSettings: EnableLegendCardSettings = streamGraphData.formattingSettings.enableLegendCardSettings;
 
-        const title: string = legendSettings.showTitle
-            ? legendSettings.titleText || streamGraphData.legendData.title
+        const title: string = enableLegendCardSettings.showAxisTitle.value
+            ? enableLegendCardSettings.legendName.value || streamGraphData.legendData.title
             : undefined;
 
-        const dataPoints: LegendDataPoint[] = legendSettings.show
+        const dataPoints: LegendDataPoint[] = enableLegendCardSettings.show.value
             ? streamGraphData.legendData.dataPoints
             : [];
 
@@ -1085,12 +1052,11 @@ export class StreamGraph implements IVisual {
             ...streamGraphData.legendData,
             title,
             dataPoints,
-            fontSize: legendSettings.fontSize,
-            labelColor: legendSettings.labelColor,
+            fontSize: enableLegendCardSettings.fontSize.value,
+            labelColor: enableLegendCardSettings.labelColor.value.value,
         };
-
-
-        this.legend.changeOrientation(LegendPosition[legendSettings.position]);
+        
+        this.legend.changeOrientation(LegendPosition[enableLegendCardSettings.positionDropDown.value.value]);
 
         this.legend.drawLegend(legendData, { ...this.viewport });
         positionChartArea(this.svg, this.legend);
@@ -1148,7 +1114,7 @@ export class StreamGraph implements IVisual {
 
     private static getTextPropertiesFunction(text: string): TextProperties {
         const fontFamily: string = StreamGraph.DefaultFontFamily,
-            fontSize: string = PixelConverter.fromPoint(LegendSettings.DefaultFontSizeInPoints),
+            fontSize: string = PixelConverter.fromPoint(EnableLegendCardSettings.DefaultFontSizeInPoints),
             fontWeight: string = StreamGraph.DefaultFontWeight;
         return {
             text,
@@ -1158,12 +1124,7 @@ export class StreamGraph implements IVisual {
         };
     }
 
-    public enumerateObjectInstances(options: EnumerateVisualObjectInstancesOptions): VisualObjectInstanceEnumeration {
-        const settings: VisualSettings = this.data && this.data.settings
-            || VisualSettings.getDefault() as VisualSettings;
-
-        return VisualSettings.enumerateObjectInstances(
-            settings,
-            options);
+    public getFormattingModel(): powerbi.visuals.FormattingModel {
+        return this.formattingSettingsService.buildFormattingModel(this.formattingSettings);
     }
 }

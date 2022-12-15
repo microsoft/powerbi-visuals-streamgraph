@@ -1,15 +1,15 @@
 {
   "visual": {
     "name": "StreamGraph",
-    "displayName": "Stream Graph 2.0.2",
+    "displayName": "Stream Graph 2.0.3",
     "guid": "StreamGraph1446659696222",
     "visualClassName": "StreamGraph",
-    "version": "2.0.2",
+    "version": "2.0.3",
     "description": "A stacked area chart with smooth interpolation. Often used to display values over time.",
     "supportUrl": "https://aka.ms/customvisualscommunity",
     "gitHubUrl": "https://github.com/Microsoft/powerbi-visuals-streamgraph"
   },
-  "apiVersion": "2.3.0",
+  "apiVersion": "5.1.0",
   "author": {
     "name": "Microsoft",
     "email": "pbicvsupport@microsoft.com"
