@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "A la dreta al centre",
 	"Visual_TextSize": "Mida del text",
 	"Visual_DataPointsLabels": "Etiquetes de dades",
+	"Visual_ShowValues": "Mostra els valors",
 	"Visual_Tooltips_Highlighted": "Ressaltat",
 	"Visual_Tooltips_Values": "Valors",
 	"Visual_Column": "Columna"

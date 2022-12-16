@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Vpravo na střed",
 	"Visual_TextSize": "Velikost textu",
 	"Visual_DataPointsLabels": "Popisky dat",
+	"Visual_ShowValues": "Zobrazit hodnoty",
 	"Visual_Tooltips_Highlighted": "Zvýrazněný",
 	"Visual_Tooltips_Values": "Hodnoty",
 	"Visual_Column": "Sloupec"

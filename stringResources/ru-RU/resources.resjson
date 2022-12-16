@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Справа по центру",
 	"Visual_TextSize": "Размер текста",
 	"Visual_DataPointsLabels": "Метки данных",
+	"Visual_ShowValues": "Показать Значения",
 	"Visual_Tooltips_Highlighted": "Выделено",
 	"Visual_Tooltips_Values": "Значения",
 	"Visual_Column": "Столбец"

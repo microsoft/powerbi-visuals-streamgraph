@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Rechtsmidden",
 	"Visual_TextSize": "Tekengrootte",
 	"Visual_DataPointsLabels": "Gegevenslabels",
+	"Visual_ShowValues": "Toon waarden",
 	"Visual_Tooltips_Highlighted": "Gemarkeerd",
 	"Visual_Tooltips_Values": "Waarden",
 	"Visual_Column": "Kolom"

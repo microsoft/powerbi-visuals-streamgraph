@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Centrirano desno",
 	"Visual_TextSize": "Veličina teksta",
 	"Visual_DataPointsLabels": "Oznake podataka",
+	"Visual_ShowValues": "Prikaži vrijednosti",
 	"Visual_Tooltips_Highlighted": "Istaknuto",
 	"Visual_Tooltips_Values": "Vrijednosti",
 	"Visual_Column": "Stupac"

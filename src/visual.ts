@@ -165,6 +165,7 @@ export class StreamGraph implements IVisual {
         bottom: StreamGraph.XAxisOnSize,
         top: 0
     };
+    private static isLocalizedLegendOrientationDropdown: boolean = false;
 
     private static XAxisLabelSelector: ClassAndSelector = createClassAndSelector("xAxisLabel");
     private static YAxisLabelSelector: ClassAndSelector = createClassAndSelector("yAxisLabel");
@@ -1037,8 +1038,19 @@ export class StreamGraph implements IVisual {
         return selectionMerged;
     }
 
+    private localizeLegendOrientationDropdown(enableLegendCardSettings : EnableLegendCardSettings)
+    {
+        StreamGraph.isLocalizedLegendOrientationDropdown = true;
+        let strToBeLocalized : string = "Visual_LegendPosition_";
+        for(let i = 0; i < enableLegendCardSettings.positionDropDown.items.length; i ++)
+        {
+            enableLegendCardSettings.positionDropDown.items[i].displayName = this.localizationManager.getDisplayName(strToBeLocalized + enableLegendCardSettings.positionDropDown.items[i].displayName)
+        }
+    }
+
     private renderLegend(streamGraphData: StreamData): void {
         const enableLegendCardSettings: EnableLegendCardSettings = streamGraphData.formattingSettings.enableLegendCardSettings;
+        if(!StreamGraph.isLocalizedLegendOrientationDropdown) this.localizeLegendOrientationDropdown(enableLegendCardSettings);
 
         const title: string = enableLegendCardSettings.showAxisTitle.value
             ? enableLegendCardSettings.legendName.value || streamGraphData.legendData.title

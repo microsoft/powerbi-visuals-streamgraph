@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "दायाँ केंद्र",
 	"Visual_TextSize": "पाठ आकार",
 	"Visual_DataPointsLabels": "डेटा लेबल्स",
+	"Visual_ShowValues": "मान दिखाएं",
 	"Visual_Tooltips_Highlighted": "हाइलाइटेड",
 	"Visual_Tooltips_Values": "मान",
 	"Visual_Column": "स्तंभ"

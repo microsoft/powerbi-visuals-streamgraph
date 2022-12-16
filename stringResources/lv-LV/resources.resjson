@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Pa labi centrā",
 	"Visual_TextSize": "Teksta lielums",
 	"Visual_DataPointsLabels": "Datu etiķetes",
+	"Visual_ShowValues": "Rādīt vērtības",
 	"Visual_Tooltips_Highlighted": "Iezīmēts",
 	"Visual_Tooltips_Values": "Vērtības",
 	"Visual_Column": "Kolonna"

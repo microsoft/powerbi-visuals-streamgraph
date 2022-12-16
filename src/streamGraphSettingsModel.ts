@@ -12,18 +12,21 @@ class EnableGeneralCardSettings extends Card {
     wiggle = new formattingSettings.ToggleSwitch({
         name: "wiggle",
         displayName: "Enable Wiggle",
+        displayNameKey: "Visual_Wiggle",
         value: true,
         topLevelToggle: false
     });
 
     name: string = "enableWiggle";
     displayName: string = "General";
+    displayNameKey: string = "Visual_General";
     slices = [this.wiggle];
 }
 
 class BaseLabelColorCardSetting extends Card{
     labelColor = new formattingSettings.ColorPicker({
         name: "labelColor",
+        displayNameKey: "Visual_LabelsFill",
         displayName: "Color",
         value: { value: "#888888" },
     });
@@ -33,6 +36,7 @@ class BaseFontSizeCardSettings extends BaseLabelColorCardSetting{
     fontSize = new formattingSettings.NumUpDown({
         name: "fontSize",
         displayName: "Text Size",
+        displayNameKey: "Visual_TextSize",
         value: 12,
         options: {
             minValue: {
@@ -50,13 +54,15 @@ class BaseFontSizeCardSettings extends BaseLabelColorCardSetting{
 class BaseAxisCardSettings extends BaseFontSizeCardSettings{
     show = new formattingSettings.ToggleSwitch({
         name: "show",
-        displayName: undefined,
+        displayName: "show",
+        displayNameKey: "Visual_Show",
         value: true,
         topLevelToggle: true
     });
 
     showAxisTitle = new formattingSettings.ToggleSwitch({
         name: "showAxisTitle",
+        displayNameKey: "Visual_Title",
         displayName: "Title",
         value: true,
         topLevelToggle: false
@@ -68,21 +74,23 @@ const positionOptions : IEnumMember[] = [
     {value : LegendPosition[LegendPosition.Bottom], displayName : "Bottom"},
     {value : LegendPosition[LegendPosition.Left], displayName : "Left"}, 
     {value : LegendPosition[LegendPosition.Right], displayName : "Right"}, 
-    {value : LegendPosition[LegendPosition.TopCenter], displayName : "Top Center"}, 
-    {value : LegendPosition[LegendPosition.BottomCenter], displayName : "Bottom Center"}, 
-    {value : LegendPosition[LegendPosition.LeftCenter], displayName : "Left Center"}, 
-    {value : LegendPosition[LegendPosition.RightCenter], displayName : "Right Center"}, 
+    {value : LegendPosition[LegendPosition.TopCenter], displayName : "TopCenter"}, 
+    {value : LegendPosition[LegendPosition.BottomCenter], displayName : "BottomCenter"}, 
+    {value : LegendPosition[LegendPosition.LeftCenter], displayName : "LeftCenter"}, 
+    {value : LegendPosition[LegendPosition.RightCenter], displayName : "RightCenter"}, 
 ]; 
 
 export class EnableCategoryAxisCardSettings extends BaseAxisCardSettings {
     name: string = "enableCategoryAxis";
     displayName: string = "X-Axis";
+    displayNameKey: string = "Visual_XAxis";
     slices = [this.show, this.showAxisTitle, this.labelColor, this.fontSize];
 }
 
 export class EnableValueAxisCardSettings extends BaseAxisCardSettings {
     name: string = "enableValueAxis";
     displayName: string = "Y-Axis";
+    displayNameKey: string = "Visual_YAxis";
     slices = [this.show, this.showAxisTitle, this.labelColor, this.fontSize];
 }
 
@@ -92,7 +100,8 @@ export class EnableLegendCardSettings extends BaseLabelColorCardSetting{
 
     show = new formattingSettings.ToggleSwitch({
         name: "show",
-        displayName: undefined,
+        displayName: "show",
+        displayNameKey: "Visual_Show",
         value: true,
         topLevelToggle: true
     });
@@ -100,6 +109,7 @@ export class EnableLegendCardSettings extends BaseLabelColorCardSetting{
     showAxisTitle = new formattingSettings.ToggleSwitch({
         name: "showAxisTitle",
         displayName: "Title",
+        displayNameKey: "Visual_Title",
         value: true,
         topLevelToggle: false
     });
@@ -123,6 +133,7 @@ export class EnableLegendCardSettings extends BaseLabelColorCardSetting{
     fontSize = new formattingSettings.NumUpDown({
         name: "fontSize",
         displayName: "Text Size",
+        displayNameKey: "Visual_TextSize",
         value: 8,
         options: {
             minValue: {
@@ -138,7 +149,7 @@ export class EnableLegendCardSettings extends BaseLabelColorCardSetting{
 
     name: string = "enableLegend";
     displayName: string = "Legend";
-    displayNameKey: "Visual_Legend";
+    displayNameKey: string = "Visual_Legend";
     slices = [this.show, this.positionDropDown, this.showAxisTitle, this.legendName, this.labelColor, this.fontSize];
 }
 
@@ -146,6 +157,7 @@ export class EnableDataLabelsCardSettings extends BaseLabelColorCardSetting {
     show = new formattingSettings.ToggleSwitch({
         name: "show",
         displayName: undefined,
+        displayNameKey: "Visual_Show",
         value: false,
         topLevelToggle: true
     });
@@ -153,6 +165,7 @@ export class EnableDataLabelsCardSettings extends BaseLabelColorCardSetting {
     showValues = new formattingSettings.ToggleSwitch({
         name: "showValues",
         displayName: "Show Values",
+        displayNameKey: "Visual_ShowValues",
         value: false,
         topLevelToggle: false
     });
@@ -160,6 +173,7 @@ export class EnableDataLabelsCardSettings extends BaseLabelColorCardSetting {
     fontSize = new formattingSettings.NumUpDown({
         name: "fontSize",
         displayName: "Text Size",
+        displayNameKey: "Visual_TextSize",
         value: 9,
         options: {
             minValue: {
@@ -175,7 +189,7 @@ export class EnableDataLabelsCardSettings extends BaseLabelColorCardSetting {
 
     name: string = "enableDataLabels";
     displayName: string = "Data Labels";
-    displayNameKey: "Visual_DataPointsLabels";
+    displayNameKey: string = "Visual_DataPointsLabels";
     slices = [this.show, this.showValues, this.labelColor, this.fontSize];
 }
 

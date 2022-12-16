@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Sağ orta",
 	"Visual_TextSize": "Metin Boyutu",
 	"Visual_DataPointsLabels": "Veri Etiketleri",
+	"Visual_ShowValues": "Değerleri Göster",
 	"Visual_Tooltips_Highlighted": "Vurgulanmış",
 	"Visual_Tooltips_Values": "Değerler",
 	"Visual_Column": "Sütun"

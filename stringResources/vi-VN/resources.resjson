@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Ở giữa bên phải",
 	"Visual_TextSize": "Kích thước Văn bản",
 	"Visual_DataPointsLabels": "Nhãn Dữ liệu",
+	"Visual_ShowValues": "Hiển thị giá trị",
 	"Visual_Tooltips_Highlighted": "Được tô sáng",
 	"Visual_Tooltips_Values": "Giá trị",
 	"Visual_Column": "Cột"

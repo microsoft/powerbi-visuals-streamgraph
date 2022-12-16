@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Midt på i højre side",
 	"Visual_TextSize": "Tekststørrelse",
 	"Visual_DataPointsLabels": "Datanavne",
+	"Visual_ShowValues": "Vis værdier",
 	"Visual_Tooltips_Highlighted": "Fremhævet",
 	"Visual_Tooltips_Values": "Værdier",
 	"Visual_Column": "Kolonne"

@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Праворуч по центру",
 	"Visual_TextSize": "Розмір тексту",
 	"Visual_DataPointsLabels": "Підписи даних",
+	"Visual_ShowValues": "Показати значення",
 	"Visual_Tooltips_Highlighted": "Виділено",
 	"Visual_Tooltips_Values": "Значення",
 	"Visual_Column": "Стовпець"

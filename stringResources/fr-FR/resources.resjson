@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "À droite au centre",
 	"Visual_TextSize": "Taille du texte",
 	"Visual_DataPointsLabels": "Étiquettes de données",
+	"Visual_ShowValues": "Afficher les valeurs",
 	"Visual_Tooltips_Highlighted": "Mise en surbrillance",
 	"Visual_Tooltips_Values": "Valeurs",
 	"Visual_Column": "Colonne"
