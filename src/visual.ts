@@ -51,6 +51,7 @@ import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructor
 import IColorPalette = powerbi.extensibility.IColorPalette;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
+import IVisualEventService = powerbi.extensibility.IVisualEventService;
 
 import { DefaultOpacity } from "./utils";
 import { StreamGraphSettingsModel, EnableValueAxisCardSettings, EnableCategoryAxisCardSettings, EnableDataLabelsCardSettings, EnableLegendCardSettings } from "./streamGraphSettingsModel";
@@ -166,6 +167,7 @@ export class StreamGraph implements IVisual {
         top: 0
     };
     private static isLocalizedLegendOrientationDropdown: boolean = false;
+    private events: IVisualEventService;
 
     private static XAxisLabelSelector: ClassAndSelector = createClassAndSelector("xAxisLabel");
     private static YAxisLabelSelector: ClassAndSelector = createClassAndSelector("yAxisLabel");
@@ -198,6 +200,7 @@ export class StreamGraph implements IVisual {
     private formattingSettings: StreamGraphSettingsModel;
 
     constructor(options: VisualConstructorOptions) {
+        this.events = options.host.eventService;
         this.init(options);
     }
 
@@ -313,7 +316,10 @@ export class StreamGraph implements IVisual {
                 });
             }
 
+            const tabindex : number = valueIndex;
+
             series[valueIndex] = {
+                tabindex,
                 color,
                 identity,
                 tooltipInfo,
@@ -337,6 +343,7 @@ export class StreamGraph implements IVisual {
                     value = y;
                 }
                 let streamDataPoint: StreamDataPoint = {
+                    tabindex: dataPointValueIndex,
                     x: dataPointValueIndex,
                     y: StreamGraph.isNumber(y)
                         ? y
@@ -352,6 +359,7 @@ export class StreamGraph implements IVisual {
 
                 if (!stackValues[dataPointValueIndex]) {
                     stackValues[dataPointValueIndex] = {
+                        tabindex: dataPointValueIndex,
                         x: streamDataPoint.x
                     };
                 }
@@ -437,7 +445,10 @@ export class StreamGraph implements IVisual {
         /* Adding values for d3.stack V5 */
         let stackedSeries = stack(stackValues);
 
+        const tabindex: number = 0;
+        
         return {
+            tabindex,
             series,
             stackedSeries,
             metadata,
@@ -514,12 +525,15 @@ export class StreamGraph implements IVisual {
     }
 
     public update(options: VisualUpdateOptions): void {
+        this.events.renderingStarted(options);
+
         if (!options
             || !options.dataViews
             || !options.dataViews[0]
             || !options.dataViews[0].categorical
         ) {
             this.clearData();
+            this.events.renderingFinished(options);
             return;
         }
 
@@ -540,6 +554,7 @@ export class StreamGraph implements IVisual {
             || !this.data.series.length
         ) {
             this.clearData();
+            this.events.renderingFinished(options);
             return;
         }
 
@@ -593,7 +608,7 @@ export class StreamGraph implements IVisual {
 
             this.behavior.renderSelection(false);
         }
-
+        this.events.renderingFinished(options);
     }
 
     private setTextNodesPosition(xAxisTextNodes: Selection<d3.BaseType, any, any, any>,
