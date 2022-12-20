@@ -316,10 +316,7 @@ export class StreamGraph implements IVisual {
                 });
             }
 
-            const tabindex : number = valueIndex;
-
             series[valueIndex] = {
-                tabindex,
                 color,
                 identity,
                 tooltipInfo,
@@ -343,7 +340,6 @@ export class StreamGraph implements IVisual {
                     value = y;
                 }
                 let streamDataPoint: StreamDataPoint = {
-                    tabindex: dataPointValueIndex,
                     x: dataPointValueIndex,
                     y: StreamGraph.isNumber(y)
                         ? y
@@ -359,7 +355,6 @@ export class StreamGraph implements IVisual {
 
                 if (!stackValues[dataPointValueIndex]) {
                     stackValues[dataPointValueIndex] = {
-                        tabindex: dataPointValueIndex,
                         x: streamDataPoint.x
                     };
                 }
@@ -445,10 +440,7 @@ export class StreamGraph implements IVisual {
         /* Adding values for d3.stack V5 */
         let stackedSeries = stack(stackValues);
 
-        const tabindex: number = 0;
-        
         return {
-            tabindex,
             series,
             stackedSeries,
             metadata,
