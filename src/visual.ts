@@ -242,7 +242,7 @@ export class StreamGraph implements IVisual {
         let yMaxValue: number = -Number.MAX_VALUE;
         let yMinValue: number = Number.MAX_VALUE;
 
-        let categorical: DataViewCategorical = dataView.categorical,
+        const categorical: DataViewCategorical = dataView.categorical,
             categories: DataViewCategoryColumn[] = categorical.categories,
             values: DataViewValueColumns = categorical.values,
             series: StreamGraphSeries[] = [],
@@ -251,10 +251,8 @@ export class StreamGraph implements IVisual {
                 title: values.source
                     ? values.source.displayName
                     : EnableLegendCardSettings.DefaultTitleText,
-            },
-            value: number = 0,
-            valuesFormatter: IValueFormatter,
-            categoryFormatter: IValueFormatter;
+            };
+        let value: number = 0;
 
         const category: DataViewCategoryColumn = categories && categories.length > 0
             ? categories[0]
@@ -341,7 +339,7 @@ export class StreamGraph implements IVisual {
                 if (y > value) {
                     value = y;
                 }
-                let streamDataPoint: StreamDataPoint = {
+                const streamDataPoint: StreamDataPoint = {
                     x: dataPointValueIndex,
                     y: StreamGraph.isNumber(y)
                         ? y
@@ -384,12 +382,12 @@ export class StreamGraph implements IVisual {
             interactivityService.applySelectionStateToData(series);
         }
 
-        valuesFormatter = valueFormatter.create({
+        const valuesFormatter : IValueFormatter = valueFormatter.create({
             format: StreamGraph.ValuesFormat,
             value: value
         });
 
-        categoryFormatter = valueFormatter.create({
+        const categoryFormatter: IValueFormatter = valueFormatter.create({
             format: valueFormatter.getFormatStringByColumn(category.source),
             value: category.values
         });
@@ -409,24 +407,24 @@ export class StreamGraph implements IVisual {
             }
         }
 
-        let textProperties: TextProperties = {
+        const textProperties: TextProperties = {
             text: xMaxValue.toString(),
             fontFamily: "sans-serif",
             fontSize: PixelConverter.toString(formattingSettings.enableCategoryAxisCardSettings.fontSize.value)
         };
-        let xAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textProperties);
-        let xAxisValueMaxTextHalfSize: number = xAxisValueMaxTextSize / 2;
-        let textPropertiesY: TextProperties = {
+        const xAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textProperties);
+        const xAxisValueMaxTextHalfSize: number = xAxisValueMaxTextSize / 2;
+        const textPropertiesY: TextProperties = {
             text: yMaxValue.toString(),
             fontFamily: "sans-serif",
             fontSize: PixelConverter.toString(formattingSettings.enableValueAxisCardSettings.fontSize.value)
         };
-        let yAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textPropertiesY);
-        let yAxisValueMaxTextHalfSize: number = yAxisValueMaxTextSize / 2;
-        let yAxisFontSize: number = +formattingSettings.enableValueAxisCardSettings.fontSize.value;
-        let yAxisFontHalfSize: number = yAxisFontSize / 2;
-        let xAxisFontSize: number = +formattingSettings.enableCategoryAxisCardSettings.fontSize.value;
-        let xAxisFontHalfSize: number = xAxisFontSize / 2;
+        const yAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textPropertiesY);
+        const yAxisValueMaxTextHalfSize: number = yAxisValueMaxTextSize / 2;
+        const yAxisFontSize: number = +formattingSettings.enableValueAxisCardSettings.fontSize.value;
+        const yAxisFontHalfSize: number = yAxisFontSize / 2;
+        const xAxisFontSize: number = +formattingSettings.enableCategoryAxisCardSettings.fontSize.value;
+        const xAxisFontHalfSize: number = xAxisFontSize / 2;
 
         /* Generate stack values for d3.stack V5 */
         const allLabels = legendData.dataPoints.map((dataPoint) => dataPoint.label);
@@ -440,7 +438,7 @@ export class StreamGraph implements IVisual {
         }
 
         /* Adding values for d3.stack V5 */
-        let stackedSeries = stackVar(stackValues);
+        const stackedSeries = stackVar(stackValues);
 
         return {
             series,
@@ -639,7 +637,7 @@ export class StreamGraph implements IVisual {
         maxHeight: number): void {
 
         text.each(function () {
-            let allowedLength: number = axisProperties.xLabelMaxWidth;
+            const allowedLength: number = axisProperties.xLabelMaxWidth;
 
             textMeasurementService.wordBreak(
                 this,
@@ -650,7 +648,7 @@ export class StreamGraph implements IVisual {
         });
     }
     private calculateAxes() {
-        let showAxisTitle: boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.showAxisTitle.value,
+        const showAxisTitle: boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.showAxisTitle.value,
             categoryAxisLabelColor: string = this.data.formattingSettings.enableCategoryAxisCardSettings.labelColor.value.value,
             xShow: boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.show.value,
 
@@ -658,9 +656,9 @@ export class StreamGraph implements IVisual {
             yShow: boolean = this.data.formattingSettings.enableValueAxisCardSettings.show.value;
 
         this.viewport.height -= StreamGraph.TickHeight + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0);
-        let effectiveWidth: number = Math.max(0, this.viewport.width - this.margin.left - (this.margin.right + this.data.xAxisValueMaxTextHalfSize));
-        let effectiveHeight: number = Math.max(0, this.viewport.height - (this.margin.top + this.data.yAxisFontHalfSize) - this.margin.bottom + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0));
-        let metaDataColumnPercent: powerbi.DataViewMetadataColumn = {
+        const effectiveWidth: number = Math.max(0, this.viewport.width - this.margin.left - (this.margin.right + this.data.xAxisValueMaxTextHalfSize));
+        const effectiveHeight: number = Math.max(0, this.viewport.height - (this.margin.top + this.data.yAxisFontHalfSize) - this.margin.bottom + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0));
+        const metaDataColumnPercent: powerbi.DataViewMetadataColumn = {
             displayName: this.localizationManager.getDisplayName(ColumnDisplayName),
             type: ValueType.fromDescriptor({ numeric: true }),
             objects: {
@@ -699,7 +697,7 @@ export class StreamGraph implements IVisual {
                 .style("stroke", categoryAxisLabelColor)
                 .style("font-size", this.data.formattingSettings.enableCategoryAxisCardSettings.fontSize.value);
 
-            let transformParams: any[] = [
+            const transformParams: any[] = [
                 StreamGraph.AxisTextNodeTextAnchorForAngel0,
                 StreamGraph.AxisTextNodeDXForAngel0,
                 StreamGraph.AxisTextNodeDYForAngel0
@@ -710,6 +708,7 @@ export class StreamGraph implements IVisual {
             xAxisTextNodes.call(StreamGraph.wordBreak, this.xAxisProperties, StreamGraph.XAxisLabelSize);
 
             this.setTextNodesPosition.apply(this, [xAxisTextNodes].concat(transformParams));
+            // this.setTextNodesPosition = {...{xAxisTextNodes: (this, [xAxisTextNodes].concat(transformParams))}};
         }
 
         if (yShow) {
@@ -946,7 +945,7 @@ export class StreamGraph implements IVisual {
 
         const isHighContrast: boolean = this.colorPalette.isHighContrast;
 
-        let selection: Selection<d3.BaseType, any, any, any> = this.dataPointsContainer
+        const selection: Selection<d3.BaseType, any, any, any> = this.dataPointsContainer
             .selectAll(StreamGraph.LayerSelector.selectorName)
             .data(stackedSeries);
 
@@ -989,10 +988,7 @@ export class StreamGraph implements IVisual {
             let dataPointsArray: StreamDataPoint[] = [];
 
             stackedSeries.forEach((seriesItem: Series<any, any>) => {
-                let filteredDataPoints: any[];
-
-
-                filteredDataPoints = seriesItem.filter((dataPoint: any) => {
+                const filteredDataPoints: any[] = seriesItem.filter((dataPoint: any) => {
                     return dataPoint && dataPoint[0] !== null && dataPoint[0] !== undefined;
                 }).map((dataPoint: any) => {
                     return {
@@ -1050,7 +1046,7 @@ export class StreamGraph implements IVisual {
     private localizeLegendOrientationDropdown(enableLegendCardSettings : EnableLegendCardSettings)
     {
         StreamGraph.isLocalizedLegendOrientationDropdown = true;
-        let strToBeLocalized : string = "Visual_LegendPosition_";
+        const strToBeLocalized : string = "Visual_LegendPosition_";
         for(let i = 0; i < enableLegendCardSettings.positionDropDown.items.length; i ++)
         {
             enableLegendCardSettings.positionDropDown.items[i].displayName = this.localizationManager.getDisplayName(strToBeLocalized + enableLegendCardSettings.positionDropDown.items[i].displayName)

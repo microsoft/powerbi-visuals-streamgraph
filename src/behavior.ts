@@ -25,7 +25,7 @@
  */
 
 // d3
-import { BaseType, Selection } from "d3-selection";;
+import { BaseType, Selection } from "d3-selection";
 
 // powerbi.extensibility.utils.interactivity
 import { interactivityBaseService } from "powerbi-visuals-utils-interactivityutils";

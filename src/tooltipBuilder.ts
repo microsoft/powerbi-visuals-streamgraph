@@ -52,8 +52,8 @@ export function createTooltipInfo(
     localizationManager: ILocalizationManager,
     seriesIndex?: number): VisualTooltipDataItem[] {
 
-    let seriesSource: TooltipSeriesDataItem[] = [],
-        valuesSource: DataViewMetadataColumn = undefined;
+    const seriesSource: TooltipSeriesDataItem[] = [];
+    let valuesSource: DataViewMetadataColumn = undefined;
 
     seriesIndex = seriesIndex | DefaultSeriesIndex;
     if (dataViewCat && dataViewCat.values) {
@@ -113,7 +113,7 @@ export function createTooltipData(
                 highlightedValue: any = seriesData.highlightedValue;
 
             if (value || value === 0) {
-                let formattedValue: string = getFormattedValue(
+                const formattedValue: string = getFormattedValue(
                     seriesMetadataColumn,
                     value);
 
@@ -124,7 +124,7 @@ export function createTooltipData(
             }
 
             if (highlightedValue || highlightedValue === 0) {
-                let formattedHighlightedValue: string = getFormattedValue(
+                const formattedHighlightedValue: string = getFormattedValue(
                     seriesMetadataColumn,
                     highlightedValue);
 
