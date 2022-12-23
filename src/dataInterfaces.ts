@@ -43,13 +43,16 @@ import IValueFormatter = valueFormatter.IValueFormatter;
 
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
+// d3
+import { Series } from "d3-shape";
+
 // powerbi.extensibility.visual
 import { StreamGraphSettingsModel } from "./streamGraphSettingsModel";
 
 export interface StreamData {
     metadata: DataViewMetadataColumn;
     series: StreamGraphSeries[];
-    stackedSeries: d3.Series<any, any>[];
+    stackedSeries: Series<any, any>[];
     legendData: LegendData;
     valueFormatter: IValueFormatter;
     categoryFormatter: IValueFormatter;

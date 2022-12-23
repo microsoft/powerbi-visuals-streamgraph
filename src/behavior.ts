@@ -25,7 +25,7 @@
  */
 
 // d3
-import Selection = d3.Selection;
+import { BaseType, Selection } from "d3-selection";;
 
 // powerbi.extensibility.utils.interactivity
 import { interactivityBaseService } from "powerbi-visuals-utils-interactivityutils";
@@ -36,8 +36,8 @@ import { StreamGraphSeries } from "./dataInterfaces";
 import { getFillOpacity } from "./utils";
 
 export interface BehaviorOptions extends interactivityBaseService.IBehaviorOptions<StreamGraphSeries>{
-    selection: Selection<d3.BaseType, StreamGraphSeries, any, any>;
-    clearCatcher: Selection<d3.BaseType, any, any, any>;
+    selection: Selection<BaseType, StreamGraphSeries, any, any>;
+    clearCatcher: Selection<BaseType, any, any, any>;
     interactivityService: IInteractivityService<any>;
     series: StreamGraphSeries[];
 }
@@ -45,8 +45,8 @@ export interface BehaviorOptions extends interactivityBaseService.IBehaviorOptio
 const getEvent = () => require("d3-selection").event;
 
 export class StreamGraphBehavior implements IInteractiveBehavior {
-    private selection: Selection<d3.BaseType, StreamGraphSeries, any, any>;
-    private clearCatcher: Selection<d3.BaseType, any, any, any>;
+    private selection: Selection<BaseType, StreamGraphSeries, any, any>;
+    private clearCatcher: Selection<BaseType, any, any, any>;
     private interactivityService: IInteractivityService<any>;
     private series: any = null;
 

@@ -23,13 +23,15 @@
  *  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  *  THE SOFTWARE.
  */
-import "@babel/polyfill";
 import "./../style/visual.less";
 
 // d3
 import * as d3 from "d3";
 import Selection = d3.Selection;
-import LinearScale = d3.ScaleLinear;
+// import { BaseType, select, Selection } from "d3-selection";
+import { scaleLinear, ScaleLinear } from "d3-scale";
+import { stackOffsetNone, stackOffsetWiggle, curveCatmullRom, area, stack, Stack, Area, Series } from "d3-shape";
+import { min, max, range } from "d3-array";
 
 // powerbi
 import powerbi from "powerbi-visuals-api";
@@ -142,9 +144,9 @@ export class StreamGraph implements IVisual {
     private static YAxis: ClassAndSelector = createClassAndSelector("yAxis");
     private static XAxis: ClassAndSelector = createClassAndSelector("xAxis");
     private static axisGraphicsContext: ClassAndSelector = createClassAndSelector("axisGraphicsContext");
-    private axes: d3.Selection<d3.BaseType, any, any, any>;
-    private axisX: d3.Selection<d3.BaseType, any, any, any>;
-    private axisY: d3.Selection<d3.BaseType, any, any, any>;
+    private axes: Selection<d3.BaseType, any, any, any>;
+    private axisX: Selection<d3.BaseType, any, any, any>;
+    private axisY: Selection<d3.BaseType, any, any, any>;
     private xAxisProperties: IAxisProperties;
     private yAxisProperties: IAxisProperties;
     private static XAxisOnSize: number = 20;
@@ -429,16 +431,16 @@ export class StreamGraph implements IVisual {
         /* Generate stack values for d3.stack V5 */
         const allLabels = legendData.dataPoints.map((dataPoint) => dataPoint.label);
 
-        const stack: d3.Stack<any, any, any> = d3.stack()
+        const stackVar: Stack<any, any, any> = stack()
             .keys(allLabels)
-            .offset(d3.stackOffsetNone);
+            .offset(stackOffsetNone);
 
         if (formattingSettings.enableWiggle.wiggle.value) {
-            stack.offset(d3.stackOffsetWiggle);
+            stackVar.offset(stackOffsetWiggle);
         }
 
         /* Adding values for d3.stack V5 */
-        let stackedSeries = stack(stackValues);
+        let stackedSeries = stackVar(stackValues);
 
         return {
             series,
@@ -619,7 +621,7 @@ export class StreamGraph implements IVisual {
     private toggleAxisVisibility(
         isShown: boolean,
         className: string,
-        axis: d3.Selection<d3.BaseType, any, any, any>): void {
+        axis: Selection<d3.BaseType, any, any, any>): void {
 
         axis.classed(className, isShown);
         if (!isShown) {
@@ -671,7 +673,7 @@ export class StreamGraph implements IVisual {
         if (xShow) {
             const axisOptions: CreateAxisOptions = {
                 pixelSpan: effectiveWidth,
-                dataDomain: d3.range(this.data.xMaxValue + 1),
+                dataDomain: range(this.data.xMaxValue + 1),
                 metaDataColumn: this.data.metadata,
                 outerPadding: StreamGraph.outerPadding,
                 formatString: null,
@@ -874,8 +876,8 @@ export class StreamGraph implements IVisual {
     }
 
     private static getStreamGraphLabelLayout(
-        xScale: LinearScale<number, number>,
-        yScale: LinearScale<number, number>,
+        xScale: ScaleLinear<number, number>,
+        yScale: ScaleLinear<number, number>,
         enableDataLabelsCardSettings: EnableDataLabelsCardSettings
     ): ILabelLayout {
 
@@ -899,7 +901,7 @@ export class StreamGraph implements IVisual {
 
     private renderChart(
         series: StreamGraphSeries[],
-        stackedSeries: d3.Series<any, any>[],
+        stackedSeries: Series<any, any>[],
         duration: number,
         hasHighlights: boolean = false
     ): Selection<d3.BaseType, StreamGraphSeries, any, any> {
@@ -924,19 +926,19 @@ export class StreamGraph implements IVisual {
 
         const
             margin: IMargin = this.margin,
-            xScale: LinearScale<number, number> = d3.scaleLinear()
+            xScale: ScaleLinear<number, number> = scaleLinear()
                 .domain([0, series[0].dataPoints.length - 1])
                 .range([margin.left, width - (margin.right + this.data.xAxisValueMaxTextHalfSize)]);
 
-        const yMin: number = d3.min(stackedSeries, serie => d3.min(serie, d => d[0]));
-        const yMax: number = d3.max(stackedSeries, serie => d3.max(serie, d => d[1])) + this.YMaxAdjustment;
+        const yMin: number = min(stackedSeries, serie => min(serie, d => d[0]));
+        const yMax: number = max(stackedSeries, serie => max(serie, d => d[1])) + this.YMaxAdjustment;
 
-        const yScale: LinearScale<number, number> = d3.scaleLinear()
+        const yScale: ScaleLinear<number, number> = scaleLinear()
             .domain([Math.min(yMin, 0), yMax])
             .range([height - (margin.bottom + StreamGraph.TickHeight), (this.margin.top - this.data.yAxisFontHalfSize)]);
 
-        const area: d3.Area<any> = d3.area<StreamDataPoint>()
-            .curve(d3.curveCatmullRom.alpha(0.5))
+        const areaVar: Area<any> = area<StreamDataPoint>()
+            .curve(curveCatmullRom.alpha(0.5))
             .x((d, i) => xScale(i))
             .y0(d => yScale(d[0]))
             .y1(d => yScale(d[1]))
@@ -950,7 +952,7 @@ export class StreamGraph implements IVisual {
 
         const selectionMerged = selection
             .enter()
-            .append("path")
+            .append<d3.BaseType>("path")
             .merge(selection);
 
         selectionMerged
@@ -962,7 +964,7 @@ export class StreamGraph implements IVisual {
         selectionMerged
             .transition()
             .duration(duration)
-            .attr("d", area);
+            .attr("d", areaVar);
 
         selectionMerged
             .selectAll("path")
@@ -974,7 +976,7 @@ export class StreamGraph implements IVisual {
             .remove();
 
         if (this.data.formattingSettings.enableDataLabelsCardSettings.show.value) {
-            const labelsXScale: LinearScale<number, number> = d3.scaleLinear()
+            const labelsXScale: ScaleLinear<number, number> = scaleLinear()
                 .domain([0, series[0].dataPoints.length - 1])
                 .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxTextHalfSize]);
 
@@ -986,7 +988,7 @@ export class StreamGraph implements IVisual {
             // Merge all points into a single array
             let dataPointsArray: StreamDataPoint[] = [];
 
-            stackedSeries.forEach((seriesItem: d3.Series<any, any>) => {
+            stackedSeries.forEach((seriesItem: Series<any, any>) => {
                 let filteredDataPoints: any[];
 
 
