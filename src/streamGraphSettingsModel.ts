@@ -29,6 +29,7 @@ class BaseLabelColorCardSetting extends Card{
         displayNameKey: "Visual_LabelsFill",
         displayName: "Color",
         value: { value: "#888888" },
+        instanceKind: powerbi.VisualEnumerationInstanceKinds.ConstantOrRule
     });
 }
 
