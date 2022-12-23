@@ -221,6 +221,7 @@ export class StreamGraph implements IVisual {
         return !isNaN(value as number) && isFinite(value as number) && value !== null;
     }
 
+    /* eslint-disable-next-line max-lines-per-function */
     public converter(
         dataView: DataView,
         colorPalette: IColorPalette,
@@ -707,8 +708,8 @@ export class StreamGraph implements IVisual {
             
             xAxisTextNodes.call(StreamGraph.wordBreak, this.xAxisProperties, StreamGraph.XAxisLabelSize);
 
+            /* eslint-disable-next-line prefer-spread */
             this.setTextNodesPosition.apply(this, [xAxisTextNodes].concat(transformParams));
-            // this.setTextNodesPosition = {...{xAxisTextNodes: (this, [xAxisTextNodes].concat(transformParams))}};
         }
 
         if (yShow) {
@@ -898,6 +899,7 @@ export class StreamGraph implements IVisual {
         };
     }
 
+    /* eslint-disable-next-line max-lines-per-function */
     private renderChart(
         series: StreamGraphSeries[],
         stackedSeries: Series<any, any>[],
