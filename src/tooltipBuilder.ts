@@ -27,8 +27,7 @@ import powerbi from "powerbi-visuals-api";
 import DataView = powerbi.DataView;
 
 // powerbi.extensibility.utils.formatting
-import {valueFormatter as ValueFormatter} from "powerbi-visuals-utils-formattingutils";
-import valueFormatter = ValueFormatter.valueFormatter;
+import {valueFormatter} from "powerbi-visuals-utils-formattingutils";
 
 import DataViewValueColumn = powerbi.DataViewValueColumn;
 import DataViewCategorical = powerbi.DataViewCategorical;

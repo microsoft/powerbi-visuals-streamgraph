@@ -92,11 +92,9 @@ import { positionChartArea } from "powerbi-visuals-utils-chartutils/lib/legend/l
 import { CreateAxisOptions } from "powerbi-visuals-utils-chartutils/lib/axis/axisInterfaces";
 
 // powerbi.extensibility.utils.formatting
-import { valueFormatter as ValueFormatter, textMeasurementService as TextMeasurementService } from "powerbi-visuals-utils-formattingutils";
-import valueFormatter = ValueFormatter.valueFormatter;
-import TextProperties = TextMeasurementService.TextProperties;
-import IValueFormatter = ValueFormatter.IValueFormatter;
-import textMeasurementService = TextMeasurementService.textMeasurementService;
+import { valueFormatter, textMeasurementService } from "powerbi-visuals-utils-formattingutils";
+import { TextProperties } from "powerbi-visuals-utils-formattingutils/lib/src/interfaces";
+import IValueFormatter = valueFormatter.IValueFormatter;
 
 // powerbi.extensibility.utils.type
 import { pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutils";
@@ -691,7 +689,7 @@ export class StreamGraph implements IVisual {
 
             this.xAxisProperties = AxisHelper.createAxis(axisOptions);
 
-            this.axisX.call(this.xAxisProperties.axis);
+            this.axisX.call(<any>this.xAxisProperties.axis);
 
             this.axisX
                 .style("fill", categoryAxisLabelColor)
@@ -725,7 +723,7 @@ export class StreamGraph implements IVisual {
                 useTickIntervalForDisplayUnits: true
             });
 
-            this.axisY.call(this.yAxisProperties.axis);
+            this.axisY.call(<any>this.yAxisProperties.axis);
 
             this.axisY
                 .style("fill", valueAxisLabelColor)
