@@ -44,69 +44,55 @@ export class StreamGraphBuilder extends VisualBuilderBase<StreamGraph> {
         this.visual.update(options);
     }
 
-    public get mainElement(): JQuery {
-        return this.element.children("svg.streamGraph");
+    public get mainElement(): HTMLElement {
+        return this.element.querySelector("svg.streamGraph")!;
     }
-
-    public get axisGraphicsContext(): JQuery {
-        return this.mainElement.children("g.axisGraphicsContext");
+    
+    public get axisGraphicsContext(): HTMLElement {
+        return this.mainElement.querySelector("g.axisGraphicsContext")!;
     }
-
-    public get xAxisTicks(): JQuery {
-        return this.axisGraphicsContext
-            .children("g.xAxis");
+    
+    public get xAxisTicks(): NodeListOf<HTMLElement> {
+        return this.axisGraphicsContext.querySelectorAll("g.xAxis");
     }
-
-    public get yAxisTicks(): JQuery {
-        return this.axisGraphicsContext
-            .children("g.yAxis");
+    
+    public get yAxisTicks(): NodeListOf<HTMLElement> {
+        return this.axisGraphicsContext.querySelectorAll("g.yAxis");
     }
-
-    public get xAxisLabel(): JQuery {
-        return this.axisGraphicsContext.children("text.xAxisLabel");
+    
+    public get xAxisLabel(): HTMLElement {
+        return this.axisGraphicsContext.querySelector("text.xAxisLabel")!;
     }
-
-    public get yAxisLabel(): JQuery {
-        return this.axisGraphicsContext.children("text.yAxisLabel");
+    
+    public get yAxisLabel(): HTMLElement {
+        return this.axisGraphicsContext.querySelector("text.yAxisLabel")!;
     }
-
-    public get dataLabelsText(): JQuery {
-        return this.mainElement
-            .children("g.labels")
-            .children("text.data-labels");
+    
+    public get dataLabelsText(): NodeListOf<HTMLElement> {
+        return this.mainElement.querySelectorAll("g.labels text.data-labels");
     }
-
-    public get layers(): JQuery {
-        return this.mainElement
-            .children("g.dataPointsContainer")
-            .children("path.layer");
+    
+    public get layers(): NodeListOf<HTMLElement> {
+        return this.mainElement.querySelectorAll("g.dataPointsContainer path.layer");
     }
-
-    public get legendGroup(): JQuery {
-        return this.element
-            .children("svg.legend")
-            .children("g#legendGroup");
+    
+    public get legendGroup(): HTMLElement {
+        return this.element.querySelector("svg.legend g#legendGroup")!;
     }
-
+    
     public get legendOrientation(): string {
-        return this.element
-            .children("svg.legend")
-            .attr("orientation");
+        return this.element.querySelector("svg.legend")!.getAttribute("orientation")!;
     }
-
+    
     public get legendWidth(): number {
-        return this.element
-            .children("svg.legend")
-            .width();
+        return this.element.querySelector("svg.legend")!.clientWidth;
     }
-
-    public get legendTitle(): JQuery {
-        return this.legendGroup.children(".legendTitle");
+    
+    public get legendTitle(): HTMLElement {
+        return this.legendGroup.querySelector(".legendTitle")!;
     }
-
-    public get legendItemText(): JQuery {
-        return this.legendGroup
-            .children(".legendItem")
-            .children("text.legendText");
+    
+    public get legendItemText(): NodeListOf<HTMLElement> {
+        return this.legendGroup.querySelectorAll(".legendItem text.legendText");
     }
 }

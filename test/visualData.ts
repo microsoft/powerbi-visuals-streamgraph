@@ -68,7 +68,7 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
         let array: number[] = [];
         const lenght: number = valuesArray.length;
         for (let i: number = 0; i < lenght; i++) {
-            array[i] = null;
+            array[i] = null!;
         }
         if (!hightlightedElementNumber)
             return array;
@@ -157,6 +157,6 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
                 columns[1],
                 columns[2],
                 columns[3]
-            ], columnNames).build();
+            ], columnNames!).build();
     }
 }

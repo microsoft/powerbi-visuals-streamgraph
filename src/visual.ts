@@ -196,8 +196,8 @@ export class StreamGraph implements IVisual {
 
     private YMaxAdjustment: number = 1.5;
 
-    private formattingSettingsService: FormattingSettingsService;
-    private formattingSettings: StreamGraphSettingsModel;
+    private static formattingSettingsService: FormattingSettingsService;
+    private static formattingSettings: StreamGraphSettingsModel;
 
     constructor(options: VisualConstructorOptions) {
         this.events = options.host.eventService;
@@ -220,7 +220,7 @@ export class StreamGraph implements IVisual {
     }
 
     /* eslint-disable-next-line max-lines-per-function */
-    public converter(
+    public static converter(
         dataView: DataView,
         colorPalette: IColorPalette,
         interactivityService: IInteractivityService<any>,
@@ -471,7 +471,7 @@ export class StreamGraph implements IVisual {
         this.visualHost = options.host;
         this.colorPalette = options.host.colorPalette;
         this.localizationManager = options.host.createLocalizationManager();
-        this.formattingSettingsService = new FormattingSettingsService(this.localizationManager);
+        StreamGraph.formattingSettingsService = new FormattingSettingsService(this.localizationManager);
 
         const element: HTMLElement = options.element;
 
@@ -532,7 +532,7 @@ export class StreamGraph implements IVisual {
         this.dataView = options.dataViews[0];
 
         
-        this.data = this.converter(
+        this.data = StreamGraph.converter(
             this.dataView,
             this.colorPalette,
             this.interactivityService,
@@ -1142,6 +1142,6 @@ export class StreamGraph implements IVisual {
     }
 
     public getFormattingModel(): powerbi.visuals.FormattingModel {
-        return this.formattingSettingsService.buildFormattingModel(this.formattingSettings);
+        return StreamGraph.formattingSettingsService.buildFormattingModel(StreamGraph.formattingSettings);
     }
 }
