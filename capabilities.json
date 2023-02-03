@@ -74,7 +74,7 @@
         }
     ],
     "objects": {
-        "enableWiggle": {
+        "general": {
             "properties": {
                 "wiggle": {
                     "type": {
@@ -83,7 +83,7 @@
                 }
             }
         },
-        "enableCategoryAxis": {
+        "categoryAxis": {
             "properties": {
                 "show": {
                     "type": {
@@ -111,7 +111,7 @@
                 }
             }
         },
-        "enableValueAxis": {
+        "valueAxis": {
             "properties": {
                 "show": {
                     "type": {
@@ -139,25 +139,25 @@
                 }
             }
         },
-        "enableLegend": {
+        "legend": {
             "properties": {
                 "show": {
                     "type": {
                         "bool": true
                     }
                 },
-                "showAxisTitle": {
+                "showTitle": {
                     "type": {
                         "bool": true
                     }
                 },
-                "legendName": {
+                "titleText": {
                     "type": {
                         "text": true
                     },
                     "suppressFormatPainterCopy": true
                 },
-                "positionDropDown": {
+                "position": {
                     "type": {
                         "text": true
                     },
@@ -179,19 +179,19 @@
                 }
             }
         },
-        "enableDataLabels": {
+        "labels": {
             "properties": {
                 "show": {
                     "type": {
                         "bool": true
                     }
                 },
-                "showValues": {
+                "showValue": {
                     "type": {
                         "bool": true
                     }
                 },
-                "labelColor": {
+                "color": {
                     "type": {
                         "fill": {
                             "solid": {

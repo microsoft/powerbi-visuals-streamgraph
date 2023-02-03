@@ -55,10 +55,11 @@ import IInteractivityService = interactivityBaseService.IInteractivityService;
 import createInteractivitySelectionService = interactivitySelectionService.createInteractivitySelectionService;
 
 import { StreamGraphBuilder } from "./visualBuilder";
-// import { isColorAppliedToElements, getSolidColorStructuralObject } from "./helpers/helpers";
+import { isColorAppliedToElements, getSolidColorStructuralObject } from "./helpers/helpers";
 import { ProductSalesByDateData } from "./visualData";
 import { StreamGraphSeries, StreamData, StreamDataPoint } from "../src/dataInterfaces";
 import { StreamGraph, VisualUpdateType } from "../src/visual";
+import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
 
 describe("StreamGraph", () => {
     let visualBuilder: StreamGraphBuilder,
@@ -71,8 +72,7 @@ describe("StreamGraph", () => {
         defaultDataViewBuilder = new ProductSalesByDateData();
 
         dataView = defaultDataViewBuilder.getDataView();
-        dataViews = new DataView[1];
-        dataViews[0] = dataView;
+        dataViews = [dataView];
     });
 
     describe("DOM tests", () => {
@@ -93,6 +93,7 @@ describe("StreamGraph", () => {
         });
 
         it("should display text in x-axis and not values", () => {
+            dataView.categorical!.categories![0].source.type = ValueType.fromDescriptor({ dateTime: false })
             dataView.categorical!.categories![0].values = [
                 "Jan",
                 "Feb",
@@ -110,20 +111,19 @@ describe("StreamGraph", () => {
 
             visualBuilder.updateFlushAllD3Transitions(dataView);
 
-            const isNumberRegExp: RegExp = /\d/;
+            const isNumberRegExp = /\d/;
 
-            const xAxisTicks = visualBuilder.xAxisTicks;
-            for (let i = 0; i < xAxisTicks.length; i++) {
-                const textElements = xAxisTicks[i].querySelectorAll("text");
-                for (let j = 0; j < textElements.length; j++) {
-                    expect(isNumberRegExp.test(textElements[j].textContent!)).toBeFalsy();
-                }
-            }
+            Array.from(visualBuilder.xAxisTicks).forEach((element, index) => {
+            const textElements = element.querySelectorAll("text");
+                Array.from(textElements).forEach((textElement, index, array) => {
+                    expect(isNumberRegExp.test(textElement.textContent!)).toBeFalsy();
+                });
+            });
         });
 
         it("svg element created", () => {
-            expect(visualBuilder.mainElement[0]).toBeTruthy();
-          });
+            expect(document.body.contains(visualBuilder.mainElement)).toBeTruthy();
+        });
 
         it("Layers are not empty on first data initialization", () => {
             const visualUpdateOptions: VisualUpdateOptions = {
@@ -134,7 +134,6 @@ describe("StreamGraph", () => {
 
             visualBuilder.updateVisual(visualUpdateOptions);
 
-            // const layers: JQuery<any>[] = visualBuilder.layers.toArray().map($);
             const layers = Array.from(visualBuilder.layers).map((layer: HTMLElement) => {});
             expect(layers.length).toBeGreaterThan(0);
         });
@@ -273,17 +272,17 @@ describe("StreamGraph", () => {
                 expect(visualBuilder.dataLabelsText[0].textContent!.length).toBeGreaterThan(expectedTextWithValue.length);
             });
 
-            // it("color", () => {
-            //     const color = "#ABCDEF";
+            it("color", () => {
+                const color = "#ABCDEF";
             
-            //     (dataView.metadata.objects as any).labels.color = getSolidColorStructuralObject(color);
+                (dataView.metadata.objects as any).labels.color = getSolidColorStructuralObject(color);
             
-            //     visualBuilder.updateFlushAllD3Transitions(dataView);
+                visualBuilder.updateFlushAllD3Transitions(dataView);
             
-            //     Array.from(visualBuilder.dataLabelsText).forEach((element: HTMLElement) => {
-            //         assertColorsMatch(element.style.fill, color);
-            //     });
-            // });
+                Array.from(visualBuilder.dataLabelsText).forEach((element: HTMLElement) => {
+                    assertColorsMatch(element.style.fill, color);
+                });
+            });
             
             it("font size", () => {
                 const fontSize = 22,
@@ -345,17 +344,17 @@ describe("StreamGraph", () => {
                 expect(document.body.contains(visualBuilder.xAxisLabel)).toBe(false);
             });
 
-            // it("color", () => {
-            //     const color: string = "#ABCDEF";
-            //     (dataView.metadata.objects as any).categoryAxis.labelColor = getSolidColorStructuralObject(color);
-            //     visualBuilder.updateFlushAllD3Transitions(dataView);
-            //     Array.from(visualBuilder.xAxisTicks).forEach((tick) => {
-            //         const textElements = tick.getElementsByTagName("text");
-            //         for (let i = 0; i < textElements.length; i++) {
-            //             expect(textElements[i].style.fill).toBe(color);
-            //         }
-            //     });
-            // });
+            it("color", () => {
+                const color = "#ABCDEF";
+
+                (dataView.metadata.objects as any).categoryAxis.labelColor = getSolidColorStructuralObject(color);
+
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                Array.from(visualBuilder.xAxisTicks).forEach(element => {
+                    assertColorsMatch(getComputedStyle(element).fill, color);
+                  });
+            });
 
             it("font size", () => {
                 const fontSize = 22;
@@ -400,29 +399,26 @@ describe("StreamGraph", () => {
                 (dataView.metadata.objects as any).valueAxis.showAxisTitle = true;
                 visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                expect(visualBuilder.yAxisLabel.style.display).toBe("block");
+                expect(document.body.contains(visualBuilder.yAxisLabel)).toBe(true);
 
                 (dataView.metadata.objects as any).valueAxis.showAxisTitle = false;
                 visualBuilder.updateFlushAllD3Transitions(dataView);
 
-                expect(visualBuilder.yAxisLabel.style.display).toBe("none");
+                expect(document.body.contains(visualBuilder.yAxisLabel)).toBe(false);
             });
 
             
-            // it("color", () => {
-            //     const color: string = "#ABCDEF";
+            it("color", () => {
+                const color = "#ABCDEF";
 
-            //     (dataView.metadata.objects as any).valueAxis.labelColor = getSolidColorStructuralObject(color);
+                (dataView.metadata.objects as any).valueAxis.labelColor = getSolidColorStructuralObject(color);
 
-            //     visualBuilder.updateFlushAllD3Transitions(dataView);
+                visualBuilder.updateFlushAllD3Transitions(dataView);
 
-            //     Array.from(visualBuilder.yAxisTicks)
-            //     .map(tick => Array.from(tick.getElementsByTagName('text')))
-            //     .flat()
-            //     .forEach((element: SVGTextElement) => {
-            //             assertColorsMatch(getComputedStyle(element).fill, color);
-            //         });
-            // });
+                Array.from(visualBuilder.yAxisTicks).forEach(element => {
+                    assertColorsMatch(getComputedStyle(element).fill, color);
+                });
+            });
 
             it("font size", () => {
                 const fontSize = 22;
@@ -451,7 +447,7 @@ describe("StreamGraph", () => {
                 if (selectionIdIndex++ === 1) {
                     return seriesSelectionId;
                 }
-
+                
                 return createSelectionId((++selectionIdIndex).toString());
             };
             visualBuilder.visualHost.createSelectionIdBuilder = () => customMockISelectionIdBuilder;
@@ -463,15 +459,15 @@ describe("StreamGraph", () => {
         it("Selection state set on converter result including clear", () => {
             let series: StreamGraphSeries[];
 
-            interactivityService["selectedIds"] = [seriesSelectionId];
-
+            interactivityService["selectionManager"].selectionIds = [seriesSelectionId];
+            
             const data = StreamGraph.converter(
                 dataView,
                 colorPalette,
                 interactivityService,
                 visualBuilder.visualHost,
                 dataViews);
-
+                
             series = data.series;
 
             // We should see the selection state applied to resulting data
@@ -640,119 +636,125 @@ describe("StreamGraph", () => {
         }
     });
 
-    // describe("Capabilities tests", () => {
-    //     it("all items having displayName should have displayNameKey property", () => {
-    //         jasmine.getJSONFixtures().fixturesPath = "base";
+    describe("Capabilities tests", () => {
+        it("all items having displayName should have displayNameKey property", async () => {
+            let r = await fetch("base/capabilities.json");
+            let jsonData = await r.json();
+            let objectsChecker: Function = (obj) => {
+                const objKeys = Object.keys(obj);
+                for (let property of objKeys) {
+                    let value: any = obj[property];
 
-    //         let jsonData = getJSONFixture("capabilities.json");
+                    if (value.displayName) {
+                        expect(value.displayNameKey).toBeDefined();
+                    }
 
-    //         let objectsChecker: Function = (obj) => {
-    //             for (let property in obj) {
-    //                 let value: any = obj[property];
+                    if (typeof value === "object") {
+                        objectsChecker(value);
+                    }
+                }
+            };
 
-    //                 if (value.displayName) {
-    //                     expect(value.displayNameKey).toBeDefined();
-    //                 }
+            objectsChecker(jsonData);
+        });
+    });
 
-    //                 if (typeof value === "object") {
-    //                     objectsChecker(value);
-    //                 }
-    //             }
-    //         };
+    describe("Accessibility", () => {
+        describe("High contrast mode", () => {
+            const backgroundColor: string = "#000000";
+            const foregroundColor: string = "#ffff00";
 
-    //         objectsChecker(jsonData);
-    //     });
-    // });
+            beforeEach(() => {
+                visualBuilder.visualHost.colorPalette.isHighContrast = true;
 
-    // describe("Accessibility", () => {
-    //     describe("High contrast mode", () => {
-    //         const backgroundColor: string = "#000000";
-    //         const foregroundColor: string = "#ffff00";
+                visualBuilder.visualHost.colorPalette.background = { value: backgroundColor };
+                visualBuilder.visualHost.colorPalette.foreground = { value: foregroundColor };
+            });
 
-    //         beforeEach(() => {
-    //             visualBuilder.visualHost.colorPalette.isHighContrast = true;
+            it("should not use fill style", (done) => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    const layers = Array.from(visualBuilder.layers).map(element => {
+                        return element;
+                      });
 
-    //             visualBuilder.visualHost.colorPalette.background = { value: backgroundColor };
-    //             visualBuilder.visualHost.colorPalette.foreground = { value: foregroundColor };
-    //         });
+                    expect(isColorAppliedToElements(layers, null, "fill"));
 
-    //         it("should not use fill style", (done) => {
-    //             visualBuilder.updateRenderTimeout(dataView, () => {
-    //                 const layers: JQuery<any>[] = visualBuilder.layers.toArray().map($);
+                    done();
+                });
+            });
 
-    //                 expect(isColorAppliedToElements(layers, null, "fill"));
+            it("should use stroke style", (done) => {
+                visualBuilder.updateRenderTimeout(dataView, () => {
+                    const layers = Array.from(visualBuilder.layers).map(element => {
+                        return element;
+                      });
 
-    //                 done();
-    //             });
-    //         });
+                    expect(isColorAppliedToElements(layers, foregroundColor, "stroke"));
 
-    //         it("should use stroke style", (done) => {
-    //             visualBuilder.updateRenderTimeout(dataView, () => {
-    //                 const layers: JQuery<any>[] = visualBuilder.layers.toArray().map($);
+                    done();
+                });
+            });
+        });
+    });
 
-    //                 expect(isColorAppliedToElements(layers, foregroundColor, "stroke"));
+    describe("highlight test", () => {
+        const seriesCount: number = 4;
+        const seriesLenght: number = 50;
+        let dataLabelsText: HTMLElement[];
+        let dataViewWithHighLighted: DataView;
+        let highligtedSeriesNumber: number;
+        let hightlightedElementNumber: number;
 
-    //                 done();
-    //             });
-    //         });
-    //     });
-    // });
+        beforeEach(() => {
+            highligtedSeriesNumber = Math.ceil(getRandomNumber(0, seriesCount - 1));
+            hightlightedElementNumber = Math.ceil(getRandomNumber(0, seriesLenght - 1));
 
-    // describe("highlight test", () => {
-    //     const seriesCount: number = 4;
-    //     const seriesLenght: number = 50;
-    //     let dataLabelsText: JQuery<any>[];
-    //     let dataViewWithHighLighted: DataView;
-    //     let highligtedSeriesNumber: number;
-    //     let hightlightedElementNumber: number;
+            dataViewWithHighLighted = defaultDataViewBuilder.getDataView(undefined, false, true, highligtedSeriesNumber, hightlightedElementNumber);
+            dataViewWithHighLighted.metadata.objects = {
+                labels: {
+                    show: true,
+                    showValue: true
+                }
+            };
+            visualBuilder.update(dataViewWithHighLighted);
+            
+            dataLabelsText = Array.from(visualBuilder.dataLabelsText).map(element => {
+                return element;
+              });
+        });
 
-    //     beforeEach(() => {
-    //         highligtedSeriesNumber = Math.ceil(getRandomNumber(0, seriesCount - 1));
-    //         hightlightedElementNumber = Math.ceil(getRandomNumber(0, seriesLenght - 1));
+        it("should highligted elements labels count be similar to highlighted serie's previous elements count", (done) => {
+            visualBuilder.updateRenderTimeout(dataViewWithHighLighted, () => {
+                expect(dataLabelsText.length).toBeLessThan(seriesLenght);
 
-    //         dataViewWithHighLighted = defaultDataViewBuilder.getDataView(undefined, false, true, highligtedSeriesNumber, hightlightedElementNumber);
-    //         dataViewWithHighLighted.metadata.objects = {
-    //             labels: {
-    //                 show: true,
-    //                 showValue: true
-    //             }
-    //         };
-    //         visualBuilder.update(dataViewWithHighLighted);
-    //         dataLabelsText = visualBuilder.dataLabelsText.toArray().map($);
-    //     });
+                // depends on viewport and label width
+                expect(dataLabelsText.length).toBeGreaterThanOrEqual(1);
+                expect(dataLabelsText.length).toBeLessThanOrEqual(hightlightedElementNumber + 1);
+                done();
+            });
+        });
 
-    //     it("should highligted elements labels count be similar to highlighted serie's previous elements count", (done) => {
-    //         visualBuilder.updateRenderTimeout(dataViewWithHighLighted, () => {
-    //             expect(dataLabelsText.length).toBeLessThan(seriesLenght);
+        it("should highligted elements labels has right names", (done) => {
+            visualBuilder.updateRenderTimeout(dataViewWithHighLighted, () => {
+                const highlightedSeriesName: string = ProductSalesByDateData.GroupNames[highligtedSeriesNumber];
+                const groupNameLength: number = ProductSalesByDateData.GroupNames[highligtedSeriesNumber].length;
 
-    //             // depends on viewport and label width
-    //             expect(dataLabelsText.length).toBeGreaterThanOrEqual(1);
-    //             expect(dataLabelsText.length).toBeLessThanOrEqual(hightlightedElementNumber + 1);
-    //             done();
-    //         });
-    //     });
+                dataLabelsText.forEach((element, index) => {
+                    const labelText: string = element.textContent!;
+                    const labelValue: number = Number(labelText.substr(groupNameLength));
+                    // if highlighted element is the last - its label is not rendered (for the prettier view)
+                    const expectedLastLabelValue: number = (hightlightedElementNumber === seriesLenght - 1) ? 0 :
+                        dataViewWithHighLighted.categorical!.values![highligtedSeriesNumber].values[hightlightedElementNumber] as number;
 
-    //     it("should highligted elements labels has right names", (done) => {
-    //         visualBuilder.updateRenderTimeout(dataViewWithHighLighted, () => {
-    //             const highlightedSeriesName: string = ProductSalesByDateData.GroupNames[highligtedSeriesNumber];
-    //             const groupNameLength: number = ProductSalesByDateData.GroupNames[highligtedSeriesNumber].length;
-
-    //             dataLabelsText.forEach((element: JQuery<any>, index: number) => {
-    //                 const labelText: string = element.text();
-    //                 const labelValue: number = Number(labelText.substr(groupNameLength));
-    //                 // if highlighted element is the last - its label is not rendered (for the prettier view)
-    //                 const expectedLastLabelValue: number = (hightlightedElementNumber === seriesLenght - 1) ? 0 :
-    //                     dataViewWithHighLighted.categorical!.values![highligtedSeriesNumber].values[hightlightedElementNumber] as number;
-
-    //                 expect(labelText.includes(highlightedSeriesName)).toBe(true);
-    //                 if (index === dataLabelsText.length - 1) {
-    //                     expect(labelValue).toBe(expectedLastLabelValue);
-    //                 } else {
-    //                     expect(labelValue).toBe(0);
-    //                 }
-    //             });
-    //             done();
-    //         });
-    //     });
-    // });
+                    expect(labelText.includes(highlightedSeriesName)).toBe(true);
+                    if (index === dataLabelsText.length - 1) {
+                        expect(labelValue).toBe(expectedLastLabelValue);
+                    } else {
+                        expect(labelValue).toBe(0);
+                    }
+                });
+                done();
+            });
+        });
+    });
 });

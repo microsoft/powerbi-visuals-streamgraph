@@ -432,7 +432,7 @@ export class StreamGraph implements IVisual {
             .keys(allLabels)
             .offset(stackOffsetNone);
 
-        if (formattingSettings.enableWiggle.wiggle.value) {
+        if (formattingSettings.general.wiggle.value) {
             stackVar.offset(stackOffsetWiggle);
         }
 
@@ -667,14 +667,25 @@ export class StreamGraph implements IVisual {
             }
         };
 
+        let dataDomainVals : number[];
+        let isScalarVal : boolean;
+        if(this.data.metadata.type.dateTime){
+            dataDomainVals = [this.data.xMinValue, this.data.xMaxValue];
+            isScalarVal = true;
+        }
+        else {
+            dataDomainVals = range(this.data.xMaxValue + 1);
+            isScalarVal = false;
+        }
+
         if (xShow) {
             const axisOptions: CreateAxisOptions = {
                 pixelSpan: effectiveWidth,
-                dataDomain: range(this.data.xMaxValue + 1),
+                dataDomain: dataDomainVals,
                 metaDataColumn: this.data.metadata,
                 outerPadding: StreamGraph.outerPadding,
                 formatString: null,
-                isScalar: false,
+                isScalar: isScalarVal,
                 isVertical: false,
                 // todo fix types issue
                 getValueFn: (value, dataType): any => {
@@ -703,9 +714,9 @@ export class StreamGraph implements IVisual {
             ];
 
             const xAxisTextNodes: Selection<any, any, any, any> = this.axisX.selectAll("text");
-            
-            xAxisTextNodes.call(StreamGraph.wordBreak, this.xAxisProperties, StreamGraph.XAxisLabelSize);
 
+            xAxisTextNodes.call(StreamGraph.wordBreak, this.xAxisProperties, StreamGraph.XAxisLabelSize);
+            
             /* eslint-disable-next-line prefer-spread */
             this.setTextNodesPosition.apply(this, [xAxisTextNodes].concat(transformParams));
         }
@@ -891,7 +902,7 @@ export class StreamGraph implements IVisual {
                 return d != null && d.text != null;
             },
             style: {
-                "fill": enableDataLabelsCardSettings.labelColor.value.value,
+                "fill": enableDataLabelsCardSettings.color.value.value,
                 "font-size": fontSize,
             },
         };

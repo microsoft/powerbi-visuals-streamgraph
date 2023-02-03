@@ -17,7 +17,7 @@ class EnableGeneralCardSettings extends Card {
         topLevelToggle: false
     });
 
-    name: string = "enableWiggle";
+    name: string = "general";
     displayName: string = "General";
     displayNameKey: string = "Visual_General";
     slices = [this.wiggle];
@@ -82,14 +82,14 @@ const positionOptions : IEnumMember[] = [
 ]; 
 
 export class EnableCategoryAxisCardSettings extends BaseAxisCardSettings {
-    name: string = "enableCategoryAxis";
+    name: string = "categoryAxis";
     displayName: string = "X-Axis";
     displayNameKey: string = "Visual_XAxis";
     slices = [this.show, this.showAxisTitle, this.labelColor, this.fontSize];
 }
 
 export class EnableValueAxisCardSettings extends BaseAxisCardSettings {
-    name: string = "enableValueAxis";
+    name: string = "valueAxis";
     displayName: string = "Y-Axis";
     displayNameKey: string = "Visual_YAxis";
     slices = [this.show, this.showAxisTitle, this.labelColor, this.fontSize];
@@ -108,7 +108,7 @@ export class EnableLegendCardSettings extends BaseLabelColorCardSetting{
     });
 
     showAxisTitle = new formattingSettings.ToggleSwitch({
-        name: "showAxisTitle",
+        name: "showTitle",
         displayName: "Title",
         displayNameKey: "Visual_Title",
         value: true,
@@ -120,7 +120,7 @@ export class EnableLegendCardSettings extends BaseLabelColorCardSetting{
         value: positionOptions[0],
         displayName: "Position",
         displayNameKey: "Visual_LegendPosition",
-        name: "positionDropDown"
+        name: "position"
     });
 
     legendName = new formattingSettings.TextInput({
@@ -128,7 +128,7 @@ export class EnableLegendCardSettings extends BaseLabelColorCardSetting{
         value: "",
         displayName: "Legend Name",
         displayNameKey: "Visual_LegendName",
-        name: "legendName"
+        name: "titleText"
     });
 
     fontSize = new formattingSettings.NumUpDown({
@@ -148,13 +148,13 @@ export class EnableLegendCardSettings extends BaseLabelColorCardSetting{
         }
     });
 
-    name: string = "enableLegend";
+    name: string = "legend";
     displayName: string = "Legend";
     displayNameKey: string = "Visual_Legend";
     slices = [this.show, this.positionDropDown, this.showAxisTitle, this.legendName, this.labelColor, this.fontSize];
 }
 
-export class EnableDataLabelsCardSettings extends BaseLabelColorCardSetting {
+export class EnableDataLabelsCardSettings extends Card{
     show = new formattingSettings.ToggleSwitch({
         name: "show",
         displayName: undefined,
@@ -164,11 +164,18 @@ export class EnableDataLabelsCardSettings extends BaseLabelColorCardSetting {
     });
 
     showValues = new formattingSettings.ToggleSwitch({
-        name: "showValues",
+        name: "showValue",
         displayName: "Show Values",
         displayNameKey: "Visual_ShowValues",
         value: false,
         topLevelToggle: false
+    });
+
+    color = new formattingSettings.ColorPicker({
+        name: "color",
+        displayNameKey: "Visual_LabelsFill",
+        displayName: "Color",
+        value: { value: "#888888" }
     });
 
     fontSize = new formattingSettings.NumUpDown({
@@ -188,18 +195,18 @@ export class EnableDataLabelsCardSettings extends BaseLabelColorCardSetting {
         }
     });
 
-    name: string = "enableDataLabels";
+    name: string = "labels";
     displayName: string = "Data Labels";
     displayNameKey: string = "Visual_DataPointsLabels";
-    slices = [this.show, this.showValues, this.labelColor, this.fontSize];
+    slices = [this.show, this.showValues, this.color, this.fontSize];
 }
 
 export class StreamGraphSettingsModel extends Model {
-    enableWiggle = new EnableGeneralCardSettings();
+    general = new EnableGeneralCardSettings();
     enableCategoryAxisCardSettings = new EnableCategoryAxisCardSettings();
     enableValueAxisCardSettings = new EnableValueAxisCardSettings();
     enableLegendCardSettings = new EnableLegendCardSettings();
     enableDataLabelsCardSettings = new EnableDataLabelsCardSettings();
 
-    cards = [this.enableWiggle, this.enableCategoryAxisCardSettings, this.enableValueAxisCardSettings, this.enableLegendCardSettings, this.enableDataLabelsCardSettings];
+    cards = [this.general, this.enableCategoryAxisCardSettings, this.enableValueAxisCardSettings, this.enableLegendCardSettings, this.enableDataLabelsCardSettings];
 }
