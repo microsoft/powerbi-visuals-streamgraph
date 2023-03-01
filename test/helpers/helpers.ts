@@ -37,8 +37,8 @@ export function areColorsEqual(firstColor: string, secondColor: string): boolean
 }
 
 export function isColorAppliedToElements(
-    elements,
-    color,
+    elements : HTMLElement[],
+    color? : string,
     colorStyleName: string = "fill"
 ): boolean {
     return elements.some(element => {

@@ -26,9 +26,8 @@
 import "./../style/visual.less";
 
 // d3
-import * as d3 from "d3";
-import Selection = d3.Selection;
-// import { BaseType, select, Selection } from "d3-selection";
+import "d3-transition"; 
+import { BaseType, Selection, select } from "d3-selection";
 import { scaleLinear, ScaleLinear } from "d3-scale";
 import { stackOffsetNone, stackOffsetWiggle, curveCatmullRom, area, stack, Stack, Area, Series } from "d3-shape";
 import { min, max, range } from "d3-array";
@@ -142,9 +141,9 @@ export class StreamGraph implements IVisual {
     private static YAxis: ClassAndSelector = createClassAndSelector("yAxis");
     private static XAxis: ClassAndSelector = createClassAndSelector("xAxis");
     private static axisGraphicsContext: ClassAndSelector = createClassAndSelector("axisGraphicsContext");
-    private axes: Selection<d3.BaseType, any, any, any>;
-    private axisX: Selection<d3.BaseType, any, any, any>;
-    private axisY: Selection<d3.BaseType, any, any, any>;
+    private axes: Selection<BaseType, any, any, any>;
+    private axisX: Selection<BaseType, any, any, any>;
+    private axisY: Selection<BaseType, any, any, any>;
     private xAxisProperties: IAxisProperties;
     private yAxisProperties: IAxisProperties;
     private static XAxisOnSize: number = 20;
@@ -188,9 +187,9 @@ export class StreamGraph implements IVisual {
     private interactivityService: IInteractivityService<any>;
 
     private tooltipServiceWrapper: ITooltipServiceWrapper;
-    private svg: Selection<d3.BaseType, any, any, any>;
-    private clearCatcher: Selection<d3.BaseType, any, any, any>;
-    private dataPointsContainer: Selection<d3.BaseType, any, any, any>;
+    private svg: Selection<BaseType, any, any, any>;
+    private clearCatcher: Selection<BaseType, any, any, any>;
+    private dataPointsContainer: Selection<BaseType, any, any, any>;
 
     private localizationManager: ILocalizationManager;
 
@@ -464,7 +463,7 @@ export class StreamGraph implements IVisual {
     }
 
     public init(options: VisualConstructorOptions): void {
-        d3.select("html").style(
+        select("html").style(
             "-webkit-tap-highlight-color", "transparent" // Turns off the blue highlighting at mobile browsers
         );
 
@@ -479,7 +478,7 @@ export class StreamGraph implements IVisual {
             this.visualHost.tooltipService,
             element);
 
-        this.svg = d3.select(element)
+        this.svg = select(element)
             .append("svg")
             .classed(StreamGraph.VisualClassName, true);
 
@@ -558,7 +557,7 @@ export class StreamGraph implements IVisual {
         const values: DataViewValueColumns = this.dataView.categorical.values;
         const hasHighlights: boolean = !!(values.length > 0 && values[0].highlights);
 
-        const selection: Selection<d3.BaseType, StreamGraphSeries, any, any> = this.renderChart(
+        const selection: Selection<BaseType, StreamGraphSeries, any, any> = this.renderChart(
             this.data.series,
             this.data.stackedSeries,
             StreamGraph.AnimationDuration,
@@ -602,7 +601,7 @@ export class StreamGraph implements IVisual {
         this.events.renderingFinished(options);
     }
 
-    private setTextNodesPosition(xAxisTextNodes: Selection<d3.BaseType, any, any, any>,
+    private setTextNodesPosition(xAxisTextNodes: Selection<BaseType, any, any, any>,
         textAnchor: string,
         dx: string,
         dy: string,
@@ -618,7 +617,7 @@ export class StreamGraph implements IVisual {
     private toggleAxisVisibility(
         isShown: boolean,
         className: string,
-        axis: Selection<d3.BaseType, any, any, any>): void {
+        axis: Selection<BaseType, any, any, any>): void {
 
         axis.classed(className, isShown);
         if (!isShown) {
@@ -785,7 +784,7 @@ export class StreamGraph implements IVisual {
 
             const textSettings: TextProperties = StreamGraph.getTextPropertiesFunction(yAxisText);
             yAxisText = textMeasurementService.getTailoredTextOrDefault(textSettings, height);
-            const yAxisLabel: Selection<d3.BaseType, any, any, any> = this.axes.append("text")
+            const yAxisLabel: Selection<BaseType, any, any, any> = this.axes.append("text")
                 .style("font-family", textSettings.fontFamily)
                 .style("font-size", textSettings.fontSize)
                 .style("font-style", textSettings.fontStyle)
@@ -866,7 +865,7 @@ export class StreamGraph implements IVisual {
 
         xAxisText = textMeasurementService.getTailoredTextOrDefault(textSettings, width);
 
-        const xAxisLabel: Selection<d3.BaseType, any, any, any> = this.axes.append("text")
+        const xAxisLabel: Selection<BaseType, any, any, any> = this.axes.append("text")
             .style("font-family", textSettings.fontFamily)
             .style("font-size", textSettings.fontSize)
             .style("font-weight", textSettings.fontWeight)
@@ -914,7 +913,7 @@ export class StreamGraph implements IVisual {
         stackedSeries: Series<any, any>[],
         duration: number,
         hasHighlights: boolean = false
-    ): Selection<d3.BaseType, StreamGraphSeries, any, any> {
+    ): Selection<BaseType, StreamGraphSeries, any, any> {
 
         const { width, height } = this.viewport;
 
@@ -956,13 +955,13 @@ export class StreamGraph implements IVisual {
 
         const isHighContrast: boolean = this.colorPalette.isHighContrast;
 
-        const selection: Selection<d3.BaseType, any, any, any> = this.dataPointsContainer
+        const selection: Selection<BaseType, any, any, any> = this.dataPointsContainer
             .selectAll(StreamGraph.LayerSelector.selectorName)
             .data(stackedSeries);
 
         const selectionMerged = selection
             .enter()
-            .append<d3.BaseType>("path")
+            .append<BaseType>("path")
             .merge(selection);
 
         selectionMerged
@@ -1030,7 +1029,7 @@ export class StreamGraph implements IVisual {
 
             dataLabelUtils.cleanDataLabels(this.svg);
 
-            const labels: Selection<d3.BaseType, StreamDataPoint, any, any> =
+            const labels: Selection<BaseType, StreamDataPoint, any, any> =
                 dataLabelUtils.drawDefaultLabelsForDataPointChart(
                     dataPointsArray,
                     this.svg,

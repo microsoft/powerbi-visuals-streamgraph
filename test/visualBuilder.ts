@@ -44,7 +44,7 @@ export class StreamGraphBuilder extends VisualBuilderBase<StreamGraph> {
         this.visual.update(options);
     }
 
-    public get mainElement(): HTMLElement {
+    public get mainElement(): SVGElement {
         return this.element.querySelector("svg.streamGraph")!;
     }
     

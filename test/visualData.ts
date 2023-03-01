@@ -68,7 +68,7 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
         let array: number[] = [];
         const lenght: number = valuesArray.length;
         for (let i: number = 0; i < lenght; i++) {
-            array[i] = null!;
+            array[i] = NaN;
         }
         if (!hightlightedElementNumber)
             return array;

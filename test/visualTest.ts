@@ -88,7 +88,7 @@ describe("StreamGraph", () => {
             const paths = dataPointsContainer!.querySelectorAll("path");
             paths.forEach(function (element, index) {
                 let nanLocation = element.getAttribute("d")!.indexOf("NaN");
-                expect(nanLocation !== -1).toBeFalsy();
+                expect(nanLocation).toBe(-1);
             });
         });
 
@@ -673,11 +673,9 @@ describe("StreamGraph", () => {
 
             it("should not use fill style", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    const layers = Array.from(visualBuilder.layers).map(element => {
-                        return element;
-                      });
+                    const layers = Array.from(visualBuilder.layers);
 
-                    expect(isColorAppliedToElements(layers, null, "fill"));
+                    expect(isColorAppliedToElements(layers, undefined, "fill"));
 
                     done();
                 });
@@ -685,9 +683,7 @@ describe("StreamGraph", () => {
 
             it("should use stroke style", (done) => {
                 visualBuilder.updateRenderTimeout(dataView, () => {
-                    const layers = Array.from(visualBuilder.layers).map(element => {
-                        return element;
-                      });
+                    const layers = Array.from(visualBuilder.layers);
 
                     expect(isColorAppliedToElements(layers, foregroundColor, "stroke"));
 
@@ -718,9 +714,7 @@ describe("StreamGraph", () => {
             };
             visualBuilder.update(dataViewWithHighLighted);
             
-            dataLabelsText = Array.from(visualBuilder.dataLabelsText).map(element => {
-                return element;
-              });
+            dataLabelsText = Array.from(visualBuilder.dataLabelsText);
         });
 
         it("should highligted elements labels count be similar to highlighted serie's previous elements count", (done) => {

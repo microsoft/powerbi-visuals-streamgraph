@@ -64,17 +64,13 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
 
         this.series = options.series;
 
-        this.selection.on("contextmenu", (datum) => {
-            const event: MouseEvent = (getEvent() as MouseEvent) || window.event as MouseEvent;
-            if (event) {
-                this.selectionHandler.handleContextMenu(
-                    datum,
-                    {
-                        x: event.clientX,
-                        y: event.clientY
-                    });
-                event.preventDefault();
-            }
+        this.selection.on('contextmenu', (event: PointerEvent, dataPoint : any) => {
+            this.selectionHandler.handleContextMenu(dataPoint ? this.series[dataPoint.index] : {}, 
+            {    
+                x: event.clientX,
+                y: event.clientY
+            });
+            event.preventDefault();
         });
 
         this.selection.on("click", (datum) => {
