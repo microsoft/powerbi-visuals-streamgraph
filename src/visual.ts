@@ -29,7 +29,7 @@ import "./../style/visual.less";
 import "d3-transition"; 
 import { BaseType, Selection, select } from "d3-selection";
 import { scaleLinear, ScaleLinear } from "d3-scale";
-import { stackOffsetNone, stackOffsetWiggle, curveCatmullRom, area, stack, Stack, Area, Series } from "d3-shape";
+import { stackOffsetNone, stackOffsetWiggle, stackOffsetSilhouette, stackOffsetDiverging, curveCatmullRom, area, stack, Stack, Area, Series } from "d3-shape";
 import { min, max, range } from "d3-array";
 
 // powerbi
@@ -159,6 +159,7 @@ export class StreamGraph implements IVisual {
     private static YAxisLabelAngle: string = "rotate(-90)";
     private static YAxisLabelDy: number = 30;
     private static XAxisLabelDy: string = "-0.5em";
+    private static curvatureValue = 0.5;
     private margin: IMargin = {
         left: StreamGraph.YAxisOnSize,
         right: -20,
@@ -192,8 +193,6 @@ export class StreamGraph implements IVisual {
     private dataPointsContainer: Selection<BaseType, any, any, any>;
 
     private localizationManager: ILocalizationManager;
-
-    private YMaxAdjustment: number = 1.5;
 
     private static formattingSettingsService: FormattingSettingsService;
     private static formattingSettings: StreamGraphSettingsModel;
@@ -376,6 +375,44 @@ export class StreamGraph implements IVisual {
                 }
             }
         }
+
+        let arrayOfYs = [];
+        for (let valueIndex: number = 0; valueIndex < values.length; valueIndex++) {
+            let label: string = values[valueIndex].source.groupName as string;
+
+            const dataPointsValues: PrimitiveValue[] = values[valueIndex].values;
+
+            for (let dataPointValueIndex: number = 0; dataPointValueIndex < dataPointsValues.length; dataPointValueIndex++) {
+                const y: number = hasHighlights
+                    ? values[valueIndex].highlights[dataPointValueIndex] as number
+                    : dataPointsValues[dataPointValueIndex] as number;
+
+                if (y > value) {
+                    value = y;
+                }
+                const streamDataPoint: StreamDataPoint = {
+                    x: dataPointValueIndex,
+                    y: StreamGraph.isNumber(y)
+                        ? y
+                        : StreamGraph.DefaultValue,
+                    text: label,
+                    labelFontSize: fontSizeInPx,
+                    highlight: hasHighlights && values[valueIndex].highlights && values[valueIndex].highlights[dataPointValueIndex] !== null
+                };
+
+                if(arrayOfYs.length <= dataPointValueIndex)
+                    arrayOfYs.push(streamDataPoint.y)
+                else
+                    arrayOfYs[dataPointValueIndex] += streamDataPoint.y;
+            }
+        }
+        for(var idx = 0; idx < arrayOfYs.length; idx++)
+        {
+            if (arrayOfYs[idx] > yMaxValue) {
+                yMaxValue = arrayOfYs[idx];
+            }
+        }
+
         if (interactivityService) {
             interactivityService.applySelectionStateToData(series);
         }
@@ -432,7 +469,7 @@ export class StreamGraph implements IVisual {
             .offset(stackOffsetNone);
 
         if (formattingSettings.general.wiggle.value) {
-            stackVar.offset(stackOffsetWiggle);
+            stackVar.offset(stackOffsetSilhouette);
         }
 
         /* Adding values for d3.stack V5 */
@@ -723,14 +760,15 @@ export class StreamGraph implements IVisual {
         if (yShow) {
             this.yAxisProperties = AxisHelper.createAxis({
                 pixelSpan: effectiveHeight,
-                dataDomain: [this.data.yMinValue, this.data.yMaxValue],
+                dataDomain: [Math.min(this.data.yMinValue, 0), this.data.yMaxValue],
                 metaDataColumn: metaDataColumnPercent,
                 formatString: null,
                 outerPadding: StreamGraph.outerPadding,
                 isCategoryAxis: false,
                 isScalar: true,
                 isVertical: true,
-                useTickIntervalForDisplayUnits: true
+                useTickIntervalForDisplayUnits: true,
+                disableNice : true
             });
 
             this.axisY.call(<any>this.yAxisProperties.axis);
@@ -940,14 +978,14 @@ export class StreamGraph implements IVisual {
                 .range([margin.left, width - (margin.right + this.data.xAxisValueMaxTextHalfSize)]);
 
         const yMin: number = min(stackedSeries, serie => min(serie, d => d[0]));
-        const yMax: number = max(stackedSeries, serie => max(serie, d => d[1])) + this.YMaxAdjustment;
+        const yMax: number = max(stackedSeries, serie => max(serie, d => d[1]));
 
         const yScale: ScaleLinear<number, number> = scaleLinear()
             .domain([Math.min(yMin, 0), yMax])
-            .range([height - (margin.bottom + StreamGraph.TickHeight), (this.margin.top - this.data.yAxisFontHalfSize)]);
+            .range([height - (margin.bottom + StreamGraph.TickHeight), (this.margin.top + this.data.yAxisFontHalfSize)]);
 
         const areaVar: Area<any> = area<StreamDataPoint>()
-            .curve(curveCatmullRom.alpha(0.5))
+            .curve(curveCatmullRom.alpha(StreamGraph.curvatureValue))
             .x((d, i) => xScale(i))
             .y0(d => yScale(d[0]))
             .y1(d => yScale(d[1]))
@@ -1017,7 +1055,7 @@ export class StreamGraph implements IVisual {
             });
 
             const viewport: IViewport = {
-                height: height - (this.margin.top + this.data.yAxisFontHalfSize),
+                height: height,
                 width: width - (this.margin.right + this.data.xAxisValueMaxTextHalfSize) - margin.left,
             };
 
