@@ -56,7 +56,7 @@ import createInteractivitySelectionService = interactivitySelectionService.creat
 
 import { StreamGraphBuilder } from "./visualBuilder";
 import { isColorAppliedToElements, getSolidColorStructuralObject } from "./helpers/helpers";
-import { ProductSalesByDateData } from "./visualData";
+import { ProductSalesByDateData, MovieGenreSalesByDateData } from "./visualData";
 import { StreamGraphSeries, StreamData, StreamDataPoint } from "../src/dataInterfaces";
 import { StreamGraph, VisualUpdateType } from "../src/visual";
 import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
@@ -64,12 +64,14 @@ import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
 describe("StreamGraph", () => {
     let visualBuilder: StreamGraphBuilder,
         defaultDataViewBuilder: ProductSalesByDateData,
+        otherDataViewBuilder: MovieGenreSalesByDateData,
         dataView: DataView,
         dataViews: DataView[];
 
     beforeEach(() => {
         visualBuilder = new StreamGraphBuilder(1000, 500);
         defaultDataViewBuilder = new ProductSalesByDateData();
+        otherDataViewBuilder = new MovieGenreSalesByDateData();
 
         dataView = defaultDataViewBuilder.getDataView();
         dataViews = [dataView];
@@ -749,6 +751,126 @@ describe("StreamGraph", () => {
                 });
                 done();
             });
+        });
+    });
+
+    describe("y scale and graph waves alignment test with wiggle", () => {
+        let dataViewShort: DataView;
+
+        beforeEach(async () => {
+            dataViewShort = otherDataViewBuilder.getDataView(undefined);
+            dataViewShort.metadata.objects = {
+                curvature: {
+                    enabled: false
+                },
+                general: {
+                    wiggle: true
+                },
+                valueAxis : {
+                    highPrecision: true
+                }
+            };
+
+            visualBuilder.updateFlushAllD3Transitions(dataViewShort);
+        });
+
+        it("top tick y axis matches top wave of graph", (done) => {
+            const yAxisTicks = visualBuilder.yAxisTicks;
+            const yAxisTopTick = yAxisTicks[0].childNodes[11].childNodes[0] as Element;
+            const yAxisRect = yAxisTopTick.getBoundingClientRect();
+
+            const dataLayers = visualBuilder.layers;
+            const topDataLayer = dataLayers[2];
+            const topDataRect = topDataLayer.getBoundingClientRect();
+
+            expect(Math.abs(yAxisRect.y - topDataRect.y)).toBeLessThanOrEqual(3);
+            done();
+        });
+
+        it("bottom tick y axis matches bottom wave of graph", (done) => {
+            const yAxisTicks = visualBuilder.yAxisTicks;
+            const yAxisBottomTick = yAxisTicks[0].childNodes[1].childNodes[0] as Element;
+            const yAxisRect = yAxisBottomTick.getBoundingClientRect();
+
+            const dataLayers = visualBuilder.layers;
+            const bottomDataLayer = dataLayers[0];
+            const bottomDataRect = bottomDataLayer.getBoundingClientRect();
+
+            expect(Math.abs(yAxisRect.bottom - bottomDataRect.bottom)).toBeLessThanOrEqual(3);
+            done();
+        });
+
+        it("tick y axis matches wave of graph", (done) => {
+            const yAxisTicks = visualBuilder.yAxisTicks;
+            const yAxisBottomTick = yAxisTicks[0].childNodes[10].childNodes[0] as Element;
+            const yAxisRect = yAxisBottomTick.getBoundingClientRect();
+
+            const dataLayers = visualBuilder.layers;
+            const bottomDataLayer = dataLayers[0];
+            const bottomDataRect = bottomDataLayer.getBoundingClientRect();
+
+            expect(Math.abs(yAxisRect.y - bottomDataRect.y)).toBeLessThanOrEqual(3);
+            done();
+        });
+    });
+
+    describe("y scale and graph waves alignment test without wiggle", () => {
+        let dataViewShort: DataView;
+
+        beforeEach(async () => {
+            dataViewShort = otherDataViewBuilder.getDataView(undefined);
+            dataViewShort.metadata.objects = {
+                curvature: {
+                    enabled: false
+                },
+                general: {
+                    wiggle: false
+                },
+                valueAxis : {
+                    highPrecision: true
+                }
+            };
+
+            visualBuilder.updateFlushAllD3Transitions(dataViewShort);
+        });
+
+        it("top tick y axis matches top wave of graph", (done) => {
+            const yAxisTicks = visualBuilder.yAxisTicks;
+            const yAxisTopTick = yAxisTicks[0].childNodes[11].childNodes[0] as Element;
+            const yAxisRect = yAxisTopTick.getBoundingClientRect();
+
+            const dataLayers = visualBuilder.layers;
+            const topDataLayer = dataLayers[2];
+            const topDataRect = topDataLayer.getBoundingClientRect();
+
+            expect(Math.abs(yAxisRect.y - topDataRect.y)).toBeLessThanOrEqual(3);
+            done();
+        });
+
+        it("bottom tick y axis matches bottom wave of graph", (done) => {
+            const yAxisTicks = visualBuilder.yAxisTicks;
+            const yAxisBottomTick = yAxisTicks[0].childNodes[1].childNodes[0] as Element;
+            const yAxisRect = yAxisBottomTick.getBoundingClientRect();
+
+            const dataLayers = visualBuilder.layers;
+            const bottomDataLayer = dataLayers[0];
+            const bottomDataRect = bottomDataLayer.getBoundingClientRect();
+
+            expect(Math.abs(yAxisRect.bottom - bottomDataRect.bottom)).toBeLessThanOrEqual(3);
+            done();
+        });
+
+        it("tick y axis matches wave of graph", (done) => {
+            const yAxisTicks = visualBuilder.yAxisTicks;
+            const yAxisBottomTick = yAxisTicks[0].childNodes[10].childNodes[0] as Element;
+            const yAxisRect = yAxisBottomTick.getBoundingClientRect();
+
+            const dataLayers = visualBuilder.layers;
+            const bottomDataLayer = dataLayers[0];
+            const bottomDataRect = bottomDataLayer.getBoundingClientRect();
+
+            expect(Math.abs(yAxisRect.y - bottomDataRect.y)).toBeLessThanOrEqual(3);
+            done();
         });
     });
 });

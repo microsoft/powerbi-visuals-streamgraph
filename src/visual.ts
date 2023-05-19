@@ -768,7 +768,7 @@ export class StreamGraph implements IVisual {
                 isScalar: true,
                 isVertical: true,
                 useTickIntervalForDisplayUnits: true,
-                disableNice : true
+                disableNice : this.data.formattingSettings.enableValueAxisCardSettings.highPrecision.value
             });
 
             this.axisY.call(<any>this.yAxisProperties.axis);
@@ -984,12 +984,15 @@ export class StreamGraph implements IVisual {
             .domain([Math.min(yMin, 0), yMax])
             .range([height - (margin.bottom + StreamGraph.TickHeight), (this.margin.top + this.data.yAxisFontHalfSize)]);
 
-        const areaVar: Area<any> = area<StreamDataPoint>()
-            .curve(curveCatmullRom.alpha(StreamGraph.curvatureValue))
+        let areaVar: Area<any> = area<StreamDataPoint>()
             .x((d, i) => xScale(i))
             .y0(d => yScale(d[0]))
             .y1(d => yScale(d[1]))
             .defined(d => StreamGraph.isNumber(d[0]) && StreamGraph.isNumber(d[1]));
+        
+        if(this.data.formattingSettings.enableGraphCurvatureCardSettings.enabled.value) {
+            areaVar = areaVar.curve(curveCatmullRom.alpha(this.data.formattingSettings.enableGraphCurvatureCardSettings.value.value / 1.0))
+        }
 
         const isHighContrast: boolean = this.colorPalette.isHighContrast;
 

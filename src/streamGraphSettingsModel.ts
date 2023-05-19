@@ -89,10 +89,18 @@ export class EnableCategoryAxisCardSettings extends BaseAxisCardSettings {
 }
 
 export class EnableValueAxisCardSettings extends BaseAxisCardSettings {
+    highPrecision = new formattingSettings.ToggleSwitch({
+        name: "highPrecision",
+        displayName: "High Precision",
+        displayNameKey: "Visual_HighPrecision",
+        value: true,
+        topLevelToggle: false
+    });
+
     name: string = "valueAxis";
     displayName: string = "Y-Axis";
     displayNameKey: string = "Visual_YAxis";
-    slices = [this.show, this.showAxisTitle, this.labelColor, this.fontSize];
+    slices = [this.show, this.highPrecision, this.showAxisTitle, this.labelColor, this.fontSize];
 }
 
 export class EnableLegendCardSettings extends BaseLabelColorCardSetting{
@@ -201,12 +209,50 @@ export class EnableDataLabelsCardSettings extends Card{
     slices = [this.show, this.showValues, this.color, this.fontSize];
 }
 
+export class EnableGraphCurvatureCardSettings extends Card{
+    enabled = new formattingSettings.ToggleSwitch({
+        name: "enabled",
+        value: true,
+        topLevelToggle: true
+    });
+
+    value = new formattingSettings.NumUpDown({
+        name: "value",
+        displayName: "Curvature Value",
+        displayNameKey: "Visual_CurvatureValue",
+        value: 5,
+        options: {
+            minValue: {
+                type: powerbiVisualsApi.visuals.ValidatorType.Min,
+                value: 0,
+            },
+            maxValue: {
+                type: powerbiVisualsApi.visuals.ValidatorType.Max,
+                value: 10,
+            }
+        }
+    });
+
+    name: string = "curvature";
+    displayName: string = "Curvature";
+    displayNameKey: string = "Visual_Curvature";
+    slices = [this.enabled, this.value];
+}
+
 export class StreamGraphSettingsModel extends Model {
     general = new EnableGeneralCardSettings();
     enableCategoryAxisCardSettings = new EnableCategoryAxisCardSettings();
     enableValueAxisCardSettings = new EnableValueAxisCardSettings();
     enableLegendCardSettings = new EnableLegendCardSettings();
     enableDataLabelsCardSettings = new EnableDataLabelsCardSettings();
+    enableGraphCurvatureCardSettings = new EnableGraphCurvatureCardSettings();
 
-    cards = [this.general, this.enableCategoryAxisCardSettings, this.enableValueAxisCardSettings, this.enableLegendCardSettings, this.enableDataLabelsCardSettings];
+    cards = [
+        this.general,
+        this.enableCategoryAxisCardSettings,
+        this.enableValueAxisCardSettings,
+        this.enableLegendCardSettings,
+        this.enableDataLabelsCardSettings,
+        this.enableGraphCurvatureCardSettings
+    ];
 }

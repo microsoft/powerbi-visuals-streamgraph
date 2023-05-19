@@ -113,6 +113,11 @@
         },
         "valueAxis": {
             "properties": {
+                "highPrecision": {
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "show": {
                     "type": {
                         "bool": true
@@ -201,6 +206,20 @@
                     }
                 },
                 "fontSize": {
+                    "type": {
+                        "integer": true
+                    }
+                }
+            }
+        },
+        "curvature": {
+            "properties": {
+                "enabled": {
+                    "type": {
+                        "bool" : true
+                    }
+                },
+                "value": {
                     "type": {
                         "integer": true
                     }

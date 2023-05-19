@@ -27,5 +27,8 @@
 	"Visual_ShowValues": "Show Values",
 	"Visual_Tooltips_Highlighted": "Highlighted",
 	"Visual_Tooltips_Values": "Values",
-	"Visual_Column": "Column"
+	"Visual_Column": "Column",
+	"Visual_HighPrecision" : "High Precision",
+	"Visual_CurvatureValue" : "Curvature Value",
+	"Visual_Curvature" : "Curvature"
 }
