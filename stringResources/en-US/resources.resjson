@@ -30,5 +30,14 @@
 	"Visual_Column": "Column",
 	"Visual_HighPrecision" : "High Precision",
 	"Visual_CurvatureValue" : "Curvature Value",
-	"Visual_Curvature" : "Curvature"
+	"Visual_Curvature" : "Curvature",
+	"Visual_DataOffset" : "Data Offset",
+	"Visual_DataOffset_Silhouette" : "Silhouette",
+	"Visual_DataOffset_Expand" : "Expand",
+	"Visual_DataOrder" : "Data Order",
+	"Visual_DataOrder_None" : "None",
+	"Visual_DataOrder_Ascending" : "Ascending",
+	"Visual_DataOrder_Descending" : "Descending",
+	"Visual_DataOrder_InsideOut" : "Inside Out",
+	"Visual_DataOrder_Reverse" : "Reverse"
 }

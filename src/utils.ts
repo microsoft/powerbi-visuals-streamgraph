@@ -39,3 +39,17 @@ export function getFillOpacity(
 
     return DefaultOpacity;
 }
+
+export enum DataOrder {
+    None = 0,
+    Ascending = 1,
+    Descending = 2,
+    InsideOut = 3,
+    Reverse = 4
+}
+
+export enum DataOffset {
+    None = 0,
+    Silhouette = 1,
+    Expand = 2
+}

@@ -26,10 +26,12 @@
 import "./../style/visual.less";
 
 // d3
-import "d3-transition"; 
+import "d3-transition";
 import { BaseType, Selection, select } from "d3-selection";
 import { scaleLinear, ScaleLinear } from "d3-scale";
-import { stackOffsetNone, stackOffsetWiggle, stackOffsetSilhouette, stackOffsetDiverging, curveCatmullRom, area, stack, Stack, Area, Series } from "d3-shape";
+import { stackOrderNone, stackOrderAscending, stackOrderDescending, stackOrderInsideOut, stackOrderReverse } from "d3-shape";
+import { stackOffsetNone, stackOffsetExpand, stackOffsetSilhouette } from "d3-shape";
+import { curveCatmullRom, area, stack, Stack, Area, Series } from "d3-shape";
 import { min, max, range } from "d3-array";
 
 // powerbi
@@ -54,8 +56,8 @@ import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
 
-import { DefaultOpacity } from "./utils";
-import { StreamGraphSettingsModel, EnableValueAxisCardSettings, EnableCategoryAxisCardSettings, EnableDataLabelsCardSettings, EnableLegendCardSettings } from "./streamGraphSettingsModel";
+import { DefaultOpacity, DataOrder, DataOffset } from "./utils";
+import { StreamGraphSettingsModel, EnableValueAxisCardSettings, EnableCategoryAxisCardSettings, EnableDataLabelsCardSettings, EnableLegendCardSettings, EnableGeneralCardSettings } from "./streamGraphSettingsModel";
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
 import { createTooltipInfo } from "./tooltipBuilder";
 import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue } from "./dataInterfaces";
@@ -167,6 +169,9 @@ export class StreamGraph implements IVisual {
         top: 0
     };
     private static isLocalizedLegendOrientationDropdown: boolean = false;
+    private static isLocalizedDataOrderDropdown: boolean = false;
+    private static isLocalizedDataOffsetDropdown: boolean = false;
+
     private events: IVisualEventService;
 
     private static XAxisLabelSelector: ClassAndSelector = createClassAndSelector("xAxisLabel");
@@ -376,9 +381,9 @@ export class StreamGraph implements IVisual {
             }
         }
 
-        let arrayOfYs = [];
+        const arrayOfYs = [];
         for (let valueIndex: number = 0; valueIndex < values.length; valueIndex++) {
-            let label: string = values[valueIndex].source.groupName as string;
+            const label: string = values[valueIndex].source.groupName as string;
 
             const dataPointsValues: PrimitiveValue[] = values[valueIndex].values;
 
@@ -406,7 +411,7 @@ export class StreamGraph implements IVisual {
                     arrayOfYs[dataPointValueIndex] += streamDataPoint.y;
             }
         }
-        for(var idx = 0; idx < arrayOfYs.length; idx++)
+        for(let idx = 0; idx < arrayOfYs.length; idx++)
         {
             if (arrayOfYs[idx] > yMaxValue) {
                 yMaxValue = arrayOfYs[idx];
@@ -464,12 +469,40 @@ export class StreamGraph implements IVisual {
         /* Generate stack values for d3.stack V5 */
         const allLabels = legendData.dataPoints.map((dataPoint) => dataPoint.label);
 
-        const stackVar: Stack<any, any, any> = stack()
+        let stackVar: Stack<any, any, any> = stack()
             .keys(allLabels)
             .offset(stackOffsetNone);
+        
+        switch(formattingSettings.general.dataOrderDropDown.value.value){
+            default:
+            case DataOrder[DataOrder.None]:
+                stackVar = stackVar.order(stackOrderNone);
+                break;
+            case DataOrder[DataOrder.Ascending]:
+                stackVar = stackVar.order(stackOrderAscending);
+                break;
+            case DataOrder[DataOrder.Descending]:
+                stackVar = stackVar.order(stackOrderDescending);
+                break;
+            case DataOrder[DataOrder.InsideOut]:
+                stackVar = stackVar.order(stackOrderInsideOut);
+                break;
+            case DataOrder[DataOrder.Reverse]:
+                stackVar = stackVar.order(stackOrderReverse);
+                break;
+        }
 
         if (formattingSettings.general.wiggle.value) {
-            stackVar.offset(stackOffsetSilhouette);
+            switch(formattingSettings.general.dataOffsetDropDown.value.value){
+                default:
+                case DataOffset[DataOffset.Silhouette]:
+                    stackVar.offset(stackOffsetSilhouette);
+                    break;
+                case DataOffset[DataOffset.Expand]:
+                    stackVar.offset(stackOffsetExpand);
+                    yMaxValue = 1;
+                    break;
+            }
         }
 
         /* Adding values for d3.stack V5 */
@@ -585,6 +618,7 @@ export class StreamGraph implements IVisual {
             return;
         }
 
+        this.localizeFormattingPanes(this.data);
         this.renderLegend(this.data);
         this.updateViewport();
 
@@ -1104,10 +1138,38 @@ export class StreamGraph implements IVisual {
         }
     }
 
+    private localizeDataOrderDropdown(enableGeneralCardSettings : EnableGeneralCardSettings)
+    {
+        StreamGraph.isLocalizedDataOrderDropdown = true;
+        const strToBeLocalized : string = "Visual_DataOrder_";
+        for(let i = 0; i < enableGeneralCardSettings.dataOrderDropDown.items.length; i ++)
+        {
+            enableGeneralCardSettings.dataOrderDropDown.items[i].displayName = this.localizationManager.getDisplayName(strToBeLocalized + enableGeneralCardSettings.dataOrderDropDown.items[i].displayName)
+        }
+    }
+
+    private localizeDataOffsetDropdown(enableGeneralCardSettings : EnableGeneralCardSettings)
+    {
+        StreamGraph.isLocalizedDataOffsetDropdown = true;
+        const strToBeLocalized : string = "Visual_DataOffset_";
+        for(let i = 0; i < enableGeneralCardSettings.dataOffsetDropDown.items.length; i ++)
+        {
+            enableGeneralCardSettings.dataOffsetDropDown.items[i].displayName = this.localizationManager.getDisplayName(strToBeLocalized + enableGeneralCardSettings.dataOffsetDropDown.items[i].displayName)
+        }
+    }
+    
+    private localizeFormattingPanes(streamGraphData: StreamData)
+    {
+        const enableLegendCardSettings: EnableLegendCardSettings = streamGraphData.formattingSettings.enableLegendCardSettings;
+        const enableGeneralCardSettings: EnableGeneralCardSettings = streamGraphData.formattingSettings.general;
+        
+        if(!StreamGraph.isLocalizedLegendOrientationDropdown) this.localizeLegendOrientationDropdown(enableLegendCardSettings);
+        if(!StreamGraph.isLocalizedDataOrderDropdown) this.localizeDataOrderDropdown(enableGeneralCardSettings);
+        if(!StreamGraph.isLocalizedDataOffsetDropdown) this.localizeDataOffsetDropdown(enableGeneralCardSettings);
+    }
+
     private renderLegend(streamGraphData: StreamData): void {
         const enableLegendCardSettings: EnableLegendCardSettings = streamGraphData.formattingSettings.enableLegendCardSettings;
-        if(!StreamGraph.isLocalizedLegendOrientationDropdown) this.localizeLegendOrientationDropdown(enableLegendCardSettings);
-
         const title: string = enableLegendCardSettings.showAxisTitle.value
             ? enableLegendCardSettings.legendName.value || streamGraphData.legendData.title
             : undefined;

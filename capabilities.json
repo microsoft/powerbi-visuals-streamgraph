@@ -80,6 +80,18 @@
                     "type": {
                         "bool": true
                     }
+                },
+                "dataOrder": {
+                    "type": {
+                        "text": true
+                    },
+                    "suppressFormatPainterCopy": true
+                },
+                "dataOffset": {
+                    "type": {
+                        "text": true
+                    },
+                    "suppressFormatPainterCopy": true
                 }
             }
         },

@@ -1,6 +1,7 @@
 import powerbiVisualsApi from "powerbi-visuals-api";
 import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
 import { legendInterfaces } from "powerbi-visuals-utils-chartutils";
+import { DataOrder, DataOffset } from "./utils";
 import LegendPosition = legendInterfaces.LegendPosition;
 
 import Card = formattingSettings.Card;
@@ -8,7 +9,20 @@ import Model = formattingSettings.Model;
 
 import IEnumMember = powerbi.IEnumMember;
 
-class EnableGeneralCardSettings extends Card {
+const dataOrderOptions : IEnumMember[] = [
+    {value : DataOrder[DataOrder.None], displayName : "None"}, 
+    {value : DataOrder[DataOrder.Ascending], displayName : "Ascending"},
+    {value : DataOrder[DataOrder.Descending], displayName : "Descending"}, 
+    {value : DataOrder[DataOrder.InsideOut], displayName : "InsideOut"}, 
+    {value : DataOrder[DataOrder.Reverse], displayName : "Reverse"}
+];
+
+const dataOffsetOptions : IEnumMember[] = [
+    {value : DataOffset[DataOffset.Silhouette], displayName : "Silhouette"},
+    {value : DataOffset[DataOffset.Expand], displayName : "Expand"}
+];
+
+export class EnableGeneralCardSettings extends Card {
     wiggle = new formattingSettings.ToggleSwitch({
         name: "wiggle",
         displayName: "Enable Wiggle",
@@ -17,10 +31,26 @@ class EnableGeneralCardSettings extends Card {
         topLevelToggle: false
     });
 
+    dataOffsetDropDown = new formattingSettings.ItemDropdown({
+        items: dataOffsetOptions,
+        value: dataOffsetOptions[0],
+        displayName: "Wiggle Type",
+        displayNameKey: "Visual_DataOffset",
+        name: "dataOffset"
+    });
+
+    dataOrderDropDown = new formattingSettings.ItemDropdown({
+        items: dataOrderOptions,
+        value: dataOrderOptions[0],
+        displayName: "Data Order",
+        displayNameKey: "Visual_DataOrder",
+        name: "dataOrder"
+    });
+
     name: string = "general";
     displayName: string = "General";
     displayNameKey: string = "Visual_General";
-    slices = [this.wiggle];
+    slices = [this.wiggle, this.dataOffsetDropDown, this.dataOrderDropDown];
 }
 
 class BaseLabelColorCardSetting extends Card{
@@ -220,7 +250,7 @@ export class EnableGraphCurvatureCardSettings extends Card{
         name: "value",
         displayName: "Curvature Value",
         displayNameKey: "Visual_CurvatureValue",
-        value: 5,
+        value: 0,
         options: {
             minValue: {
                 type: powerbiVisualsApi.visuals.ValidatorType.Min,
