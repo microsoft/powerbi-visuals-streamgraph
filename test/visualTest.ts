@@ -756,6 +756,7 @@ describe("StreamGraph", () => {
 
     describe("y scale and graph waves alignment test with wiggle", () => {
         let dataViewShort: DataView;
+        const maxPixelDiffereneceDelta = 3;
 
         beforeEach(async () => {
             dataViewShort = otherDataViewBuilder.getDataView(undefined);
@@ -783,7 +784,7 @@ describe("StreamGraph", () => {
             const topDataLayer = dataLayers[2];
             const topDataRect = topDataLayer.getBoundingClientRect();
 
-            expect(Math.abs(yAxisRect.y - topDataRect.y)).toBeLessThanOrEqual(3);
+            expect(Math.abs(yAxisRect.y - topDataRect.y)).toBeLessThanOrEqual(maxPixelDiffereneceDelta);
             done();
         });
 
@@ -796,7 +797,7 @@ describe("StreamGraph", () => {
             const bottomDataLayer = dataLayers[0];
             const bottomDataRect = bottomDataLayer.getBoundingClientRect();
 
-            expect(Math.abs(yAxisRect.bottom - bottomDataRect.bottom)).toBeLessThanOrEqual(3);
+            expect(Math.abs(yAxisRect.bottom - bottomDataRect.bottom)).toBeLessThanOrEqual(maxPixelDiffereneceDelta);
             done();
         });
 
@@ -809,13 +810,14 @@ describe("StreamGraph", () => {
             const bottomDataLayer = dataLayers[0];
             const bottomDataRect = bottomDataLayer.getBoundingClientRect();
 
-            expect(Math.abs(yAxisRect.y - bottomDataRect.y)).toBeLessThanOrEqual(3);
+            expect(Math.abs(yAxisRect.y - bottomDataRect.y)).toBeLessThanOrEqual(maxPixelDiffereneceDelta);
             done();
         });
     });
 
     describe("y scale and graph waves alignment test without wiggle", () => {
         let dataViewShort: DataView;
+        const maxPixelDiffereneceDelta = 3;
 
         beforeEach(async () => {
             dataViewShort = otherDataViewBuilder.getDataView(undefined);
@@ -843,7 +845,7 @@ describe("StreamGraph", () => {
             const topDataLayer = dataLayers[2];
             const topDataRect = topDataLayer.getBoundingClientRect();
 
-            expect(Math.abs(yAxisRect.y - topDataRect.y)).toBeLessThanOrEqual(3);
+            expect(Math.abs(yAxisRect.y - topDataRect.y)).toBeLessThanOrEqual(maxPixelDiffereneceDelta);
             done();
         });
 
@@ -856,7 +858,7 @@ describe("StreamGraph", () => {
             const bottomDataLayer = dataLayers[0];
             const bottomDataRect = bottomDataLayer.getBoundingClientRect();
 
-            expect(Math.abs(yAxisRect.bottom - bottomDataRect.bottom)).toBeLessThanOrEqual(3);
+            expect(Math.abs(yAxisRect.bottom - bottomDataRect.bottom)).toBeLessThanOrEqual(maxPixelDiffereneceDelta);
             done();
         });
 
@@ -869,7 +871,7 @@ describe("StreamGraph", () => {
             const bottomDataLayer = dataLayers[0];
             const bottomDataRect = bottomDataLayer.getBoundingClientRect();
 
-            expect(Math.abs(yAxisRect.y - bottomDataRect.y)).toBeLessThanOrEqual(3);
+            expect(Math.abs(yAxisRect.y - bottomDataRect.y)).toBeLessThanOrEqual(maxPixelDiffereneceDelta);
             done();
         });
     });

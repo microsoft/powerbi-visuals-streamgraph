@@ -250,7 +250,7 @@ export class EnableGraphCurvatureCardSettings extends Card{
         name: "value",
         displayName: "Curvature Value",
         displayNameKey: "Visual_CurvatureValue",
-        value: 0,
+        value: 5,
         options: {
             minValue: {
                 type: powerbiVisualsApi.visuals.ValidatorType.Min,
@@ -258,7 +258,7 @@ export class EnableGraphCurvatureCardSettings extends Card{
             },
             maxValue: {
                 type: powerbiVisualsApi.visuals.ValidatorType.Max,
-                value: 10,
+                value: 50,
             }
         }
     });

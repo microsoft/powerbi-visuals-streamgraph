@@ -190,12 +190,12 @@ export class StreamGraph implements IVisual {
     private viewport: IViewport;
     private colorPalette: ISandboxExtendedColorPalette;
     private behavior: IInteractiveBehavior;
-    private interactivityService: IInteractivityService<any>;
+    private interactivityService: IInteractivityService<StreamGraphSeries>;
 
     private tooltipServiceWrapper: ITooltipServiceWrapper;
     private svg: Selection<BaseType, any, any, any>;
-    private clearCatcher: Selection<BaseType, any, any, any>;
-    private dataPointsContainer: Selection<BaseType, any, any, any>;
+    private clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
+    private dataPointsContainer: Selection<BaseType, StreamGraphSeries, any, any>;
 
     private localizationManager: ILocalizationManager;
 
@@ -226,7 +226,7 @@ export class StreamGraph implements IVisual {
     public static converter(
         dataView: DataView,
         colorPalette: IColorPalette,
-        interactivityService: IInteractivityService<any>,
+        interactivityService: IInteractivityService<StreamGraphSeries>,
         visualHost: IVisualHost,
         dataViews: DataView[]
     ): StreamData {
@@ -324,7 +324,8 @@ export class StreamGraph implements IVisual {
                 tooltipInfo,
                 dataPoints: [],
                 highlight: hasHighlights,
-                selected: false
+                selected: false,
+                label
             };
 
             const dataPointsValues: PrimitiveValue[] = values[valueIndex].values;
@@ -675,14 +676,12 @@ export class StreamGraph implements IVisual {
     private setTextNodesPosition(xAxisTextNodes: Selection<BaseType, any, any, any>,
         textAnchor: string,
         dx: string,
-        dy: string,
-        transform: string): void {
+        dy: string): void {
 
         xAxisTextNodes
             .style("text-anchor", textAnchor)
             .attr("dx", dx)
-            .attr("dy", dy)
-            .attr("transform", transform);
+            .attr("dy", dy);
     }
 
     private toggleAxisVisibility(
@@ -701,7 +700,7 @@ export class StreamGraph implements IVisual {
     private static outerPadding: number = 0;
 
     private static wordBreak(
-        text: Selection<any, any, any, any>,
+        text: Selection<Element, any, any, any>,
         axisProperties: IAxisProperties,
         maxHeight: number): void {
 
@@ -737,6 +736,7 @@ export class StreamGraph implements IVisual {
             }
         };
 
+        //This is done beacuse d3.range() provided wrong range when parameter was huge number.
         let dataDomainVals : number[];
         let isScalarVal : boolean;
         if(this.data.metadata.type.dateTime){
@@ -770,25 +770,21 @@ export class StreamGraph implements IVisual {
 
             this.xAxisProperties = AxisHelper.createAxis(axisOptions);
 
-            this.axisX.call(<any>this.xAxisProperties.axis);
+            this.axisX.call(this.xAxisProperties.axis);
 
             this.axisX
                 .style("fill", categoryAxisLabelColor)
                 .style("stroke", categoryAxisLabelColor)
                 .style("font-size", this.data.formattingSettings.enableCategoryAxisCardSettings.fontSize.value);
 
-            const transformParams: any[] = [
-                StreamGraph.AxisTextNodeTextAnchorForAngel0,
-                StreamGraph.AxisTextNodeDXForAngel0,
-                StreamGraph.AxisTextNodeDYForAngel0
-            ];
-
-            const xAxisTextNodes: Selection<any, any, any, any> = this.axisX.selectAll("text");
+            const xAxisTextNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("text");
 
             xAxisTextNodes.call(StreamGraph.wordBreak, this.xAxisProperties, StreamGraph.XAxisLabelSize);
-            
-            /* eslint-disable-next-line prefer-spread */
-            this.setTextNodesPosition.apply(this, [xAxisTextNodes].concat(transformParams));
+
+            this.setTextNodesPosition(xAxisTextNodes, 
+                StreamGraph.AxisTextNodeTextAnchorForAngel0, 
+                StreamGraph.AxisTextNodeDXForAngel0,
+                StreamGraph.AxisTextNodeDYForAngel0);
         }
 
         if (yShow) {
@@ -805,7 +801,7 @@ export class StreamGraph implements IVisual {
                 disableNice : this.data.formattingSettings.enableValueAxisCardSettings.highPrecision.value
             });
 
-            this.axisY.call(<any>this.yAxisProperties.axis);
+            this.axisY.call(this.yAxisProperties.axis);
 
             this.axisY
                 .style("fill", valueAxisLabelColor)
@@ -1018,14 +1014,14 @@ export class StreamGraph implements IVisual {
             .domain([Math.min(yMin, 0), yMax])
             .range([height - (margin.bottom + StreamGraph.TickHeight), (this.margin.top + this.data.yAxisFontHalfSize)]);
 
-        let areaVar: Area<any> = area<StreamDataPoint>()
+        let areaVar: Area<StreamDataPoint> = area<StreamDataPoint>()
             .x((d, i) => xScale(i))
             .y0(d => yScale(d[0]))
             .y1(d => yScale(d[1]))
             .defined(d => StreamGraph.isNumber(d[0]) && StreamGraph.isNumber(d[1]));
         
         if(this.data.formattingSettings.enableGraphCurvatureCardSettings.enabled.value) {
-            areaVar = areaVar.curve(curveCatmullRom.alpha(this.data.formattingSettings.enableGraphCurvatureCardSettings.value.value / 1.0))
+            areaVar = areaVar.curve(curveCatmullRom.alpha(this.data.formattingSettings.enableGraphCurvatureCardSettings.value.value / 10.0))
         }
 
         const isHighContrast: boolean = this.colorPalette.isHighContrast;
@@ -1130,32 +1126,32 @@ export class StreamGraph implements IVisual {
 
     private localizeLegendOrientationDropdown(enableLegendCardSettings : EnableLegendCardSettings)
     {
-        StreamGraph.isLocalizedLegendOrientationDropdown = true;
         const strToBeLocalized : string = "Visual_LegendPosition_";
         for(let i = 0; i < enableLegendCardSettings.positionDropDown.items.length; i ++)
         {
             enableLegendCardSettings.positionDropDown.items[i].displayName = this.localizationManager.getDisplayName(strToBeLocalized + enableLegendCardSettings.positionDropDown.items[i].displayName)
         }
+        StreamGraph.isLocalizedLegendOrientationDropdown = true;
     }
 
     private localizeDataOrderDropdown(enableGeneralCardSettings : EnableGeneralCardSettings)
     {
-        StreamGraph.isLocalizedDataOrderDropdown = true;
         const strToBeLocalized : string = "Visual_DataOrder_";
         for(let i = 0; i < enableGeneralCardSettings.dataOrderDropDown.items.length; i ++)
         {
             enableGeneralCardSettings.dataOrderDropDown.items[i].displayName = this.localizationManager.getDisplayName(strToBeLocalized + enableGeneralCardSettings.dataOrderDropDown.items[i].displayName)
         }
+        StreamGraph.isLocalizedDataOrderDropdown = true;
     }
 
     private localizeDataOffsetDropdown(enableGeneralCardSettings : EnableGeneralCardSettings)
     {
-        StreamGraph.isLocalizedDataOffsetDropdown = true;
         const strToBeLocalized : string = "Visual_DataOffset_";
         for(let i = 0; i < enableGeneralCardSettings.dataOffsetDropDown.items.length; i ++)
         {
             enableGeneralCardSettings.dataOffsetDropDown.items[i].displayName = this.localizationManager.getDisplayName(strToBeLocalized + enableGeneralCardSettings.dataOffsetDropDown.items[i].displayName)
         }
+        StreamGraph.isLocalizedDataOffsetDropdown = true;
     }
     
     private localizeFormattingPanes(streamGraphData: StreamData)

@@ -94,6 +94,7 @@ export interface StreamGraphSeries extends SelectableDataPoint {
     dataPoints: StreamDataPoint[];
     tooltipInfo?: VisualTooltipDataItem[];
     highlight?: boolean;
+    label: string;
 }
 
 export interface StackValue {

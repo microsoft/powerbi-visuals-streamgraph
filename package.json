@@ -62,7 +62,7 @@
     "less-loader": "11.1.0",
     "playwright": "^1.34.3",
     "powerbi-models": "1.12.6",
-    "powerbi-visuals-api": "~5.2.0",
+    "powerbi-visuals-api": "~5.4.0",
     "powerbi-visuals-tools": "^4.3.2",
     "powerbi-visuals-utils-chartutils": "^6.0.1",
     "powerbi-visuals-utils-colorutils": "6.0.1",

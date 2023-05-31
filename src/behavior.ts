@@ -37,17 +37,15 @@ import { getFillOpacity } from "./utils";
 
 export interface BehaviorOptions extends interactivityBaseService.IBehaviorOptions<StreamGraphSeries>{
     selection: Selection<BaseType, StreamGraphSeries, any, any>;
-    clearCatcher: Selection<BaseType, any, any, any>;
-    interactivityService: IInteractivityService<any>;
+    clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
+    interactivityService: IInteractivityService<StreamGraphSeries>;
     series: StreamGraphSeries[];
 }
 
-const getEvent = () => require("d3-selection").event;
-
 export class StreamGraphBehavior implements IInteractiveBehavior {
     private selection: Selection<BaseType, StreamGraphSeries, any, any>;
-    private clearCatcher: Selection<BaseType, any, any, any>;
-    private interactivityService: IInteractivityService<any>;
+    private clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
+    private interactivityService: IInteractivityService<StreamGraphSeries>;
     private series: any = null;
 
     protected options: BehaviorOptions;
@@ -73,11 +71,10 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
             event.preventDefault();
         });
 
-        this.selection.on("click", (datum) => {
-            const mouseEvent: MouseEvent = getEvent() as MouseEvent || window.event as MouseEvent;
-            mouseEvent && this.selectionHandler.handleSelection(
-                this.series[(<any>datum).target.__data__.index],
-                mouseEvent.ctrlKey);
+        this.selection.on("click", (event : PointerEvent, dataPoint : any) => {
+            event && this.selectionHandler.handleSelection(
+                this.series[dataPoint.index],
+                event.ctrlKey);
         });
 
         this.clearCatcher.on("click", () => {
