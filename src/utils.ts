@@ -29,17 +29,15 @@ export const DefaultOpacity: number = 1.0;
 
 //Returns Dimmed Opacity for unselected Elements
 export function getFillOpacity(
-    selected: boolean,
-    highlight: boolean,
-    hasSelection: boolean,
-    hasPartialHighlights: boolean,
-    anyOtherIsSelected: boolean): number {
+    isCurrentHighlighted : boolean,
+    anyHighlightedAtAll: boolean): number {
 
-    if ((hasPartialHighlights && !highlight) || (hasSelection && !selected) || (anyOtherIsSelected)) {
-        return DimmedOpacity;
+    //If current is 100% highlighted (supportHighlight), then return DefaultOpacity
+    if(isCurrentHighlighted || !anyHighlightedAtAll) {
+        return DefaultOpacity;
     }
 
-    return DefaultOpacity;
+    return DimmedOpacity;
 }
 
 export enum DataOrder {

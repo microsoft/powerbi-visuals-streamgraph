@@ -82,30 +82,26 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
         });
     }
 
-    public renderSelection(hasSelection: boolean): void {
-        const hasHighlights: boolean = this.interactivityService.hasSelection();
-
+    public renderSelection(hasHighlight: boolean): void {
         this.selection.style("opacity", (dataPoint: StackedStackValue) => {
             const currentIdx = dataPoint.index;
             const series = this.series[currentIdx];
-            let anyOtherIsSelected : boolean = false;
+            let isCurrentHighlighted : boolean = series.selected;
+            let anyHighlightedAtAll : boolean = hasHighlight;
 
             //SupportHighlight Logic
-            for(let idx = 0; idx < this.series.length; idx ++)
-            {
-                if(idx == currentIdx) continue;
-                for(let innerIdx = 0; innerIdx < this.series[idx].dataPoints.length; innerIdx ++)
-                {
-                    anyOtherIsSelected ||= this.series[idx].dataPoints[innerIdx].highlight;
-                }
+            for(let idx = 0; idx < this.series.length; idx ++) {
+                for(let innerIdx = 0; innerIdx < this.series[idx].dataPoints.length; innerIdx ++) {
+                    if(idx == currentIdx) {
+                        isCurrentHighlighted ||= this.series[idx].dataPoints[innerIdx].highlight;
+                    }
+                    anyHighlightedAtAll ||= this.series[idx].dataPoints[innerIdx].highlight;
+                } 
             }
 
             return getFillOpacity(
-                series.selected,
-                series.highlight,
-                !series.highlight && hasSelection,
-                !series.selected && hasHighlights,
-                anyOtherIsSelected);
+                isCurrentHighlighted,
+                anyHighlightedAtAll);
         });
     }
 }

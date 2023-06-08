@@ -664,7 +664,7 @@ export class StreamGraph implements IVisual {
                 behaviorOptions
             );
 
-            this.behavior.renderSelection(false);
+            this.behavior.renderSelection(interactivityService.hasSelection());
         }
         this.events.renderingFinished(options);
     }
