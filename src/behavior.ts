@@ -32,21 +32,21 @@ import { interactivityBaseService } from "powerbi-visuals-utils-interactivityuti
 import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
 import ISelectionHandler = interactivityBaseService.ISelectionHandler;
 import IInteractivityService = interactivityBaseService.IInteractivityService;
-import { StreamGraphSeries } from "./dataInterfaces";
+import { StreamGraphSeries, StackedStackValue } from "./dataInterfaces";
 import { getFillOpacity } from "./utils";
 
 export interface BehaviorOptions extends interactivityBaseService.IBehaviorOptions<StreamGraphSeries>{
-    selection: Selection<BaseType, StreamGraphSeries, any, any>;
+    selection: Selection<BaseType, StackedStackValue, any, any>;
     clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
     interactivityService: IInteractivityService<StreamGraphSeries>;
     series: StreamGraphSeries[];
 }
 
 export class StreamGraphBehavior implements IInteractiveBehavior {
-    private selection: Selection<BaseType, StreamGraphSeries, any, any>;
+    private selection: Selection<BaseType, StackedStackValue, any, any>;
     private clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
     private interactivityService: IInteractivityService<StreamGraphSeries>;
-    private series: any = null;
+    private series: StreamGraphSeries[] = null;
 
     protected options: BehaviorOptions;
     protected selectionHandler: ISelectionHandler;
@@ -62,8 +62,8 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
 
         this.series = options.series;
 
-        this.selection.on('contextmenu', (event: PointerEvent, dataPoint : any) => {
-            this.selectionHandler.handleContextMenu(dataPoint ? this.series[dataPoint.index] : {}, 
+        this.selection.on('contextmenu', (event: PointerEvent, dataPoint : StackedStackValue) => {
+            this.selectionHandler.handleContextMenu(dataPoint ? this.series[dataPoint.index] : {"selected" : false}, 
             {    
                 x: event.clientX,
                 y: event.clientY
@@ -71,7 +71,7 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
             event.preventDefault();
         });
 
-        this.selection.on("click", (event : PointerEvent, dataPoint : any) => {
+        this.selection.on("click", (event : PointerEvent, dataPoint : StackedStackValue) => {
             event && this.selectionHandler.handleSelection(
                 this.series[dataPoint.index],
                 event.ctrlKey);
@@ -85,14 +85,27 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
     public renderSelection(hasSelection: boolean): void {
         const hasHighlights: boolean = this.interactivityService.hasSelection();
 
-        this.selection.style("opacity", (stackedSeries: StreamGraphSeries) => {
-            const series = this.series[(<any>stackedSeries).index];
+        this.selection.style("opacity", (dataPoint: StackedStackValue) => {
+            const currentIdx = dataPoint.index;
+            const series = this.series[currentIdx];
+            let anyOtherIsSelected : boolean = false;
+
+            //SupportHighlight Logic
+            for(let idx = 0; idx < this.series.length; idx ++)
+            {
+                if(idx == currentIdx) continue;
+                for(let innerIdx = 0; innerIdx < this.series[idx].dataPoints.length; innerIdx ++)
+                {
+                    anyOtherIsSelected ||= this.series[idx].dataPoints[innerIdx].highlight;
+                }
+            }
 
             return getFillOpacity(
                 series.selected,
                 series.highlight,
                 !series.highlight && hasSelection,
-                !series.selected && hasHighlights);
+                !series.selected && hasHighlights,
+                anyOtherIsSelected);
         });
     }
 }

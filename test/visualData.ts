@@ -80,7 +80,7 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
         return array;
     }
 
-    public getDataView(columnNames?: string[], isGroupsEnabled: boolean = false, withHighlights: boolean = false, hightlightedIndex: number = 0, hightlightedElementNumber: number = 0): DataView {
+    public getDataView(columnNames?: string[], isGroupsEnabled: boolean = false): DataView {
         const categoriesColumn: TestDataViewBuilderCategoryColumnOptions[] = [{
             source: {
                 displayName: ProductSalesByDateData.ColumnCategory,
@@ -139,18 +139,6 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
             values: this.valuesSales[3]
         }];
 
-        if (withHighlights) {
-            columns[hightlightedIndex].highlights = this.generateHightLightedValues(this.valuesSales[hightlightedIndex], hightlightedElementNumber);
-            columns[hightlightedIndex].source.groupName = ProductSalesByDateData.GroupNames[hightlightedIndex];
-
-            for (let i = 0; i < columns.length; i++) {
-                if (i !== hightlightedIndex) {
-                    columns[i].highlights = this.generateHightLightedValues(this.valuesSales[i]);
-                    columns[i].source.groupName = ProductSalesByDateData.GroupNames[i];
-                }
-            }
-        }
-
         return this.createCategoricalDataViewBuilder(
             categoriesColumn, [
                 columns[0],
@@ -196,14 +184,14 @@ export class MovieGenreSalesByDateData extends TestDataViewBuilder {
     ];
 
     public generateHightLightedValues(valuesArray: number[], hightlightedElementNumber?: number): number[] {
-        let array: number[] = [];
-        const lenght: number = valuesArray.length;
-        for (let i: number = 0; i < lenght; i++) {
-            array[i] = NaN;
+        let array: any[] = [];
+        const length: number = valuesArray.length;
+        for (let i: number = 0; i < length; i++) {
+            array[i] = null;
         }
         if (!hightlightedElementNumber)
             return array;
-        if (hightlightedElementNumber >= lenght || hightlightedElementNumber < 0) {
+        if (hightlightedElementNumber >= length || hightlightedElementNumber < 0) {
             array[0] = valuesArray[0];
         } else {
             array[hightlightedElementNumber] = valuesArray[hightlightedElementNumber];
@@ -211,7 +199,7 @@ export class MovieGenreSalesByDateData extends TestDataViewBuilder {
         return array;
     }
 
-    public getDataView(columnNames?: string[]): DataView {
+    public getDataView(columnNames?: string[], withHighlights: boolean = false, hightlightedIndex: number = 0, hightlightedElementNumber: number = 0): DataView {
         const categoriesColumn: TestDataViewBuilderCategoryColumnOptions[] = [{
             source: {
                 displayName: MovieGenreSalesByDateData.ColumnCategory,
@@ -246,6 +234,18 @@ export class MovieGenreSalesByDateData extends TestDataViewBuilder {
             },
             values: this.valuesSales[2]
         }];
+
+        if (withHighlights) {
+            columns[hightlightedIndex].highlights = this.generateHightLightedValues(this.valuesSales[hightlightedIndex], hightlightedElementNumber);
+            columns[hightlightedIndex].source.groupName = ProductSalesByDateData.GroupNames[hightlightedIndex];
+
+            for (let i = 0; i < columns.length; i++) {
+                if (i !== hightlightedIndex) {
+                    columns[i].highlights = this.generateHightLightedValues(this.valuesSales[i]);
+                    columns[i].source.groupName = ProductSalesByDateData.GroupNames[i];
+                }
+            }
+        }
 
 
         return this.createCategoricalDataViewBuilder(

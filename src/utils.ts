@@ -27,13 +27,15 @@
 export const DimmedOpacity: number = 0.4;
 export const DefaultOpacity: number = 1.0;
 
+//Returns Dimmed Opacity for unselected Elements
 export function getFillOpacity(
     selected: boolean,
     highlight: boolean,
     hasSelection: boolean,
-    hasPartialHighlights: boolean): number {
+    hasPartialHighlights: boolean,
+    anyOtherIsSelected: boolean): number {
 
-    if ((hasPartialHighlights && !highlight) || (hasSelection && !selected)) {
+    if ((hasPartialHighlights && !highlight) || (hasSelection && !selected) || (anyOtherIsSelected)) {
         return DimmedOpacity;
     }
 

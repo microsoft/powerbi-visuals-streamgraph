@@ -60,7 +60,7 @@ import { DefaultOpacity, DataOrder, DataOffset } from "./utils";
 import { StreamGraphSettingsModel, EnableValueAxisCardSettings, EnableCategoryAxisCardSettings, EnableDataLabelsCardSettings, EnableLegendCardSettings, EnableGeneralCardSettings } from "./streamGraphSettingsModel";
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
 import { createTooltipInfo } from "./tooltipBuilder";
-import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue } from "./dataInterfaces";
+import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue, StackedStackValue } from "./dataInterfaces";
 
 
 // powerbi.extensibility.utils.svg
@@ -262,8 +262,6 @@ export class StreamGraph implements IVisual {
 
         const colorHelper: ColorHelper = new ColorHelper(colorPalette);
 
-        const hasHighlights: boolean = !!(values.length > 0 && values[0].highlights);
-
         this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(StreamGraphSettingsModel, dataViews);
         const formattingSettings = this.formattingSettings;
         const fontSizeInPx: string = PixelConverter.fromPoint(formattingSettings.enableDataLabelsCardSettings.fontSize.value);
@@ -272,7 +270,16 @@ export class StreamGraph implements IVisual {
 
         for (let valueIndex: number = 0; valueIndex < values.length; valueIndex++) {
             let label: string = values[valueIndex].source.groupName as string,
-                identity: ISelectionId = null;
+                identity: ISelectionId = null,
+                hasHighlights: boolean = !!(values.length > 0 && values[valueIndex].highlights);
+            
+            if(hasHighlights)
+            {
+                for(let idx = 0; idx < values[valueIndex].highlights.length; idx++)
+                {
+                    hasHighlights ||= !!(values[valueIndex].highlights[idx]);
+                }
+            }
 
             if (visualHost) {
                 const categoryColumn: DataViewCategoryColumn = {
@@ -335,9 +342,7 @@ export class StreamGraph implements IVisual {
             }
 
             for (let dataPointValueIndex: number = 0; dataPointValueIndex < dataPointsValues.length; dataPointValueIndex++) {
-                const y: number = hasHighlights
-                    ? values[valueIndex].highlights[dataPointValueIndex] as number
-                    : dataPointsValues[dataPointValueIndex] as number;
+                const y: number = dataPointsValues[dataPointValueIndex] as number;
 
                 if (y > value) {
                     value = y;
@@ -358,13 +363,14 @@ export class StreamGraph implements IVisual {
 
                 if (!stackValues[dataPointValueIndex]) {
                     stackValues[dataPointValueIndex] = {
-                        x: streamDataPoint.x
+                        x: streamDataPoint.x,
+                        highlight : false
                     };
                 }
                 stackValues[dataPointValueIndex][label] = streamDataPoint.y;
 
-                if (!stackValues[dataPointValueIndex]["highlight"]) {
-                    stackValues[dataPointValueIndex]["highlight"] = streamDataPoint.highlight ? 1 : 0;
+                if (!stackValues[dataPointValueIndex].highlight) {
+                    stackValues[dataPointValueIndex].highlight = streamDataPoint.highlight ? true : false;
                 }
 
                 if (streamDataPoint.x > xMaxValue) {
@@ -384,32 +390,22 @@ export class StreamGraph implements IVisual {
 
         const arrayOfYs = [];
         for (let valueIndex: number = 0; valueIndex < values.length; valueIndex++) {
-            const label: string = values[valueIndex].source.groupName as string;
-
             const dataPointsValues: PrimitiveValue[] = values[valueIndex].values;
 
             for (let dataPointValueIndex: number = 0; dataPointValueIndex < dataPointsValues.length; dataPointValueIndex++) {
-                const y: number = hasHighlights
-                    ? values[valueIndex].highlights[dataPointValueIndex] as number
-                    : dataPointsValues[dataPointValueIndex] as number;
+                let y: number = dataPointsValues[dataPointValueIndex] as number;
 
                 if (y > value) {
                     value = y;
                 }
-                const streamDataPoint: StreamDataPoint = {
-                    x: dataPointValueIndex,
-                    y: StreamGraph.isNumber(y)
+                y = StreamGraph.isNumber(y)
                         ? y
-                        : StreamGraph.DefaultValue,
-                    text: label,
-                    labelFontSize: fontSizeInPx,
-                    highlight: hasHighlights && values[valueIndex].highlights && values[valueIndex].highlights[dataPointValueIndex] !== null
-                };
+                        : StreamGraph.DefaultValue;
 
                 if(arrayOfYs.length <= dataPointValueIndex)
-                    arrayOfYs.push(streamDataPoint.y)
+                    arrayOfYs.push(y)
                 else
-                    arrayOfYs[dataPointValueIndex] += streamDataPoint.y;
+                    arrayOfYs[dataPointValueIndex] += y;
             }
         }
         for(let idx = 0; idx < arrayOfYs.length; idx++)
@@ -629,7 +625,7 @@ export class StreamGraph implements IVisual {
         const values: DataViewValueColumns = this.dataView.categorical.values;
         const hasHighlights: boolean = !!(values.length > 0 && values[0].highlights);
 
-        const selection: Selection<BaseType, StreamGraphSeries, any, any> = this.renderChart(
+        const selection: Selection<BaseType, StackedStackValue, any, any> = this.renderChart(
             this.data.series,
             this.data.stackedSeries,
             StreamGraph.AnimationDuration,
@@ -981,7 +977,7 @@ export class StreamGraph implements IVisual {
         stackedSeries: Series<any, any>[],
         duration: number,
         hasHighlights: boolean = false
-    ): Selection<BaseType, StreamGraphSeries, any, any> {
+    ): Selection<BaseType, StackedStackValue, any, any> {
 
         const { width, height } = this.viewport;
 

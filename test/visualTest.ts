@@ -695,62 +695,31 @@ describe("StreamGraph", () => {
         });
     });
 
-    describe("highlight test", () => {
-        const seriesCount: number = 4;
-        const seriesLenght: number = 50;
-        let dataLabelsText: HTMLElement[];
+    describe("support highlight test", () => {
+        const seriesCount: number = 3;
+        const seriesLenght: number = 12;
         let dataViewWithHighLighted: DataView;
         let highligtedSeriesNumber: number;
         let hightlightedElementNumber: number;
 
         beforeEach(() => {
-            highligtedSeriesNumber = Math.ceil(getRandomNumber(0, seriesCount - 1));
-            hightlightedElementNumber = Math.ceil(getRandomNumber(0, seriesLenght - 1));
+            highligtedSeriesNumber = Math.round(getRandomNumber(0, seriesCount - 1));
+            hightlightedElementNumber = Math.round(getRandomNumber(0, seriesLenght - 1));
 
-            dataViewWithHighLighted = defaultDataViewBuilder.getDataView(undefined, false, true, highligtedSeriesNumber, hightlightedElementNumber);
-            dataViewWithHighLighted.metadata.objects = {
-                labels: {
-                    show: true,
-                    showValue: true
-                }
-            };
+            dataViewWithHighLighted = otherDataViewBuilder.getDataView(undefined, true, highligtedSeriesNumber, hightlightedElementNumber);
             visualBuilder.update(dataViewWithHighLighted);
-            
-            dataLabelsText = Array.from(visualBuilder.dataLabelsText);
         });
 
-        it("should highligted elements labels count be similar to highlighted serie's previous elements count", (done) => {
-            visualBuilder.updateRenderTimeout(dataViewWithHighLighted, () => {
-                expect(dataLabelsText.length).toBeLessThan(seriesLenght);
-
-                // depends on viewport and label width
-                expect(dataLabelsText.length).toBeGreaterThanOrEqual(1);
-                expect(dataLabelsText.length).toBeLessThanOrEqual(hightlightedElementNumber + 1);
-                done();
-            });
-        });
-
-        it("should highligted elements labels has right names", (done) => {
-            visualBuilder.updateRenderTimeout(dataViewWithHighLighted, () => {
-                const highlightedSeriesName: string = ProductSalesByDateData.GroupNames[highligtedSeriesNumber];
-                const groupNameLength: number = ProductSalesByDateData.GroupNames[highligtedSeriesNumber].length;
-
-                dataLabelsText.forEach((element, index) => {
-                    const labelText: string = element.textContent!;
-                    const labelValue: number = Number(labelText.substr(groupNameLength));
-                    // if highlighted element is the last - its label is not rendered (for the prettier view)
-                    const expectedLastLabelValue: number = (hightlightedElementNumber === seriesLenght - 1) ? 0 :
-                        dataViewWithHighLighted.categorical!.values![highligtedSeriesNumber].values[hightlightedElementNumber] as number;
-
-                    expect(labelText.includes(highlightedSeriesName)).toBe(true);
-                    if (index === dataLabelsText.length - 1) {
-                        expect(labelValue).toBe(expectedLastLabelValue);
-                    } else {
-                        expect(labelValue).toBe(0);
-                    }
-                });
-                done();
-            });
+        it("selected value/serie should have full opacity, other should have less opacity", (done) => {
+            expect(parseFloat(visualBuilder.layers[highligtedSeriesNumber].style.opacity)).toBe(1);
+            for(let idx = 0; idx < seriesCount; idx ++)
+            {
+                if(idx != highligtedSeriesNumber)
+                {
+                    expect(parseFloat(visualBuilder.layers[idx].style.opacity)).toBeLessThan(1);
+                } 
+            }
+            done();
         });
     });
 

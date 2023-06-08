@@ -98,6 +98,12 @@ export interface StreamGraphSeries extends SelectableDataPoint {
 }
 
 export interface StackValue {
-    x: number;
-    [key: string]: number;
+    x: number,
+    highlight : boolean;
+}
+
+// https://github.com/d3/d3-shape#stack
+export interface StackedStackValue extends StackValue {
+    key: string,
+    index: number
 }
