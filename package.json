@@ -1,6 +1,6 @@
 {
   "name": "powerbi-visuals-streamgraph",
-  "version": "2.0.3",
+  "version": "3.0.0",
   "description": "A stacked area chart with smooth interpolation. Often used to display values over time.",
   "repository": {
     "type": "git",
