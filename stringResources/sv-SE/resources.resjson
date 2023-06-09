@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Mitten till höger",
 	"Visual_TextSize": "Textstorlek",
 	"Visual_DataPointsLabels": "Dataetiketter",
+	"Visual_ShowValues": "Visa värden",
 	"Visual_Tooltips_Highlighted": "Markerad",
 	"Visual_Tooltips_Values": "Värden",
 	"Visual_Column": "Kolumn"

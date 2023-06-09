@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Dešinėje centre",
 	"Visual_TextSize": "Teksto dydis",
 	"Visual_DataPointsLabels": "Duomenų žymos",
+	"Visual_ShowValues": "Mostra valori",
 	"Visual_Tooltips_Highlighted": "Pažymėta",
 	"Visual_Tooltips_Values": "Reikšmės",
 	"Visual_Column": "Stulpelis"

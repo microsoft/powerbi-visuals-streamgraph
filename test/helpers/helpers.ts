@@ -37,18 +37,18 @@ export function areColorsEqual(firstColor: string, secondColor: string): boolean
 }
 
 export function isColorAppliedToElements(
-    elements: JQuery[],
-    color?: string,
+    elements : HTMLElement[],
+    color? : string,
     colorStyleName: string = "fill"
 ): boolean {
-    return elements.some((element: JQuery) => {
-        const currentColor: string = element.css(colorStyleName);
-
-        if (!currentColor || !color) {
-            return currentColor === color;
-        }
-
-        return areColorsEqual(currentColor, color);
+    return elements.some(element => {
+      const currentColor = getComputedStyle(element).getPropertyValue(colorStyleName);
+  
+      if (!currentColor || !color) {
+        return currentColor === color;
+      }
+  
+      return areColorsEqual(currentColor, color);
     });
 }
 

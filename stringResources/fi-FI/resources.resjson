@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Oikealla keskellä",
 	"Visual_TextSize": "Tekstin koko",
 	"Visual_DataPointsLabels": "Arvopisteiden nimet",
+	"Visual_ShowValues": "Näytä arvot",
 	"Visual_Tooltips_Highlighted": "Korostettu",
 	"Visual_Tooltips_Values": "Arvot",
 	"Visual_Column": "Sarake"

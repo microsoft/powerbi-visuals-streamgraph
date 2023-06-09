@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Desno na sredino",
 	"Visual_TextSize": "Velikost besedila",
 	"Visual_DataPointsLabels": "Oznake podatkov",
+	"Visual_ShowValues": "Pokaži vrednosti",
 	"Visual_Tooltips_Highlighted": "Označeno",
 	"Visual_Tooltips_Values": "Vrednosti",
 	"Visual_Column": "Stolpec"

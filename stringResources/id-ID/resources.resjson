@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Tengah kanan",
 	"Visual_TextSize": "Ukuran Teks",
 	"Visual_DataPointsLabels": "Label Data",
+	"Visual_ShowValues": "Tampilkan Nilai",
 	"Visual_Tooltips_Highlighted": "Disorot",
 	"Visual_Tooltips_Values": "Nilai",
 	"Visual_Column": "Kolom"

@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Desno centralno",
 	"Visual_TextSize": "Veličina teksta",
 	"Visual_DataPointsLabels": "Oznake podataka",
+	"Visual_ShowValues": "Prikaži vrednosti",
 	"Visual_Tooltips_Highlighted": "Istaknuto",
 	"Visual_Tooltips_Values": "Vrednosti",
 	"Visual_Column": "Kolona"

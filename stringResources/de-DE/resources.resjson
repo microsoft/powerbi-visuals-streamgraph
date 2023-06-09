@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Rechts zentriert",
 	"Visual_TextSize": "Textgröße",
 	"Visual_DataPointsLabels": "Datenbeschriftungen",
+	"Visual_ShowValues": "Werte anzeigen",
 	"Visual_Tooltips_Highlighted": "Hervorgehoben",
 	"Visual_Tooltips_Values": "Werte",
 	"Visual_Column": "Spalte"

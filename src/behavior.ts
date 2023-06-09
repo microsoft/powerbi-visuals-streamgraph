@@ -25,30 +25,31 @@
  */
 
 // d3
-import Selection = d3.Selection;
+import { BaseType, Selection } from "d3-selection";
 
 // powerbi.extensibility.utils.interactivity
-import { interactivityService } from "powerbi-visuals-utils-interactivityutils";
-import IInteractiveBehavior = interactivityService.IInteractiveBehavior;
-import ISelectionHandler = interactivityService.ISelectionHandler;
-import IInteractivityService = interactivityService.IInteractivityService;
-import { StreamGraphSeries } from "./dataInterfaces";
+import { interactivityBaseService } from "powerbi-visuals-utils-interactivityutils";
+import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
+import ISelectionHandler = interactivityBaseService.ISelectionHandler;
+import IInteractivityService = interactivityBaseService.IInteractivityService;
+import { StreamGraphSeries, StackedStackValue } from "./dataInterfaces";
 import { getFillOpacity } from "./utils";
 
-export interface BehaviorOptions {
-    selection: Selection<d3.BaseType, StreamGraphSeries, any, any>;
-    clearCatcher: Selection<d3.BaseType, any, any, any>;
-    interactivityService: IInteractivityService;
+export interface BehaviorOptions extends interactivityBaseService.IBehaviorOptions<StreamGraphSeries>{
+    selection: Selection<BaseType, StackedStackValue, any, any>;
+    clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
+    interactivityService: IInteractivityService<StreamGraphSeries>;
     series: StreamGraphSeries[];
 }
 
-const getEvent = () => require("d3-selection").event;
-
 export class StreamGraphBehavior implements IInteractiveBehavior {
-    private selection: Selection<d3.BaseType, StreamGraphSeries, any, any>;
-    private clearCatcher: Selection<d3.BaseType, any, any, any>;
-    private interactivityService: IInteractivityService;
-    private series: any = null;
+    private selection: Selection<BaseType, StackedStackValue, any, any>;
+    private clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
+    private interactivityService: IInteractivityService<StreamGraphSeries>;
+    private series: StreamGraphSeries[] = null;
+
+    protected options: BehaviorOptions;
+    protected selectionHandler: ISelectionHandler;
 
     public bindEvents(
         options: BehaviorOptions,
@@ -57,13 +58,23 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
         this.selection = options.selection;
         this.clearCatcher = options.clearCatcher;
         this.interactivityService = options.interactivityService;
+        this.selectionHandler = selectionHandler;
 
         this.series = options.series;
 
-        this.selection.on("click", (series: StreamGraphSeries) => {
-            selectionHandler.handleSelection(
-                this.series[(<any>series).index],
-                (getEvent() as MouseEvent).ctrlKey);
+        this.selection.on('contextmenu', (event: PointerEvent, dataPoint : StackedStackValue) => {
+            this.selectionHandler.handleContextMenu(dataPoint ? this.series[dataPoint.index] : {"selected" : false}, 
+            {    
+                x: event.clientX,
+                y: event.clientY
+            });
+            event.preventDefault();
+        });
+
+        this.selection.on("click", (event : PointerEvent, dataPoint : StackedStackValue) => {
+            event && this.selectionHandler.handleSelection(
+                this.series[dataPoint.index],
+                event.ctrlKey);
         });
 
         this.clearCatcher.on("click", () => {
@@ -71,17 +82,26 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
         });
     }
 
-    public renderSelection(hasSelection: boolean): void {
-        const hasHighlights: boolean = this.interactivityService.hasSelection();
+    public renderSelection(hasHighlight: boolean): void {
+        this.selection.style("opacity", (dataPoint: StackedStackValue) => {
+            const currentIdx = dataPoint.index;
+            const series = this.series[currentIdx];
+            let isCurrentHighlighted : boolean = series.selected;
+            let anyHighlightedAtAll : boolean = hasHighlight;
 
-        this.selection.style("opacity", (stackedSeries: StreamGraphSeries) => {
-            const series = this.series[(<any>stackedSeries).index];
+            //SupportHighlight Logic
+            for(let idx = 0; idx < this.series.length; idx ++) {
+                for(let innerIdx = 0; innerIdx < this.series[idx].dataPoints.length; innerIdx ++) {
+                    if(idx == currentIdx) {
+                        isCurrentHighlighted ||= this.series[idx].dataPoints[innerIdx].highlight;
+                    }
+                    anyHighlightedAtAll ||= this.series[idx].dataPoints[innerIdx].highlight;
+                } 
+            }
 
             return getFillOpacity(
-                series.selected,
-                series.highlight,
-                !series.highlight && hasSelection,
-                !series.selected && hasHighlights);
+                isCurrentHighlighted,
+                anyHighlightedAtAll);
         });
     }
 }

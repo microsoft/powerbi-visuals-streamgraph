@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Jobb középen",
 	"Visual_TextSize": "Szöveg mérete",
 	"Visual_DataPointsLabels": "Adatfeliratok",
+	"Visual_ShowValues": "Értékek megjelenítése",
 	"Visual_Tooltips_Highlighted": "Kiemelt",
 	"Visual_Tooltips_Values": "Értékek",
 	"Visual_Column": "Oszlop"

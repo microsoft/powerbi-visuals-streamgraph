@@ -24,6 +24,7 @@
 	"Visual_LegendPosition_RightCenter": "Centru dreapta",
 	"Visual_TextSize": "Dimensiune text",
 	"Visual_DataPointsLabels": "Etichete de date",
+	"Visual_ShowValues": "Afișați valori",
 	"Visual_Tooltips_Highlighted": "Evidenţiat",
 	"Visual_Tooltips_Values": "Valori",
 	"Visual_Column": "Coloană"

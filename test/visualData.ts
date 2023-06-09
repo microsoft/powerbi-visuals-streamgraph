@@ -68,7 +68,7 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
         let array: number[] = [];
         const lenght: number = valuesArray.length;
         for (let i: number = 0; i < lenght; i++) {
-            array[i] = null;
+            array[i] = NaN;
         }
         if (!hightlightedElementNumber)
             return array;
@@ -80,7 +80,7 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
         return array;
     }
 
-    public getDataView(columnNames?: string[], isGroupsEnabled: boolean = false, withHighlights: boolean = false, hightlightedIndex: number = 0, hightlightedElementNumber: number = 0): DataView {
+    public getDataView(columnNames?: string[], isGroupsEnabled: boolean = false): DataView {
         const categoriesColumn: TestDataViewBuilderCategoryColumnOptions[] = [{
             source: {
                 displayName: ProductSalesByDateData.ColumnCategory,
@@ -139,6 +139,102 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
             values: this.valuesSales[3]
         }];
 
+        return this.createCategoricalDataViewBuilder(
+            categoriesColumn, [
+                columns[0],
+                columns[1],
+                columns[2],
+                columns[3]
+            ], columnNames!).build();
+    }
+}
+
+export class MovieGenreSalesByDateData extends TestDataViewBuilder {
+    private static DefaultDateFormat: string = "dddd MMMM d yyyy";
+    private static DefaultGroupName: string = "Genre";
+
+    public static ColumnCategory: string = "Date";
+    public static GroupCategory: string = "Group";
+    public static ColumnValues: string[] = ["Action", "Adventure", "Horror"];
+
+    public valuesDate: Date[] = [
+        new Date('2023/1/1'),
+        new Date('2023/2/1'),
+        new Date('2023/3/1'),
+        new Date('2023/4/1'),
+        new Date('2023/5/1'),
+        new Date('2023/6/1'),
+        new Date('2023/7/1'),
+        new Date('2023/8/1'),
+        new Date('2023/9/1'),
+        new Date('2023/10/1'),
+        new Date('2023/11/1'),
+        new Date('2023/12/1')
+    ];
+
+
+    public valuesSales: [number[], number[], number[]] = [
+        [35000,55000,70000,90000,66000,58000,48000,13000,21000,32000,21000,10000],
+        [3000, 16000,11000, 8500, 9000, 7500, 5000,25000,50000,22000,12000, 5000],
+        [2000,  9000, 9000, 1500, 5000, 4500, 7000,12000, 9000, 6000, 7000, 5000]
+    ];
+
+    public groups: string[] = [
+        "FirstGroup"
+    ];
+
+    public generateHightLightedValues(valuesArray: number[], hightlightedElementNumber?: number): number[] {
+        let array: any[] = [];
+        const length: number = valuesArray.length;
+        for (let i: number = 0; i < length; i++) {
+            array[i] = null;
+        }
+        if (!hightlightedElementNumber)
+            return array;
+        if (hightlightedElementNumber >= length || hightlightedElementNumber < 0) {
+            array[0] = valuesArray[0];
+        } else {
+            array[hightlightedElementNumber] = valuesArray[hightlightedElementNumber];
+        }
+        return array;
+    }
+
+    public getDataView(columnNames?: string[], withHighlights: boolean = false, hightlightedIndex: number = 0, hightlightedElementNumber: number = 0): DataView {
+        const categoriesColumn: TestDataViewBuilderCategoryColumnOptions[] = [{
+            source: {
+                displayName: MovieGenreSalesByDateData.ColumnCategory,
+                format: MovieGenreSalesByDateData.DefaultDateFormat,
+                type: ValueType.fromDescriptor({ dateTime: true })
+            },
+            values: this.valuesDate
+        }];
+
+        let columns: DataViewBuilderValuesColumnOptions[] = [{
+            source: {
+                displayName: MovieGenreSalesByDateData.ColumnValues[0],
+                isMeasure: true,
+                groupName: MovieGenreSalesByDateData.ColumnValues[0],
+                type: ValueType.fromDescriptor({ numeric: true })
+            },
+            values: this.valuesSales[0]
+        }, {
+            source: {
+                displayName: MovieGenreSalesByDateData.ColumnValues[1],
+                isMeasure: true,
+                groupName: MovieGenreSalesByDateData.ColumnValues[1],
+                type: ValueType.fromDescriptor({ numeric: true })
+            },
+            values: this.valuesSales[1]
+        }, {
+            source: {
+                displayName: MovieGenreSalesByDateData.ColumnValues[2],
+                isMeasure: true,
+                groupName: MovieGenreSalesByDateData.ColumnValues[2],
+                type: ValueType.fromDescriptor({ numeric: true })
+            },
+            values: this.valuesSales[2]
+        }];
+
         if (withHighlights) {
             columns[hightlightedIndex].highlights = this.generateHightLightedValues(this.valuesSales[hightlightedIndex], hightlightedElementNumber);
             columns[hightlightedIndex].source.groupName = ProductSalesByDateData.GroupNames[hightlightedIndex];
@@ -151,12 +247,12 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
             }
         }
 
+
         return this.createCategoricalDataViewBuilder(
             categoriesColumn, [
                 columns[0],
                 columns[1],
-                columns[2],
-                columns[3]
-            ], columnNames).build();
+                columns[2]
+            ], columnNames!).build();
     }
 }

@@ -28,8 +28,8 @@ import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 import PrimitiveValue = powerbi.PrimitiveValue;
 
 // powerbi.extensibility.utils.interactivity
-import { interactivityService } from "powerbi-visuals-utils-interactivityutils";
-import SelectableDataPoint = interactivityService.SelectableDataPoint;
+import { interactivitySelectionService } from "powerbi-visuals-utils-interactivityutils";
+import SelectableDataPoint = interactivitySelectionService.SelectableDataPoint;
 
 
 // powerbi.extensibility.utils.chart
@@ -43,17 +43,20 @@ import IValueFormatter = valueFormatter.IValueFormatter;
 
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 
+// d3
+import { Series } from "d3-shape";
+
 // powerbi.extensibility.visual
-import { VisualSettings } from "./settings";
+import { StreamGraphSettingsModel } from "./streamGraphSettingsModel";
 
 export interface StreamData {
     metadata: DataViewMetadataColumn;
     series: StreamGraphSeries[];
-    stackedSeries: d3.Series<any, any>[];
+    stackedSeries: Series<any, any>[];
     legendData: LegendData;
     valueFormatter: IValueFormatter;
     categoryFormatter: IValueFormatter;
-    settings: VisualSettings;
+    formattingSettings: StreamGraphSettingsModel;
     categoriesText: PrimitiveValue[];
     xMinValue: number;
     xMaxValue: number;
@@ -91,9 +94,16 @@ export interface StreamGraphSeries extends SelectableDataPoint {
     dataPoints: StreamDataPoint[];
     tooltipInfo?: VisualTooltipDataItem[];
     highlight?: boolean;
+    label: string;
 }
 
 export interface StackValue {
-    x: number;
-    [key: string]: number;
+    x: number,
+    highlight : boolean;
+}
+
+// https://github.com/d3/d3-shape#stack
+export interface StackedStackValue extends StackValue {
+    key: string,
+    index: number
 }
