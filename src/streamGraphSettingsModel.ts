@@ -56,10 +56,17 @@ export class EnableGeneralCardSettings extends Card {
 class BaseLabelColorCardSetting extends Card{
     labelColor = new formattingSettings.ColorPicker({
         name: "labelColor",
-        displayNameKey: "Visual_LabelsFill",
+        displayNameKey: "Visual_AxisFill",
         displayName: "Color",
-        value: { value: "#888888" }
+        value: { value: "#000000" }
         // instanceKind: powerbi.VisualEnumerationInstanceKinds.ConstantOrRule
+    });
+
+    titleColor = new formattingSettings.ColorPicker({
+        name: "titleColor",
+        displayNameKey: "Visual_TitleLabelsFill",
+        displayName: "Color",
+        value: { value: "#000000" }
     });
 }
 
@@ -68,7 +75,7 @@ class BaseFontSizeCardSettings extends BaseLabelColorCardSetting{
         name: "fontSize",
         displayName: "Text Size",
         displayNameKey: "Visual_TextSize",
-        value: 12,
+        value: 8,
         options: {
             minValue: {
                 type: powerbiVisualsApi.visuals.ValidatorType.Min,
@@ -76,7 +83,7 @@ class BaseFontSizeCardSettings extends BaseLabelColorCardSetting{
             },
             maxValue: {
                 type: powerbiVisualsApi.visuals.ValidatorType.Max,
-                value: 60,
+                value: 14,
             }
         }
     });
@@ -85,17 +92,17 @@ class BaseFontSizeCardSettings extends BaseLabelColorCardSetting{
 class BaseAxisCardSettings extends BaseFontSizeCardSettings{
     show = new formattingSettings.ToggleSwitch({
         name: "show",
-        displayName: "show",
-        displayNameKey: "Visual_Show",
+        displayName: "Show Axis",
+        displayNameKey: "Visual_ShowAxis",
         value: true,
-        topLevelToggle: true
+        topLevelToggle: false
     });
 
     showAxisTitle = new formattingSettings.ToggleSwitch({
         name: "showAxisTitle",
         displayNameKey: "Visual_Title",
         displayName: "Title",
-        value: true,
+        value: false,
         topLevelToggle: false
     });
 }
@@ -115,7 +122,7 @@ export class EnableCategoryAxisCardSettings extends BaseAxisCardSettings {
     name: string = "categoryAxis";
     displayName: string = "X-Axis";
     displayNameKey: string = "Visual_XAxis";
-    slices = [this.show, this.showAxisTitle, this.labelColor, this.fontSize];
+    slices = [this.show, this.labelColor, this.fontSize, this.showAxisTitle, this.titleColor];
 }
 
 export class EnableValueAxisCardSettings extends BaseAxisCardSettings {
@@ -123,17 +130,17 @@ export class EnableValueAxisCardSettings extends BaseAxisCardSettings {
         name: "highPrecision",
         displayName: "High Precision",
         displayNameKey: "Visual_HighPrecision",
-        value: true,
+        value: false,
         topLevelToggle: false
     });
 
     name: string = "valueAxis";
     displayName: string = "Y-Axis";
     displayNameKey: string = "Visual_YAxis";
-    slices = [this.show, this.highPrecision, this.showAxisTitle, this.labelColor, this.fontSize];
+    slices = [this.show, this.highPrecision, this.labelColor, this.fontSize, this.showAxisTitle, this.titleColor];
 }
 
-export class EnableLegendCardSettings extends BaseLabelColorCardSetting{
+export class EnableLegendCardSettings extends Card {
     public static DefaultTitleText: string = "";
     public static DefaultFontSizeInPoints: number = 8;
 
@@ -186,6 +193,13 @@ export class EnableLegendCardSettings extends BaseLabelColorCardSetting{
         }
     });
 
+    labelColor = new formattingSettings.ColorPicker({
+        name: "labelColor",
+        displayNameKey: "Visual_LabelsFill",
+        displayName: "Color",
+        value: { value: "#666666" }
+    });
+
     name: string = "legend";
     displayName: string = "Legend";
     displayNameKey: string = "Visual_Legend";
@@ -228,7 +242,7 @@ export class EnableDataLabelsCardSettings extends Card{
             },
             maxValue: {
                 type: powerbiVisualsApi.visuals.ValidatorType.Max,
-                value: 60,
+                value: 14,
             }
         }
     });

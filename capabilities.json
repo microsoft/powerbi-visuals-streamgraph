@@ -116,6 +116,15 @@
                         }
                     }
                 },
+                "titleColor": {
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
                 "fontSize": {
                     "type": {
                         "integer": true
@@ -141,6 +150,15 @@
                     }
                 },
                 "labelColor": {
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                },
+                "titleColor": {
                     "type": {
                         "fill": {
                             "solid": {
