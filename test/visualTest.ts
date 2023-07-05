@@ -68,6 +68,8 @@ describe("StreamGraph", () => {
         dataView: DataView,
         dataViews: DataView[];
 
+    const maxPixelDiffereneceDelta = 3;
+
     beforeEach(() => {
         visualBuilder = new StreamGraphBuilder(1000, 500);
         defaultDataViewBuilder = new ProductSalesByDateData();
@@ -354,23 +356,33 @@ describe("StreamGraph", () => {
                 visualBuilder.updateFlushAllD3Transitions(dataView);
 
                 Array.from(visualBuilder.xAxisTicks).forEach(element => {
-                    assertColorsMatch(getComputedStyle(element).fill, color);
+                    Array.from(element.children).forEach(child => {
+                        if(child.children.length == 0) return;
+                        assertColorsMatch(getComputedStyle(child.children[1]).fill, color);
+                    });
                   });
             });
 
             it("font size", () => {
-                const fontSize = 22;
-                const expectedFontSize = "22px";
+                const fontSize = 14;
+                const expectedFontSize = "14px";
                 (dataView.metadata.objects as any).categoryAxis.fontSize = fontSize;
                 visualBuilder.updateFlushAllD3Transitions(dataView);
                 const xAxisTicks = visualBuilder.xAxisTicks;
                 const xAxisTick = xAxisTicks[0];
                 const xAxisTickChildren = xAxisTick.children;
-                const g = xAxisTickChildren[xAxisTickChildren.length - 1];
+                const g = xAxisTickChildren[1].children[1];
                 const actualFontSize = getComputedStyle(g).fontSize;
                 expect(actualFontSize).toBe(expectedFontSize);
             });
 
+            it("first tick aligns with start of graph", () => {
+                visualBuilder.updateFlushAllD3Transitions(dataView);
+                let firstLayerX = visualBuilder.layers[0].getBoundingClientRect().x;
+                let axisDomainX = visualBuilder.xAxisTicks[0].children[0].getBoundingClientRect().x;
+
+                expect(Math.abs(axisDomainX - firstLayerX)).toBeLessThan(maxPixelDiffereneceDelta);
+            });
         });
 
         describe("Y-axis", () => {
@@ -418,13 +430,16 @@ describe("StreamGraph", () => {
                 visualBuilder.updateFlushAllD3Transitions(dataView);
 
                 Array.from(visualBuilder.yAxisTicks).forEach(element => {
-                    assertColorsMatch(getComputedStyle(element).fill, color);
-                });
+                    Array.from(element.children).forEach(child => {
+                        if(child.children.length == 0) return;
+                        assertColorsMatch(getComputedStyle(child.children[1]).fill, color);
+                    });
+                  });
             });
 
             it("font size", () => {
-                const fontSize = 22;
-                const expectedFontSize = "22px";
+                const fontSize = 14;
+                const expectedFontSize = "14px";
                 (dataView.metadata.objects as any).valueAxis.fontSize = fontSize;
                 visualBuilder.updateFlushAllD3Transitions(dataView);
                 const yAxisTicks = visualBuilder.yAxisTicks;
@@ -786,7 +801,6 @@ describe("StreamGraph", () => {
 
     describe("y scale and graph waves alignment test without wiggle", () => {
         let dataViewShort: DataView;
-        const maxPixelDiffereneceDelta = 3;
 
         beforeEach(async () => {
             dataViewShort = otherDataViewBuilder.getDataView(undefined);
