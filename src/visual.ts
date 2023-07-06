@@ -240,7 +240,7 @@ export class StreamGraph implements IVisual {
         }
 
         let xMaxValue: number = -Number.MAX_VALUE;
-        let xBiggestText : string = "";
+        let xLongestText : string = ""; //will contain the longest text in X Axis, used to calculate right margin offsets
         let xMinValue: number = Number.MAX_VALUE;
         let yMaxValue: number = -Number.MAX_VALUE;
         let yMinValue: number = Number.MAX_VALUE;
@@ -374,9 +374,9 @@ export class StreamGraph implements IVisual {
                     stackValues[dataPointValueIndex].highlight = streamDataPoint.highlight ? true : false;
                 }
 
-                if(streamDataPoint.text.length > xBiggestText.length)
+                if(streamDataPoint.text.length > xLongestText.length)
                 {
-                    xBiggestText = streamDataPoint.text;
+                    xLongestText = streamDataPoint.text;
                 }
                 if (streamDataPoint.x > xMaxValue) {
                     xMaxValue = streamDataPoint.x;
@@ -440,29 +440,29 @@ export class StreamGraph implements IVisual {
             if (metadata.type.dateTime && categoriesText[0] instanceof Date) {
                 xMinValue = (<Date>categoriesText[0]).getTime();
                 xMaxValue = (<Date>categoriesText[categoriesText.length - 1]).getTime();
-                xBiggestText = xMaxValue.toString();
+                xLongestText = xMaxValue.toString();
             } else if (metadata.type.numeric) {
                 xMinValue = categoriesText[0] as number;
                 xMaxValue = categoriesText[categoriesText.length - 1] as number;
-                xBiggestText = xMaxValue.toString();
+                xLongestText = xMaxValue.toString();
             } else {
                 xMinValue = 0;
                 xMaxValue = categoriesText.length - 1;
                 for(let idx = 0; idx < categoriesText.length; idx ++)
                 {
-                    if((<string>categoriesText[idx]).length > xBiggestText.length)
-                        xBiggestText = (<string>categoriesText[idx]);
+                    if((<string>categoriesText[idx]).length > xLongestText.length)
+                    xLongestText = (<string>categoriesText[idx]);
                 }
             }
         }
 
         const textProperties: TextProperties = {
-            text: xBiggestText,
+            text: xLongestText,
             fontFamily: "sans-serif",
             fontSize: PixelConverter.toString(formattingSettings.enableCategoryAxisCardSettings.fontSize.value)
         };
         const xAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textProperties);
-        const xAxisValueMaxTextHalfSize: number = xAxisValueMaxTextSize * 1.15; //reserve additional space
+        const xAxisValueMaxReservedTextSize: number = xAxisValueMaxTextSize * 1.15; //reserve additional space
         const textPropertiesY: TextProperties = {
             text: yMaxValue.toString(),
             fontFamily: "sans-serif",
@@ -536,7 +536,7 @@ export class StreamGraph implements IVisual {
             yAxisValueMaxTextSize,
             yAxisValueMaxTextHalfSize,
             xAxisValueMaxTextSize,
-            xAxisValueMaxTextHalfSize,
+            xAxisValueMaxReservedTextSize,
             yAxisFontSize,
             yAxisFontHalfSize,
             xAxisFontSize,
@@ -789,7 +789,7 @@ export class StreamGraph implements IVisual {
             yShow: boolean = this.data.formattingSettings.enableValueAxisCardSettings.show.value;
 
         this.viewport.height -= StreamGraph.TickHeight + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0);
-        const effectiveWidth: number = Math.max(0, this.viewport.width - this.margin.left - (this.margin.right + this.data.xAxisValueMaxTextHalfSize));
+        const effectiveWidth: number = Math.max(0, this.viewport.width - this.margin.left - (this.margin.right + this.data.xAxisValueMaxReservedTextSize));
         const effectiveHeight: number = Math.max(0, this.viewport.height - (this.margin.top + this.data.yAxisFontHalfSize) - this.margin.bottom + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0));
         const metaDataColumnPercent: powerbi.DataViewMetadataColumn = {
             displayName: this.localizationManager.getDisplayName(ColumnDisplayName),
@@ -823,7 +823,7 @@ export class StreamGraph implements IVisual {
                 formatString: null,
                 isScalar: isScalarVal,
                 isVertical: false,
-                useRangePoints: true, //d3 scaleBand -> scalePoint
+                useRangePoints: true, //will use scalePoint instead of scaleBand (https://d3-graph-gallery.com/graph/custom_axis.html)
                 // todo fix types issue
                 getValueFn: (value, dataType): any => {
                     if (dataType.dateTime) {
@@ -990,7 +990,7 @@ export class StreamGraph implements IVisual {
                 + (isYTitleOn
                     ? StreamGraph.YAxisLabelSize
                     : StreamGraph.MinLabelSize),
-            width: number = this.viewport.width - (this.margin.right + this.data.xAxisValueMaxTextHalfSize) - leftMargin,
+            width: number = this.viewport.width - (this.margin.right + this.data.xAxisValueMaxReservedTextSize) - leftMargin,
             height: number = this.viewport.height + StreamGraph.XAxisLabelSize + StreamGraph.TickHeight;
 
         let xAxisText: string = this.dataView.categorical.categories[0].source.displayName;
@@ -1071,7 +1071,7 @@ export class StreamGraph implements IVisual {
             margin: IMargin = this.margin,
             xScale: ScaleLinear<number, number> = scaleLinear()
                 .domain([0, series[0].dataPoints.length - 1])
-                .range([margin.left, width - (margin.right + this.data.xAxisValueMaxTextHalfSize)]);
+                .range([margin.left, width - (margin.right + this.data.xAxisValueMaxReservedTextSize)]);
 
         const yMin: number = min(stackedSeries, serie => min(serie, d => d[0]));
         const yMax: number = max(stackedSeries, serie => max(serie, d => d[1]));
@@ -1124,7 +1124,7 @@ export class StreamGraph implements IVisual {
         if (this.data.formattingSettings.enableDataLabelsCardSettings.show.value) {
             const labelsXScale: ScaleLinear<number, number> = scaleLinear()
                 .domain([0, series[0].dataPoints.length - 1])
-                .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxTextHalfSize]);
+                .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxReservedTextSize]);
 
             const layout: ILabelLayout = StreamGraph.getStreamGraphLabelLayout(
                 labelsXScale,
@@ -1155,7 +1155,7 @@ export class StreamGraph implements IVisual {
 
             const viewport: IViewport = {
                 height: height,
-                width: width - (this.margin.right + this.data.xAxisValueMaxTextHalfSize) - margin.left,
+                width: width - (this.margin.right + this.data.xAxisValueMaxReservedTextSize) - margin.left,
             };
 
             if (hasHighlights) {
