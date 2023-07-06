@@ -728,12 +728,64 @@ export class StreamGraph implements IVisual {
             (this as Element).setAttribute("y", dy);
         });
     }
+    private hideFirstAndLastTickXAxis()
+    {
+        const xAxisLineNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("line");
+        const xAxisLineNodesArray: BaseType[] = xAxisLineNodes.nodes();
+
+        // There is done to make sure first and last tick always transparent (there are cases when they are not alligned with start and end of axis)
+        if(xAxisLineNodesArray.length > 2)
+        {
+            for(let idx = 0; idx < xAxisLineNodesArray.length; idx++ )
+            {
+                (xAxisLineNodesArray[idx] as Element).setAttribute("opacity", "100");
+            }
+            (xAxisLineNodesArray[0] as Element).setAttribute("opacity", "0");
+            (xAxisLineNodesArray[xAxisLineNodesArray.length - 1] as Element).setAttribute("opacity", "0");
+        }
+    }
+    private setColorFontXAxis(xAxisTextNodes: Selection<BaseType, any, any, any>)
+    {
+        const categoryAxisLabelColor: string = this.data.formattingSettings.enableCategoryAxisCardSettings.labelColor.value.value;
+        const categoryAxisFontSize : string = this.data.formattingSettings.enableCategoryAxisCardSettings.fontSize.value.toString();
+        const xAxisTextNodesArray: BaseType[] = xAxisTextNodes.nodes();
+
+            for(let idx = 0; idx < xAxisTextNodesArray.length; idx++ )
+            {
+                if(xAxisTextNodesArray[idx])
+                {
+                    (xAxisTextNodesArray[idx] as Element)
+                        .setAttribute("fill", categoryAxisLabelColor);
+                    (xAxisTextNodesArray[idx] as Element)
+                        .setAttribute("stroke", categoryAxisLabelColor);
+                    (xAxisTextNodesArray[idx] as Element)
+                        .setAttribute("font-size", categoryAxisFontSize);
+                }
+            }
+    }
+    private setColorFontYAxis(yAxisTextNodes: Selection<BaseType, any, any, any>)
+    {
+        const valueAxisLabelColor: string = this.data.formattingSettings.enableValueAxisCardSettings.labelColor.value.value;
+        const valueAxisFontSize : string = this.data.formattingSettings.enableValueAxisCardSettings.fontSize.value.toString();
+        const yAxisTextNodesArray : BaseType[] = yAxisTextNodes.nodes();
+
+        for(let idx = 0; idx < yAxisTextNodesArray.length; idx++ )
+        {
+            if(yAxisTextNodesArray[idx])
+            {
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("fill", valueAxisLabelColor);
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("stroke", valueAxisLabelColor);
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-size", valueAxisFontSize);
+            }
+        }
+    }
     private calculateAxes() {
         const showAxisTitle: boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.showAxisTitle.value,
-            categoryAxisLabelColor: string = this.data.formattingSettings.enableCategoryAxisCardSettings.labelColor.value.value,
             xShow: boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.show.value,
 
-            valueAxisLabelColor: string = this.data.formattingSettings.enableValueAxisCardSettings.labelColor.value.value,
             yShow: boolean = this.data.formattingSettings.enableValueAxisCardSettings.show.value;
 
         this.viewport.height -= StreamGraph.TickHeight + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0);
@@ -787,34 +839,11 @@ export class StreamGraph implements IVisual {
 
             this.axisX.call(this.xAxisProperties.axis);
 
+            this.hideFirstAndLastTickXAxis();
+            
             const xAxisTextNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("text");
-            const xAxisLineNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("line");
-            const xAxisTextNodesArray: BaseType[] = xAxisTextNodes.nodes();
-            const xAxisLineNodesArray: BaseType[] = xAxisLineNodes.nodes();
-
-            // There is done to make sure first and last tick always transparent (there are cases when they are not alligned with start and end of axis)
-            if(xAxisLineNodesArray.length > 2)
-            {
-                for(let idx = 0; idx < xAxisLineNodesArray.length; idx++ )
-                {
-                    (xAxisLineNodesArray[idx] as Element).setAttribute("opacity", "100");
-                }
-                (xAxisLineNodesArray[0] as Element).setAttribute("opacity", "0");
-                (xAxisLineNodesArray[xAxisLineNodesArray.length - 1] as Element).setAttribute("opacity", "0");
-            }
-
-            for(let idx = 0; idx < xAxisTextNodesArray.length; idx++ )
-            {
-                if(xAxisTextNodesArray[idx])
-                {
-                    (xAxisTextNodesArray[idx] as Element)
-                        .setAttribute("fill", categoryAxisLabelColor);
-                    (xAxisTextNodesArray[idx] as Element)
-                        .setAttribute("stroke", categoryAxisLabelColor);
-                    (xAxisTextNodesArray[idx] as Element)
-                        .setAttribute("font-size", this.data.formattingSettings.enableCategoryAxisCardSettings.fontSize.value.toString());
-                }
-            }
+            
+            this.setColorFontXAxis(xAxisTextNodes);
 
             this.setTextNodesPosition(xAxisTextNodes, 
                 StreamGraph.AxisTextNodeTextAnchorForAngel0, 
@@ -840,21 +869,9 @@ export class StreamGraph implements IVisual {
 
             this.axisY.call(this.yAxisProperties.axis);
 
-            this.axisY
-                .style("font-size", this.data.formattingSettings.enableValueAxisCardSettings.fontSize.value);
+            const yAxisTextNodes: Selection<BaseType, any, any, any> = this.axisY.selectAll("text");
 
-            const yAxisTextNodesArray : BaseType[] = this.axisY.selectChildren().selectAll("text").nodes();
-
-            for(let idx = 0; idx < yAxisTextNodesArray.length; idx++ )
-            {
-                if(yAxisTextNodesArray[idx])
-                {
-                    (yAxisTextNodesArray[idx] as Element)
-                        .setAttribute("fill", valueAxisLabelColor);
-                    (yAxisTextNodesArray[idx] as Element)
-                        .setAttribute("stroke", valueAxisLabelColor);
-                }
-            }
+            this.setColorFontYAxis(yAxisTextNodes);
         }
 
         this.renderXAxisLabels();
@@ -1157,8 +1174,6 @@ export class StreamGraph implements IVisual {
                     viewport);
 
             if (labels) {
-                let localMarginLeft = margin.left;
-
                 //If Y axis is on or Y title is on, we need to consider that
                 let divider = 4;
                 if(this.data.formattingSettings.enableValueAxisCardSettings.show.value)
@@ -1166,13 +1181,13 @@ export class StreamGraph implements IVisual {
                 if(this.data.formattingSettings.enableValueAxisCardSettings.showAxisTitle.value)
                     divider--;
 
-                let offset: number = StreamGraph.DefaultDataLabelsOffset + localMarginLeft / divider;
+                let offset: number = StreamGraph.DefaultDataLabelsOffset + margin.left / divider;
 
                 //DataLabels value ON, Y axis OFF, Y title OFF
                 if(this.data.formattingSettings.enableDataLabelsCardSettings.showValues.value 
                         && !this.data.formattingSettings.enableValueAxisCardSettings.show.value
                         && !this.data.formattingSettings.enableValueAxisCardSettings.showAxisTitle.value)
-                    offset = StreamGraph.DefaultDataLabelsOffset - (localMarginLeft * 0.2);
+                    offset = StreamGraph.DefaultDataLabelsOffset - (margin.left * 0.2);
                 
                 //DataLabels value ON, Y axis OFF, Y title ON
                 if(this.data.formattingSettings.enableDataLabelsCardSettings.showValues.value 

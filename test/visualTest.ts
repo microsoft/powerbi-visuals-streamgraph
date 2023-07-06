@@ -445,7 +445,7 @@ describe("StreamGraph", () => {
                 const yAxisTicks = visualBuilder.yAxisTicks;
                 const yAxisTick = yAxisTicks[0];
                 const yAxisTickChildren = yAxisTick.children;
-                const g = yAxisTickChildren[yAxisTickChildren.length - 1];
+                const g = yAxisTickChildren[1].children[1];
                 const actualFontSize = getComputedStyle(g).fontSize;
                 expect(actualFontSize).toBe(expectedFontSize);
             });
