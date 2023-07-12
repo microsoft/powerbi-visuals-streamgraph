@@ -228,7 +228,7 @@ export class StreamGraph implements IVisual {
         const settingsEntries = Object.entries(formattingSettings) as settingsProperties[];
 
         //X-Axis
-        if(!formattingSettings.enableCategoryAxisCardSettings.show.value && !formattingSettings.enableCategoryAxisCardSettings.showAxisTitle.value)
+        if(!formattingSettings.enableCategoryAxisCardSettings.show.value)
         {
             const cardWeNeed : Card = settingsEntries.filter(x => x[1].constructor.name == EnableCategoryAxisCardSettings.name)[0][1];
             cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "labelColor" && x.name !== "labelFont");
@@ -243,9 +243,7 @@ export class StreamGraph implements IVisual {
         if(!formattingSettings.enableValueAxisCardSettings.show.value)
         {
             const cardWeNeed : Card = settingsEntries.filter(x => x[1].constructor.name == EnableValueAxisCardSettings.name)[0][1];
-            cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "highPrecision");
-            if(!formattingSettings.enableValueAxisCardSettings.showAxisTitle.value)
-                cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "labelColor" && x.name !== "labelFont");
+            cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "highPrecision" && x.name !== "labelFont" && x.name !== "labelColor");
         }
         if(!formattingSettings.enableValueAxisCardSettings.showAxisTitle.value)
         {
@@ -743,8 +741,8 @@ export class StreamGraph implements IVisual {
 
     private static outerPadding: number = 0;
 
-    private static wordBreak(
-        text: Selection<BaseType, any, any, any>,
+    private static applyWordBreak(
+        text: Selection<any, StreamDataPoint, any, any>,
         axisProperties: IAxisProperties,
         maxHeight: number,
         dy : string): void {
@@ -912,7 +910,7 @@ export class StreamGraph implements IVisual {
                 StreamGraph.AxisTextNodeDXForAngel0,
                 StreamGraph.AxisTextNodeDYForAngel0);
 
-            StreamGraph.wordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value.toString());
+            StreamGraph.applyWordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value.toString());
         }
 
         if (yShow) {
@@ -982,7 +980,7 @@ export class StreamGraph implements IVisual {
             yAxisText = textMeasurementService.getTailoredTextOrDefault(textSettings, height);
             const yAxisLabel: Selection<BaseType, any, any, any> = this.axes.append("text")
                 .style("font-family", textSettings.fontFamily)
-                .style("font-size", StreamGraph.YAxisLabelSize)
+                .style("font-size", textSettings.fontSize)
                 .style("font-style", textSettings.fontStyle)
                 .style("font-weight", textSettings.fontWeight)
                 .attr("transform", StreamGraph.YAxisLabelAngle)
@@ -1063,7 +1061,7 @@ export class StreamGraph implements IVisual {
 
         const xAxisLabel: Selection<BaseType, any, any, any> = this.axes.append("text")
             .style("font-family", textSettings.fontFamily)
-            .style("font-size", categoryAxisSettings.labelFont.fontSize.value)
+            .style("font-size", textSettings.fontSize)
             .style("font-weight", textSettings.fontWeight)
             .attr("transform", translate(
                 width / StreamGraph.AxisLabelMiddle,
