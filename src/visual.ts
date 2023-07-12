@@ -752,7 +752,7 @@ export class StreamGraph implements IVisual {
         const xAxisLineNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("line");
         const xAxisLineNodesArray: BaseType[] = xAxisLineNodes.nodes();
 
-        // There is done to make sure first and last tick always transparent (there are cases when they are not alligned with start and end of axis)
+        // This is done to make sure first and last tick always transparent (there are cases when they are not alligned with start and end of axis)
         if(xAxisLineNodesArray.length > 2)
         {
             for(let idx = 0; idx < xAxisLineNodesArray.length; idx++ )
