@@ -1,9 +1,8 @@
 # powerbi-visuals-streamgraph
-[![Build Status](https://travis-ci.org/Microsoft/powerbi-visuals-streamgraph.svg?branch=master)](https://travis-ci.org/Microsoft/powerbi-visuals-streamgraph) [![Coverage Status](https://coveralls.io/repos/github/Microsoft/powerbi-visuals-streamgraph/badge.svg?branch=master)](https://coveralls.io/github/Microsoft/powerbi-visuals-streamgraph?branch=master) [![Build Status](https://dev.azure.com/customvisuals/public/_apis/build/status/Microsoft.powerbi-visuals-chord)](https://dev.azure.com/customvisuals/public/_build/latest?definitionId=5)
 
 > A stacked area chart with smooth interpolation. Often used to display values over time.
 
-![stacked area chart screenshot](https://az158878.vo.msecnd.net/marketing/Partner_21474836617/Product_42949680594/Asset_1bbffb91-e55b-41b2-ad41-42b2698dfc6a/StreamGraphscreenshot1.png)
+![stacked area chart screenshot](https://github.com/microsoft/powerbi-visuals-streamgraph/blob/master/assets/screenshot.png)
 # Overview
 A stream graph, is a type of stacked area graph which is displaced around a central axis, resulting in a flowing, organic shape.
 

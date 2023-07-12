@@ -151,7 +151,7 @@ export class StreamGraph implements IVisual {
     private static XAxisOnSize: number = 20;
     private static XAxisOffSize: number = 10;
     private static YAxisOnSize: number = 25;
-    private static YAxisOffSize: number = 10;
+    private static YAxisOffSize: number = 30;
     private static XAxisLabelSize: number = 20;
     private static YAxisLabelSize: number = 20;
     private static AxisLabelMiddle: number = 2;
@@ -222,6 +222,24 @@ export class StreamGraph implements IVisual {
         return !isNaN(value as number) && isFinite(value as number) && value !== null;
     }
 
+    public static removeDisabledFormattingSettings(formattingSettings : StreamGraphSettingsModel) : void {
+        //X-Axis
+        if(!formattingSettings.enableCategoryAxisCardSettings.show.value) {
+            formattingSettings.enableCategoryAxisCardSettings.slices = formattingSettings.enableCategoryAxisCardSettings.slices.filter(x => x.name !== "labelColor" && x.name !== "labelFont");
+        }
+        if(!formattingSettings.enableCategoryAxisCardSettings.showAxisTitle.value) {
+            formattingSettings.enableCategoryAxisCardSettings.slices = formattingSettings.enableCategoryAxisCardSettings.slices.filter(x => x.name !== "titleColor");
+        }
+
+        //Y-Axis
+        if(!formattingSettings.enableValueAxisCardSettings.show.value) {
+            formattingSettings.enableValueAxisCardSettings.slices = formattingSettings.enableValueAxisCardSettings.slices.filter(x => x.name !== "highPrecision" && x.name !== "labelFont" && x.name !== "labelColor");
+        }
+        if(!formattingSettings.enableValueAxisCardSettings.showAxisTitle.value) {
+            formattingSettings.enableValueAxisCardSettings.slices = formattingSettings.enableValueAxisCardSettings.slices.filter(x => x.name !== "titleColor");
+        }
+    }
+
     /* eslint-disable-next-line max-lines-per-function */
     public static converter(
         dataView: DataView,
@@ -240,6 +258,7 @@ export class StreamGraph implements IVisual {
         }
 
         let xMaxValue: number = -Number.MAX_VALUE;
+        let xLongestText : string = ""; //will contain the longest text in X Axis, used to calculate right margin offsets
         let xMinValue: number = Number.MAX_VALUE;
         let yMaxValue: number = -Number.MAX_VALUE;
         let yMinValue: number = Number.MAX_VALUE;
@@ -263,6 +282,7 @@ export class StreamGraph implements IVisual {
         const colorHelper: ColorHelper = new ColorHelper(colorPalette);
 
         this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(StreamGraphSettingsModel, dataViews);
+        this.removeDisabledFormattingSettings(this.formattingSettings);
         const formattingSettings = this.formattingSettings;
         const fontSizeInPx: string = PixelConverter.fromPoint(formattingSettings.enableDataLabelsCardSettings.fontSize.value);
 
@@ -373,6 +393,10 @@ export class StreamGraph implements IVisual {
                     stackValues[dataPointValueIndex].highlight = streamDataPoint.highlight ? true : false;
                 }
 
+                if(streamDataPoint.text.length > xLongestText.length)
+                {
+                    xLongestText = streamDataPoint.text;
+                }
                 if (streamDataPoint.x > xMaxValue) {
                     xMaxValue = streamDataPoint.x;
                 }
@@ -435,33 +459,43 @@ export class StreamGraph implements IVisual {
             if (metadata.type.dateTime && categoriesText[0] instanceof Date) {
                 xMinValue = (<Date>categoriesText[0]).getTime();
                 xMaxValue = (<Date>categoriesText[categoriesText.length - 1]).getTime();
+                xLongestText = xMaxValue.toString();
             } else if (metadata.type.numeric) {
                 xMinValue = categoriesText[0] as number;
                 xMaxValue = categoriesText[categoriesText.length - 1] as number;
+                xLongestText = xMaxValue.toString();
             } else {
                 xMinValue = 0;
                 xMaxValue = categoriesText.length - 1;
+                for(let idx = 0; idx < categoriesText.length; idx ++)
+                {
+                    if((<string>categoriesText[idx]).length > xLongestText.length)
+                    xLongestText = (<string>categoriesText[idx]);
+                }
             }
         }
 
         const textProperties: TextProperties = {
-            text: xMaxValue.toString(),
+            text: xLongestText,
             fontFamily: "sans-serif",
-            fontSize: PixelConverter.toString(formattingSettings.enableCategoryAxisCardSettings.fontSize.value)
+            fontSize: PixelConverter.toString(formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value)
         };
         const xAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textProperties);
-        const xAxisValueMaxTextHalfSize: number = xAxisValueMaxTextSize / 2;
+        const xAxisValueMaxReservedTextSize: number = xAxisValueMaxTextSize * 1.15; //reserve additional space
         const textPropertiesY: TextProperties = {
             text: yMaxValue.toString(),
             fontFamily: "sans-serif",
-            fontSize: PixelConverter.toString(formattingSettings.enableValueAxisCardSettings.fontSize.value)
+            fontSize: PixelConverter.toString(formattingSettings.enableValueAxisCardSettings.labelFont.fontSize.value)
         };
         const yAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textPropertiesY);
         const yAxisValueMaxTextHalfSize: number = yAxisValueMaxTextSize / 2;
-        const yAxisFontSize: number = +formattingSettings.enableValueAxisCardSettings.fontSize.value;
+        const yAxisFontSize: number = +formattingSettings.enableValueAxisCardSettings.labelFont.fontSize.value;
         const yAxisFontHalfSize: number = yAxisFontSize / 2;
-        const xAxisFontSize: number = +formattingSettings.enableCategoryAxisCardSettings.fontSize.value;
+        const xAxisFontSize: number = +formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value;
         const xAxisFontHalfSize: number = xAxisFontSize / 2;
+
+        StreamGraph.YAxisLabelSize = formattingSettings.enableValueAxisCardSettings.labelFont.fontSize.value;
+        StreamGraph.XAxisLabelSize = formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value;
 
         /* Generate stack values for d3.stack V5 */
         const allLabels = legendData.dataPoints.map((dataPoint) => dataPoint.label);
@@ -521,7 +555,7 @@ export class StreamGraph implements IVisual {
             yAxisValueMaxTextSize,
             yAxisValueMaxTextHalfSize,
             xAxisValueMaxTextSize,
-            xAxisValueMaxTextHalfSize,
+            xAxisValueMaxReservedTextSize,
             yAxisFontSize,
             yAxisFontHalfSize,
             xAxisFontSize,
@@ -695,32 +729,115 @@ export class StreamGraph implements IVisual {
 
     private static outerPadding: number = 0;
 
-    private static wordBreak(
-        text: Selection<Element, any, any, any>,
+    private static applyWordBreak(
+        text: Selection<any, StreamDataPoint, any, any>,
         axisProperties: IAxisProperties,
-        maxHeight: number): void {
+        maxHeight: number,
+        dy : string): void {
 
         text.each(function () {
             const allowedLength: number = axisProperties.xLabelMaxWidth;
 
             textMeasurementService.wordBreak(
-                this,
+                this as Element,
                 allowedLength,
                 axisProperties.willLabelsWordBreak
                     ? maxHeight
                     : 0);
+            (this as Element).setAttribute("y", dy);
         });
+    }
+    private hideFirstAndLastTickXAxis()
+    {
+        const xAxisLineNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("line");
+        const xAxisLineNodesArray: BaseType[] = xAxisLineNodes.nodes();
+
+        // This is done to make sure first and last tick always transparent (there are cases when they are not alligned with start and end of axis)
+        if(xAxisLineNodesArray.length > 2)
+        {
+            for(let idx = 0; idx < xAxisLineNodesArray.length; idx++ )
+            {
+                (xAxisLineNodesArray[idx] as Element).setAttribute("opacity", "100");
+            }
+            (xAxisLineNodesArray[0] as Element).setAttribute("opacity", "0");
+            (xAxisLineNodesArray[xAxisLineNodesArray.length - 1] as Element).setAttribute("opacity", "0");
+        }
+    }
+    private setColorFontXAxis(xAxisTextNodes: Selection<BaseType, any, any, any>)
+    {
+        const categoryAxisLabelColor: string = this.data.formattingSettings.enableCategoryAxisCardSettings.labelColor.value.value,
+            categoryAxisFontSize : string = this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value.toString(),
+            categoryAxisFontFamily : string = this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.fontFamily.value;
+
+        const categoryAxisFontIsBold : boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.bold.value,
+            categoryAxisFontIsItalic : boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.italic.value,
+            categoryAxisFontIsUnderlined : boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.underline.value;
+
+        const xAxisTextNodesArray: BaseType[] = xAxisTextNodes.nodes();
+
+        for(let idx = 0; idx < xAxisTextNodesArray.length; idx++ )
+        {
+            if(xAxisTextNodesArray[idx])
+            {
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("fill", categoryAxisLabelColor);
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("stroke", categoryAxisLabelColor);
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-size", categoryAxisFontSize);
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-family", categoryAxisFontFamily);
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-weight", categoryAxisFontIsBold ? "bold" : "normal");
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-style", categoryAxisFontIsItalic ? "italic" : "normal");
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("text-decoration", categoryAxisFontIsUnderlined ? "underline" : "normal");
+            }
+        }
+    }
+    private setColorFontYAxis(yAxisTextNodes: Selection<BaseType, any, any, any>)
+    {
+        const valueAxisLabelColor: string = this.data.formattingSettings.enableValueAxisCardSettings.labelColor.value.value,
+            valueAxisFontSize : string = this.data.formattingSettings.enableValueAxisCardSettings.labelFont.fontSize.value.toString(),
+            valueAxisFontFamily : string = this.data.formattingSettings.enableValueAxisCardSettings.labelFont.fontFamily.value;
+
+        const valueAxisFontIsBold : boolean = this.data.formattingSettings.enableValueAxisCardSettings.labelFont.bold.value,
+            valueAxisFontIsItalic : boolean = this.data.formattingSettings.enableValueAxisCardSettings.labelFont.italic.value,
+            valueAxisFontIsUnderlined : boolean = this.data.formattingSettings.enableValueAxisCardSettings.labelFont.underline.value;
+
+
+        const yAxisTextNodesArray : BaseType[] = yAxisTextNodes.nodes();
+
+        for(let idx = 0; idx < yAxisTextNodesArray.length; idx++ )
+        {
+            if(yAxisTextNodesArray[idx])
+            {
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("fill", valueAxisLabelColor);
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("stroke", valueAxisLabelColor);
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-size", valueAxisFontSize);
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-family", valueAxisFontFamily);
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-weight", valueAxisFontIsBold ? "bold" : "normal");
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-style", valueAxisFontIsItalic ? "italic" : "normal");
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("text-decoration", valueAxisFontIsUnderlined ? "underline" : "normal");
+            }
+        }
     }
     private calculateAxes() {
         const showAxisTitle: boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.showAxisTitle.value,
-            categoryAxisLabelColor: string = this.data.formattingSettings.enableCategoryAxisCardSettings.labelColor.value.value,
             xShow: boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.show.value,
 
-            valueAxisLabelColor: string = this.data.formattingSettings.enableValueAxisCardSettings.labelColor.value.value,
             yShow: boolean = this.data.formattingSettings.enableValueAxisCardSettings.show.value;
 
         this.viewport.height -= StreamGraph.TickHeight + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0);
-        const effectiveWidth: number = Math.max(0, this.viewport.width - this.margin.left - (this.margin.right + this.data.xAxisValueMaxTextHalfSize));
+        const effectiveWidth: number = Math.max(0, this.viewport.width - this.margin.left - (this.margin.right + this.data.xAxisValueMaxReservedTextSize));
         const effectiveHeight: number = Math.max(0, this.viewport.height - (this.margin.top + this.data.yAxisFontHalfSize) - this.margin.bottom + (showAxisTitle ? StreamGraph.XAxisLabelSize : 0));
         const metaDataColumnPercent: powerbi.DataViewMetadataColumn = {
             displayName: this.localizationManager.getDisplayName(ColumnDisplayName),
@@ -750,9 +867,11 @@ export class StreamGraph implements IVisual {
                 dataDomain: dataDomainVals,
                 metaDataColumn: this.data.metadata,
                 outerPadding: StreamGraph.outerPadding,
+                innerPadding: 0,
                 formatString: null,
                 isScalar: isScalarVal,
                 isVertical: false,
+                useRangePoints: true, //will use scalePoint instead of scaleBand (https://d3-graph-gallery.com/graph/custom_axis.html)
                 // todo fix types issue
                 getValueFn: (value, dataType): any => {
                     if (dataType.dateTime) {
@@ -768,19 +887,18 @@ export class StreamGraph implements IVisual {
 
             this.axisX.call(this.xAxisProperties.axis);
 
-            this.axisX
-                .style("fill", categoryAxisLabelColor)
-                .style("stroke", categoryAxisLabelColor)
-                .style("font-size", this.data.formattingSettings.enableCategoryAxisCardSettings.fontSize.value);
-
+            this.hideFirstAndLastTickXAxis();
+            
             const xAxisTextNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("text");
-
-            xAxisTextNodes.call(StreamGraph.wordBreak, this.xAxisProperties, StreamGraph.XAxisLabelSize);
+            
+            this.setColorFontXAxis(xAxisTextNodes);
 
             this.setTextNodesPosition(xAxisTextNodes, 
                 StreamGraph.AxisTextNodeTextAnchorForAngel0, 
                 StreamGraph.AxisTextNodeDXForAngel0,
                 StreamGraph.AxisTextNodeDYForAngel0);
+
+            StreamGraph.applyWordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value.toString());
         }
 
         if (yShow) {
@@ -799,10 +917,9 @@ export class StreamGraph implements IVisual {
 
             this.axisY.call(this.yAxisProperties.axis);
 
-            this.axisY
-                .style("fill", valueAxisLabelColor)
-                .style("stroke", valueAxisLabelColor)
-                .style("font-size", this.data.formattingSettings.enableValueAxisCardSettings.fontSize.value);
+            const yAxisTextNodes: Selection<BaseType, any, any, any> = this.axisY.selectAll("text");
+
+            this.setColorFontYAxis(yAxisTextNodes);
         }
 
         this.renderXAxisLabels();
@@ -821,7 +938,8 @@ export class StreamGraph implements IVisual {
             .selectAll(StreamGraph.YAxisLabelSelector.selectorName)
             .remove();
         const valueAxisSettings: EnableValueAxisCardSettings = this.data.formattingSettings.enableValueAxisCardSettings;
-        this.margin.left = valueAxisSettings.show.value
+        const isYAxisOn : boolean = valueAxisSettings.show.value;
+        this.margin.left = isYAxisOn
             ? StreamGraph.YAxisOnSize + this.data.yAxisValueMaxTextSize
             : StreamGraph.YAxisOffSize;
 
@@ -854,7 +972,7 @@ export class StreamGraph implements IVisual {
                 .style("font-style", textSettings.fontStyle)
                 .style("font-weight", textSettings.fontWeight)
                 .attr("transform", StreamGraph.YAxisLabelAngle)
-                .attr("fill", valueAxisSettings.labelColor.value.value)
+                .attr("fill", valueAxisSettings.titleColor.value.value)
                 .attr("x", -(marginTop + (height / StreamGraph.AxisLabelMiddle)))
                 .attr("y", PixelConverter.fromPoint(-(this.margin.left - StreamGraph.YAxisLabelDy)))
                 .classed(StreamGraph.YAxisLabelSelector.className, true)
@@ -902,7 +1020,7 @@ export class StreamGraph implements IVisual {
 
         const categoryAxisSettings: EnableCategoryAxisCardSettings = this.data.formattingSettings.enableCategoryAxisCardSettings;
         this.margin.bottom = categoryAxisSettings.show.value
-            ? StreamGraph.XAxisOnSize + parseInt(this.data.formattingSettings.enableCategoryAxisCardSettings.fontSize.value.toString())
+            ? StreamGraph.XAxisOnSize + parseInt(this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value.toString())
             : StreamGraph.XAxisOffSize;
 
         if (!categoryAxisSettings.showAxisTitle.value
@@ -920,7 +1038,7 @@ export class StreamGraph implements IVisual {
                 + (isYTitleOn
                     ? StreamGraph.YAxisLabelSize
                     : StreamGraph.MinLabelSize),
-            width: number = this.viewport.width - (this.margin.right + this.data.xAxisValueMaxTextHalfSize) - leftMargin,
+            width: number = this.viewport.width - (this.margin.right + this.data.xAxisValueMaxReservedTextSize) - leftMargin,
             height: number = this.viewport.height + StreamGraph.XAxisLabelSize + StreamGraph.TickHeight;
 
         let xAxisText: string = this.dataView.categorical.categories[0].source.displayName;
@@ -934,9 +1052,9 @@ export class StreamGraph implements IVisual {
             .style("font-size", textSettings.fontSize)
             .style("font-weight", textSettings.fontWeight)
             .attr("transform", translate(
-                leftMargin + (width / StreamGraph.AxisLabelMiddle),
+                width / StreamGraph.AxisLabelMiddle,
                 height))
-            .attr("fill", categoryAxisSettings.labelColor.value.value)
+            .attr("fill", categoryAxisSettings.titleColor.value.value)
             .attr("dy", StreamGraph.XAxisLabelDy)
             .classed(StreamGraph.XAxisLabelSelector.className, true)
             .text(xAxisText);
@@ -1001,7 +1119,7 @@ export class StreamGraph implements IVisual {
             margin: IMargin = this.margin,
             xScale: ScaleLinear<number, number> = scaleLinear()
                 .domain([0, series[0].dataPoints.length - 1])
-                .range([margin.left, width - (margin.right + this.data.xAxisValueMaxTextHalfSize)]);
+                .range([margin.left, width - (margin.right + this.data.xAxisValueMaxReservedTextSize)]);
 
         const yMin: number = min(stackedSeries, serie => min(serie, d => d[0]));
         const yMax: number = max(stackedSeries, serie => max(serie, d => d[1]));
@@ -1054,7 +1172,7 @@ export class StreamGraph implements IVisual {
         if (this.data.formattingSettings.enableDataLabelsCardSettings.show.value) {
             const labelsXScale: ScaleLinear<number, number> = scaleLinear()
                 .domain([0, series[0].dataPoints.length - 1])
-                .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxTextHalfSize]);
+                .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxReservedTextSize]);
 
             const layout: ILabelLayout = StreamGraph.getStreamGraphLabelLayout(
                 labelsXScale,
@@ -1085,7 +1203,7 @@ export class StreamGraph implements IVisual {
 
             const viewport: IViewport = {
                 height: height,
-                width: width - (this.margin.right + this.data.xAxisValueMaxTextHalfSize) - margin.left,
+                width: width - (this.margin.right + this.data.xAxisValueMaxReservedTextSize) - margin.left,
             };
 
             if (hasHighlights) {
@@ -1104,7 +1222,26 @@ export class StreamGraph implements IVisual {
                     viewport);
 
             if (labels) {
-                const offset: number = StreamGraph.DefaultDataLabelsOffset + margin.left;
+                //If Y axis is on or Y title is on, we need to consider that
+                let divider = 4;
+                if(this.data.formattingSettings.enableValueAxisCardSettings.show.value)
+                    divider--;
+                if(this.data.formattingSettings.enableValueAxisCardSettings.showAxisTitle.value)
+                    divider--;
+
+                let offset: number = StreamGraph.DefaultDataLabelsOffset + margin.left / divider;
+
+                //DataLabels value ON, Y axis OFF, Y title OFF
+                if(this.data.formattingSettings.enableDataLabelsCardSettings.showValues.value 
+                        && !this.data.formattingSettings.enableValueAxisCardSettings.show.value
+                        && !this.data.formattingSettings.enableValueAxisCardSettings.showAxisTitle.value)
+                    offset = StreamGraph.DefaultDataLabelsOffset - (margin.left * 0.2);
+                
+                //DataLabels value ON, Y axis OFF, Y title ON
+                if(this.data.formattingSettings.enableDataLabelsCardSettings.showValues.value 
+                        && !this.data.formattingSettings.enableValueAxisCardSettings.show.value
+                        && this.data.formattingSettings.enableValueAxisCardSettings.showAxisTitle.value)
+                    offset *= 0.5;
 
                 labels.attr("transform", (dataPoint: StreamDataPoint) => {
                     return translate(
@@ -1176,6 +1313,7 @@ export class StreamGraph implements IVisual {
             dataPoints,
             fontSize: enableLegendCardSettings.fontSize.value,
             labelColor: enableLegendCardSettings.labelColor.value.value,
+            fontFamily: "helvetica, arial, sans-serif"
         };
         
         this.legend.changeOrientation(LegendPosition[enableLegendCardSettings.positionDropDown.value.value]);

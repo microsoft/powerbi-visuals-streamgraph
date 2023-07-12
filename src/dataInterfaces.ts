@@ -65,7 +65,7 @@ export interface StreamData {
     yAxisValueMaxTextSize: number;
     yAxisValueMaxTextHalfSize: number;
     xAxisValueMaxTextSize: number;
-    xAxisValueMaxTextHalfSize: number;
+    xAxisValueMaxReservedTextSize: number;
     yAxisFontSize: number;
     yAxisFontHalfSize: number;
     xAxisFontSize: number;
