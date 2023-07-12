@@ -106,6 +106,7 @@ import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-vis
 
 // powerbi.extensibility.utils.formattingModel
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
+import { Card } from "powerbi-visuals-utils-formattingmodel/lib/FormattingSettingsComponents";
 
 const ColumnDisplayName: string = "Visual_Column";
 
@@ -222,6 +223,37 @@ export class StreamGraph implements IVisual {
         return !isNaN(value as number) && isFinite(value as number) && value !== null;
     }
 
+    public static removeDisabledFormattingSettings(formattingSettings : StreamGraphSettingsModel) : void {
+        type settingsProperties = [ keyof StreamGraphSettingsModel, Card ];
+        const settingsEntries = Object.entries(formattingSettings) as settingsProperties[];
+
+        //X-Axis
+        if(!formattingSettings.enableCategoryAxisCardSettings.show.value && !formattingSettings.enableCategoryAxisCardSettings.showAxisTitle.value)
+        {
+            const cardWeNeed : Card = settingsEntries.filter(x => x[1].constructor.name == EnableCategoryAxisCardSettings.name)[0][1];
+            cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "labelColor" && x.name !== "labelFont");
+        }
+        if(!formattingSettings.enableCategoryAxisCardSettings.showAxisTitle.value)
+        {
+            const cardWeNeed : Card = settingsEntries.filter(x => x[1].constructor.name == EnableCategoryAxisCardSettings.name)[0][1];
+            cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "titleColor");
+        }
+
+        //Y-Axis
+        if(!formattingSettings.enableValueAxisCardSettings.show.value)
+        {
+            const cardWeNeed : Card = settingsEntries.filter(x => x[1].constructor.name == EnableValueAxisCardSettings.name)[0][1];
+            cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "highPrecision");
+            if(!formattingSettings.enableValueAxisCardSettings.showAxisTitle.value)
+                cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "labelColor" && x.name !== "labelFont");
+        }
+        if(!formattingSettings.enableValueAxisCardSettings.showAxisTitle.value)
+        {
+            const cardWeNeed : Card = settingsEntries.filter(x => x[1].constructor.name == EnableValueAxisCardSettings.name)[0][1];
+            cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "titleColor");
+        }
+    }
+
     /* eslint-disable-next-line max-lines-per-function */
     public static converter(
         dataView: DataView,
@@ -264,6 +296,7 @@ export class StreamGraph implements IVisual {
         const colorHelper: ColorHelper = new ColorHelper(colorPalette);
 
         this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(StreamGraphSettingsModel, dataViews);
+        this.removeDisabledFormattingSettings(this.formattingSettings);
         const formattingSettings = this.formattingSettings;
         const fontSizeInPx: string = PixelConverter.fromPoint(formattingSettings.enableDataLabelsCardSettings.fontSize.value);
 
@@ -459,24 +492,24 @@ export class StreamGraph implements IVisual {
         const textProperties: TextProperties = {
             text: xLongestText,
             fontFamily: "sans-serif",
-            fontSize: PixelConverter.toString(formattingSettings.enableCategoryAxisCardSettings.fontSize.value)
+            fontSize: PixelConverter.toString(formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value)
         };
         const xAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textProperties);
         const xAxisValueMaxReservedTextSize: number = xAxisValueMaxTextSize * 1.15; //reserve additional space
         const textPropertiesY: TextProperties = {
             text: yMaxValue.toString(),
             fontFamily: "sans-serif",
-            fontSize: PixelConverter.toString(formattingSettings.enableValueAxisCardSettings.fontSize.value)
+            fontSize: PixelConverter.toString(formattingSettings.enableValueAxisCardSettings.labelFont.fontSize.value)
         };
         const yAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textPropertiesY);
         const yAxisValueMaxTextHalfSize: number = yAxisValueMaxTextSize / 2;
-        const yAxisFontSize: number = +formattingSettings.enableValueAxisCardSettings.fontSize.value;
+        const yAxisFontSize: number = +formattingSettings.enableValueAxisCardSettings.labelFont.fontSize.value;
         const yAxisFontHalfSize: number = yAxisFontSize / 2;
-        const xAxisFontSize: number = +formattingSettings.enableCategoryAxisCardSettings.fontSize.value;
+        const xAxisFontSize: number = +formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value;
         const xAxisFontHalfSize: number = xAxisFontSize / 2;
 
-        StreamGraph.YAxisLabelSize = formattingSettings.enableValueAxisCardSettings.fontSize.value;
-        StreamGraph.XAxisLabelSize = formattingSettings.enableCategoryAxisCardSettings.fontSize.value;
+        StreamGraph.YAxisLabelSize = formattingSettings.enableValueAxisCardSettings.labelFont.fontSize.value;
+        StreamGraph.XAxisLabelSize = formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value;
 
         /* Generate stack values for d3.stack V5 */
         const allLabels = legendData.dataPoints.map((dataPoint) => dataPoint.label);
@@ -746,27 +779,48 @@ export class StreamGraph implements IVisual {
     }
     private setColorFontXAxis(xAxisTextNodes: Selection<BaseType, any, any, any>)
     {
-        const categoryAxisLabelColor: string = this.data.formattingSettings.enableCategoryAxisCardSettings.labelColor.value.value;
-        const categoryAxisFontSize : string = this.data.formattingSettings.enableCategoryAxisCardSettings.fontSize.value.toString();
+        const categoryAxisLabelColor: string = this.data.formattingSettings.enableCategoryAxisCardSettings.labelColor.value.value,
+            categoryAxisFontSize : string = this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value.toString(),
+            categoryAxisFontFamily : string = this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.fontFamily.value;
+
+        const categoryAxisFontIsBold : boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.bold.value,
+            categoryAxisFontIsItalic : boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.italic.value,
+            categoryAxisFontIsUnderlined : boolean = this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.underline.value;
+
         const xAxisTextNodesArray: BaseType[] = xAxisTextNodes.nodes();
 
-            for(let idx = 0; idx < xAxisTextNodesArray.length; idx++ )
+        for(let idx = 0; idx < xAxisTextNodesArray.length; idx++ )
+        {
+            if(xAxisTextNodesArray[idx])
             {
-                if(xAxisTextNodesArray[idx])
-                {
-                    (xAxisTextNodesArray[idx] as Element)
-                        .setAttribute("fill", categoryAxisLabelColor);
-                    (xAxisTextNodesArray[idx] as Element)
-                        .setAttribute("stroke", categoryAxisLabelColor);
-                    (xAxisTextNodesArray[idx] as Element)
-                        .setAttribute("font-size", categoryAxisFontSize);
-                }
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("fill", categoryAxisLabelColor);
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("stroke", categoryAxisLabelColor);
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-size", categoryAxisFontSize);
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-family", categoryAxisFontFamily);
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-weight", categoryAxisFontIsBold ? "bold" : "normal");
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-style", categoryAxisFontIsItalic ? "italic" : "normal");
+                (xAxisTextNodesArray[idx] as Element)
+                    .setAttribute("text-decoration", categoryAxisFontIsUnderlined ? "underline" : "normal");
             }
+        }
     }
     private setColorFontYAxis(yAxisTextNodes: Selection<BaseType, any, any, any>)
     {
-        const valueAxisLabelColor: string = this.data.formattingSettings.enableValueAxisCardSettings.labelColor.value.value;
-        const valueAxisFontSize : string = this.data.formattingSettings.enableValueAxisCardSettings.fontSize.value.toString();
+        const valueAxisLabelColor: string = this.data.formattingSettings.enableValueAxisCardSettings.labelColor.value.value,
+            valueAxisFontSize : string = this.data.formattingSettings.enableValueAxisCardSettings.labelFont.fontSize.value.toString(),
+            valueAxisFontFamily : string = this.data.formattingSettings.enableValueAxisCardSettings.labelFont.fontFamily.value;
+
+        const valueAxisFontIsBold : boolean = this.data.formattingSettings.enableValueAxisCardSettings.labelFont.bold.value,
+            valueAxisFontIsItalic : boolean = this.data.formattingSettings.enableValueAxisCardSettings.labelFont.italic.value,
+            valueAxisFontIsUnderlined : boolean = this.data.formattingSettings.enableValueAxisCardSettings.labelFont.underline.value;
+
+
         const yAxisTextNodesArray : BaseType[] = yAxisTextNodes.nodes();
 
         for(let idx = 0; idx < yAxisTextNodesArray.length; idx++ )
@@ -779,6 +833,14 @@ export class StreamGraph implements IVisual {
                     .setAttribute("stroke", valueAxisLabelColor);
                 (yAxisTextNodesArray[idx] as Element)
                     .setAttribute("font-size", valueAxisFontSize);
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-family", valueAxisFontFamily);
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-weight", valueAxisFontIsBold ? "bold" : "normal");
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("font-style", valueAxisFontIsItalic ? "italic" : "normal");
+                (yAxisTextNodesArray[idx] as Element)
+                    .setAttribute("text-decoration", valueAxisFontIsUnderlined ? "underline" : "normal");
             }
         }
     }
@@ -850,7 +912,7 @@ export class StreamGraph implements IVisual {
                 StreamGraph.AxisTextNodeDXForAngel0,
                 StreamGraph.AxisTextNodeDYForAngel0);
 
-            StreamGraph.wordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.enableCategoryAxisCardSettings.fontSize.value.toString());
+            StreamGraph.wordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value.toString());
         }
 
         if (yShow) {
@@ -972,7 +1034,7 @@ export class StreamGraph implements IVisual {
 
         const categoryAxisSettings: EnableCategoryAxisCardSettings = this.data.formattingSettings.enableCategoryAxisCardSettings;
         this.margin.bottom = categoryAxisSettings.show.value
-            ? StreamGraph.XAxisOnSize + parseInt(this.data.formattingSettings.enableCategoryAxisCardSettings.fontSize.value.toString())
+            ? StreamGraph.XAxisOnSize + parseInt(this.data.formattingSettings.enableCategoryAxisCardSettings.labelFont.fontSize.value.toString())
             : StreamGraph.XAxisOffSize;
 
         if (!categoryAxisSettings.showAxisTitle.value
@@ -1001,7 +1063,7 @@ export class StreamGraph implements IVisual {
 
         const xAxisLabel: Selection<BaseType, any, any, any> = this.axes.append("text")
             .style("font-family", textSettings.fontFamily)
-            .style("font-size", categoryAxisSettings.fontSize.value)
+            .style("font-size", categoryAxisSettings.labelFont.fontSize.value)
             .style("font-weight", textSettings.fontWeight)
             .attr("transform", translate(
                 width / StreamGraph.AxisLabelMiddle,

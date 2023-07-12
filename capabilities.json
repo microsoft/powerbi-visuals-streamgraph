@@ -97,12 +97,31 @@
         },
         "categoryAxis": {
             "properties": {
-                "show": {
+                "fontSize": { 
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "labelFontFamily": {
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "labelFontBold": {
                     "type": {
                         "bool": true
                     }
                 },
-                "showAxisTitle": {
+                "labelFontUnderline": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelFontItalic": {
                     "type": {
                         "bool": true
                     }
@@ -116,6 +135,16 @@
                         }
                     }
                 },
+                "show": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "showAxisTitle": {
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "titleColor": {
                     "type": {
                         "fill": {
@@ -123,11 +152,6 @@
                                 "color": true
                             }
                         }
-                    }
-                },
-                "fontSize": {
-                    "type": {
-                        "integer": true
                     }
                 }
             }
@@ -144,7 +168,31 @@
                         "bool": true
                     }
                 },
-                "showAxisTitle": {
+                "fontSize": { 
+                    "type": {
+                        "formatting": {
+                            "fontSize": true
+                        }
+                    }
+                },
+                "labelFontFamily": {
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "labelFontBold": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelFontUnderline": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelFontItalic": {
                     "type": {
                         "bool": true
                     }
@@ -158,6 +206,11 @@
                         }
                     }
                 },
+                "showAxisTitle": {
+                    "type": {
+                        "bool": true
+                    }
+                },
                 "titleColor": {
                     "type": {
                         "fill": {
@@ -165,11 +218,6 @@
                                 "color": true
                             }
                         }
-                    }
-                },
-                "fontSize": {
-                    "type": {
-                        "integer": true
                     }
                 }
             }

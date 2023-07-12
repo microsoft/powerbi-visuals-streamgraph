@@ -71,21 +71,40 @@ class BaseLabelColorCardSetting extends Card{
 }
 
 class BaseFontSizeCardSettings extends BaseLabelColorCardSetting{
-    fontSize = new formattingSettings.NumUpDown({
-        name: "fontSize",
-        displayName: "Text Size",
-        displayNameKey: "Visual_TextSize",
-        value: 8,
-        options: {
-            minValue: {
-                type: powerbiVisualsApi.visuals.ValidatorType.Min,
-                value: 8,
-            },
-            maxValue: {
-                type: powerbiVisualsApi.visuals.ValidatorType.Max,
-                value: 14,
+    labelFont = new formattingSettings.FontControl({
+        name: "labelFont",
+        fontFamily: new formattingSettings.FontPicker({
+            name: "labelFontFamily",
+            value: "Segoe UI, wf_segoe-ui_normal, helvetica, arial, sans-serif"
+        }),
+        fontSize: new formattingSettings.NumUpDown({
+            name: "fontSize",
+            displayName: "Text Size",
+            displayNameKey: "Visual_TextSize",
+            value: 8,
+            options: {
+                minValue: {
+                    type: powerbiVisualsApi.visuals.ValidatorType.Min,
+                    value: 8,
+                },
+                maxValue: {
+                    type: powerbiVisualsApi.visuals.ValidatorType.Max,
+                    value: 14,
+                }
             }
-        }
+        }),
+        bold: new formattingSettings.ToggleSwitch({
+            name: "labelFontBold",
+            value: false
+        }),
+        italic: new formattingSettings.ToggleSwitch({
+            name: "labelFontItalic",
+            value: false
+        }),
+        underline: new formattingSettings.ToggleSwitch({
+            name: "labelFontUnderline",
+            value: false
+        })
     });
 }
 
@@ -122,7 +141,7 @@ export class EnableCategoryAxisCardSettings extends BaseAxisCardSettings {
     name: string = "categoryAxis";
     displayName: string = "X-Axis";
     displayNameKey: string = "Visual_XAxis";
-    slices = [this.show, this.labelColor, this.fontSize, this.showAxisTitle, this.titleColor];
+    slices = [this.show, this.labelColor, this.labelFont, this.showAxisTitle, this.titleColor];
 }
 
 export class EnableValueAxisCardSettings extends BaseAxisCardSettings {
@@ -137,7 +156,7 @@ export class EnableValueAxisCardSettings extends BaseAxisCardSettings {
     name: string = "valueAxis";
     displayName: string = "Y-Axis";
     displayNameKey: string = "Visual_YAxis";
-    slices = [this.show, this.highPrecision, this.labelColor, this.fontSize, this.showAxisTitle, this.titleColor];
+    slices = [this.show, this.highPrecision, this.labelColor, this.labelFont, this.showAxisTitle, this.titleColor];
 }
 
 export class EnableLegendCardSettings extends Card {
