@@ -106,7 +106,6 @@ import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-vis
 
 // powerbi.extensibility.utils.formattingModel
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
-import { Card } from "powerbi-visuals-utils-formattingmodel/lib/FormattingSettingsComponents";
 
 const ColumnDisplayName: string = "Visual_Column";
 
@@ -224,31 +223,20 @@ export class StreamGraph implements IVisual {
     }
 
     public static removeDisabledFormattingSettings(formattingSettings : StreamGraphSettingsModel) : void {
-        type settingsProperties = [ keyof StreamGraphSettingsModel, Card ];
-        const settingsEntries = Object.entries(formattingSettings) as settingsProperties[];
-
         //X-Axis
-        if(!formattingSettings.enableCategoryAxisCardSettings.show.value)
-        {
-            const cardWeNeed : Card = settingsEntries.filter(x => x[1].constructor.name == EnableCategoryAxisCardSettings.name)[0][1];
-            cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "labelColor" && x.name !== "labelFont");
+        if(!formattingSettings.enableCategoryAxisCardSettings.show.value) {
+            formattingSettings.enableCategoryAxisCardSettings.slices = formattingSettings.enableCategoryAxisCardSettings.slices.filter(x => x.name !== "labelColor" && x.name !== "labelFont");
         }
-        if(!formattingSettings.enableCategoryAxisCardSettings.showAxisTitle.value)
-        {
-            const cardWeNeed : Card = settingsEntries.filter(x => x[1].constructor.name == EnableCategoryAxisCardSettings.name)[0][1];
-            cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "titleColor");
+        if(!formattingSettings.enableCategoryAxisCardSettings.showAxisTitle.value) {
+            formattingSettings.enableCategoryAxisCardSettings.slices = formattingSettings.enableCategoryAxisCardSettings.slices.filter(x => x.name !== "titleColor");
         }
 
         //Y-Axis
-        if(!formattingSettings.enableValueAxisCardSettings.show.value)
-        {
-            const cardWeNeed : Card = settingsEntries.filter(x => x[1].constructor.name == EnableValueAxisCardSettings.name)[0][1];
-            cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "highPrecision" && x.name !== "labelFont" && x.name !== "labelColor");
+        if(!formattingSettings.enableValueAxisCardSettings.show.value) {
+            formattingSettings.enableValueAxisCardSettings.slices = formattingSettings.enableValueAxisCardSettings.slices.filter(x => x.name !== "highPrecision" && x.name !== "labelFont" && x.name !== "labelColor");
         }
-        if(!formattingSettings.enableValueAxisCardSettings.showAxisTitle.value)
-        {
-            const cardWeNeed : Card = settingsEntries.filter(x => x[1].constructor.name == EnableValueAxisCardSettings.name)[0][1];
-            cardWeNeed.slices = cardWeNeed.slices.filter(x => x.name !== "titleColor");
+        if(!formattingSettings.enableValueAxisCardSettings.showAxisTitle.value) {
+            formattingSettings.enableValueAxisCardSettings.slices = formattingSettings.enableValueAxisCardSettings.slices.filter(x => x.name !== "titleColor");
         }
     }
 
