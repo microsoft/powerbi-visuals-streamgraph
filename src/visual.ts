@@ -1153,7 +1153,9 @@ export class StreamGraph implements IVisual {
             .classed(StreamGraph.LayerSelector.className, true)
             .style("opacity", DefaultOpacity)
             .style("fill", (d, index) => isHighContrast ? null : series[index].color)
-            .style("stroke", (d, index) => isHighContrast ? series[index].color : null);
+            .style("stroke", (d, index) => isHighContrast ? series[index].color : null)
+            .attr("tabindex", 0)
+            .attr("focusable", true);
 
         selectionMerged
             .transition()
