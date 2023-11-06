@@ -60,6 +60,7 @@ import { ProductSalesByDateData, MovieGenreSalesByDateData } from "./visualData"
 import { StreamGraphSeries, StreamData, StreamDataPoint } from "../src/dataInterfaces";
 import { StreamGraph, VisualUpdateType } from "../src/visual";
 import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
+import { dateTimeFormat } from "powerbi-visuals-utils-formattingutils/lib/src/formattingService/formattingService";
 
 describe("StreamGraph", () => {
     let visualBuilder: StreamGraphBuilder,
@@ -118,7 +119,7 @@ describe("StreamGraph", () => {
             const isNumberRegExp = /\d/;
 
             Array.from(visualBuilder.xAxisTicks).forEach((element, index) => {
-            const textElements = element.querySelectorAll("text");
+                const textElements = element.querySelectorAll("text");
                 Array.from(textElements).forEach((textElement, index, array) => {
                     expect(isNumberRegExp.test(textElement.textContent!)).toBeFalsy();
                 });
@@ -138,7 +139,7 @@ describe("StreamGraph", () => {
 
             visualBuilder.updateVisual(visualUpdateOptions);
 
-            const layers = Array.from(visualBuilder.layers).map((layer: HTMLElement) => {});
+            const layers = Array.from(visualBuilder.layers).map((layer: HTMLElement) => { });
             expect(layers.length).toBeGreaterThan(0);
         });
 
@@ -164,14 +165,14 @@ describe("StreamGraph", () => {
 
         it("multi-selection test", () => {
             visualBuilder.updateFlushAllD3Transitions(dataView);
-        
+
             const firstLayer = visualBuilder.layers[0],
                 secondLayer = visualBuilder.layers[1],
                 thirdLayer = visualBuilder.layers[2];
-        
+
             clickElement(firstLayer);
             clickElement(secondLayer, true);
-        
+
             expect(parseFloat(firstLayer.style.opacity)).toBe(1);
             expect(parseFloat(secondLayer.style.opacity)).toBe(1);
             expect(parseFloat(thirdLayer.style.opacity)).toBeLessThan(1);
@@ -190,7 +191,7 @@ describe("StreamGraph", () => {
 
             it("show", () => {
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-            
+
                 const children = visualBuilder.legendGroup.children;
                 let isInDom = false;
                 for (let i = 0; i < children.length; i++) {
@@ -200,10 +201,10 @@ describe("StreamGraph", () => {
                     }
                 }
                 expect(isInDom).toBe(true);
-            
+
                 (dataView.metadata.objects as any).legend.show = false;
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-            
+
                 isInDom = false;
                 for (let i = 0; i < children.length; i++) {
                     if (document.body.contains(children[i])) {
@@ -243,7 +244,7 @@ describe("StreamGraph", () => {
 
             it("show", () => {
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-            
+
                 let isInDom = false;
                 for (let i = 0; i < visualBuilder.dataLabelsText.length; i++) {
                     if (document.body.contains(visualBuilder.dataLabelsText[i])) {
@@ -252,11 +253,11 @@ describe("StreamGraph", () => {
                     }
                 }
                 expect(isInDom).toBe(true);
-            
+
                 (dataView.metadata.objects as any).labels.show = false;
-            
+
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-            
+
                 isInDom = false;
                 for (let i = 0; i < visualBuilder.dataLabelsText.length; i++) {
                     if (document.body.contains(visualBuilder.dataLabelsText[i])) {
@@ -271,31 +272,31 @@ describe("StreamGraph", () => {
                 const expectedTextWithValue = "Product";
                 visualBuilder.updateFlushAllD3Transitions(dataView);
                 (dataView.metadata.objects as any).labels.showValue = true;
-            
+
                 visualBuilder.updateFlushAllD3Transitions(dataView);
                 expect(visualBuilder.dataLabelsText[0].textContent!.length).toBeGreaterThan(expectedTextWithValue.length);
             });
 
             it("color", () => {
                 const color = "#ABCDEF";
-            
+
                 (dataView.metadata.objects as any).labels.color = getSolidColorStructuralObject(color);
-            
+
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-            
+
                 Array.from(visualBuilder.dataLabelsText).forEach((element: HTMLElement) => {
                     assertColorsMatch(element.style.fill, color);
                 });
             });
-            
+
             it("font size", () => {
                 const fontSize = 22,
                     expectedFontSize = "29.3333px";
-            
+
                 (dataView.metadata.objects as any).labels.fontSize = fontSize;
-            
+
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-            
+
                 Array.from(visualBuilder.dataLabelsText).forEach((element: HTMLElement) => {
                     expect(element.style.fontSize).toBe(expectedFontSize);
                 });
@@ -313,7 +314,7 @@ describe("StreamGraph", () => {
 
             it("show", () => {
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-            
+
                 let isInDom = false;
                 for (let i = 0; i < visualBuilder.xAxisTicks.length; i++) {
                     if (document.body.contains(visualBuilder.xAxisTicks[i])) {
@@ -322,10 +323,10 @@ describe("StreamGraph", () => {
                     }
                 }
                 expect(isInDom).toBe(true);
-            
+
                 (dataView.metadata.objects as any).categoryAxis.show = false;
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-            
+
                 isInDom = false;
                 for (let i = 0; i < visualBuilder.xAxisTicks.length; i++) {
                     if (document.body.contains(visualBuilder.xAxisTicks[i])) {
@@ -339,12 +340,12 @@ describe("StreamGraph", () => {
             it("show title", () => {
                 (dataView.metadata.objects as any).categoryAxis.showAxisTitle = true;
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-            
+
                 expect(document.body.contains(visualBuilder.xAxisLabel)).toBe(true);
-            
+
                 (dataView.metadata.objects as any).categoryAxis.showAxisTitle = false;
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-            
+
                 expect(document.body.contains(visualBuilder.xAxisLabel)).toBe(false);
             });
 
@@ -357,10 +358,10 @@ describe("StreamGraph", () => {
 
                 Array.from(visualBuilder.xAxisTicks).forEach(element => {
                     Array.from(element.children).forEach(child => {
-                        if(child.children.length == 0) return;
+                        if (child.children.length == 0) return;
                         assertColorsMatch(getComputedStyle(child.children[1]).fill, color);
                     });
-                  });
+                });
             });
 
             it("font size", () => {
@@ -396,14 +397,14 @@ describe("StreamGraph", () => {
 
             it("show", () => {
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-            
+
                 const yAxisTicksElements = Array.from(visualBuilder.yAxisTicks);
                 const isInDom = yAxisTicksElements.some(element => element.parentNode);
                 expect(isInDom).toBeTruthy();
-            
+
                 (dataView.metadata.objects as any).valueAxis.show = false;
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-            
+
                 const yAxisTicksElementsAfter = Array.from(visualBuilder.yAxisTicks);
                 const isInDomAfter = yAxisTicksElementsAfter.some(element => element.parentNode);
                 expect(isInDomAfter).toBeFalsy();
@@ -421,7 +422,7 @@ describe("StreamGraph", () => {
                 expect(document.body.contains(visualBuilder.yAxisLabel)).toBe(false);
             });
 
-            
+
             it("color", () => {
                 const color = "#ABCDEF";
 
@@ -431,10 +432,10 @@ describe("StreamGraph", () => {
 
                 Array.from(visualBuilder.yAxisTicks).forEach(element => {
                     Array.from(element.children).forEach(child => {
-                        if(child.children.length == 0) return;
+                        if (child.children.length == 0) return;
                         assertColorsMatch(getComputedStyle(child.children[1]).fill, color);
                     });
-                  });
+                });
             });
 
             it("font size", () => {
@@ -464,7 +465,7 @@ describe("StreamGraph", () => {
                 if (selectionIdIndex++ === 1) {
                     return seriesSelectionId;
                 }
-                
+
                 return createSelectionId((++selectionIdIndex).toString());
             };
             visualBuilder.visualHost.createSelectionIdBuilder = () => customMockISelectionIdBuilder;
@@ -477,14 +478,14 @@ describe("StreamGraph", () => {
             let series: StreamGraphSeries[];
 
             interactivityService["selectionManager"].selectionIds = [seriesSelectionId];
-            
+
             const data = StreamGraph.converter(
                 dataView,
                 colorPalette,
                 interactivityService,
                 visualBuilder.visualHost,
                 dataViews);
-                
+
             series = data.series;
 
             // We should see the selection state applied to resulting data
@@ -712,27 +713,25 @@ describe("StreamGraph", () => {
 
     describe("support highlight test", () => {
         const seriesCount: number = 3;
-        const seriesLenght: number = 12;
+        const seriesLength: number = 12;
         let dataViewWithHighLighted: DataView;
-        let highligtedSeriesNumber: number;
-        let hightlightedElementNumber: number;
+        let highlightedSeriesNumber: number;
+        let highlightedElementNumber: number;
 
         beforeEach(() => {
-            highligtedSeriesNumber = Math.round(getRandomNumber(0, seriesCount - 1));
-            hightlightedElementNumber = Math.round(getRandomNumber(0, seriesLenght - 1));
+            highlightedSeriesNumber = Math.round(getRandomNumber(0, seriesCount - 1));
+            highlightedElementNumber = Math.round(getRandomNumber(0, seriesLength - 1));
 
-            dataViewWithHighLighted = otherDataViewBuilder.getDataView(undefined, true, highligtedSeriesNumber, hightlightedElementNumber);
+            dataViewWithHighLighted = otherDataViewBuilder.getDataView(undefined, true, highlightedSeriesNumber, highlightedElementNumber);
             visualBuilder.update(dataViewWithHighLighted);
         });
 
         it("selected value/serie should have full opacity, other should have less opacity", (done) => {
-            expect(parseFloat(visualBuilder.layers[highligtedSeriesNumber].style.opacity)).toBe(1);
-            for(let idx = 0; idx < seriesCount; idx ++)
-            {
-                if(idx != highligtedSeriesNumber)
-                {
+            expect(parseFloat(visualBuilder.layers[highlightedSeriesNumber].style.opacity)).toBe(1);
+            for (let idx = 0; idx < seriesCount; idx++) {
+                if (idx != highlightedSeriesNumber) {
                     expect(parseFloat(visualBuilder.layers[idx].style.opacity)).toBeLessThan(1);
-                } 
+                }
             }
             done();
         });
@@ -751,7 +750,7 @@ describe("StreamGraph", () => {
                 general: {
                     wiggle: true
                 },
-                valueAxis : {
+                valueAxis: {
                     highPrecision: true
                 }
             };
@@ -811,7 +810,7 @@ describe("StreamGraph", () => {
                 general: {
                     wiggle: false
                 },
-                valueAxis : {
+                valueAxis: {
                     highPrecision: true
                 }
             };
@@ -856,6 +855,34 @@ describe("StreamGraph", () => {
 
             expect(Math.abs(yAxisRect.y - bottomDataRect.y)).toBeLessThanOrEqual(maxPixelDiffereneceDelta);
             done();
+        });
+    });
+
+    describe("Stroke is applied on focus", () => {
+        it("should apply thicker stroke on focus", () => {
+            const defaultStrokeWidth: number = 1;
+            visualBuilder.updateFlushAllD3Transitions(dataView);
+            const randomLayerIndex = Math.round(getRandomNumber(0, visualBuilder.layers.length - 1));
+            const randomLayer = visualBuilder.layers[randomLayerIndex];
+
+            randomLayer.focus();
+
+            const focusedStrokeWidth: number = +getComputedStyle(randomLayer)
+                .getPropertyValue("stroke-width")
+                .replace('px', '');
+
+            expect(focusedStrokeWidth).toBeGreaterThan(defaultStrokeWidth);
+            for (let i = 0; i < visualBuilder.layers.length; i++) {
+                if (i == randomLayerIndex) {
+                    continue;
+                }
+
+                const currentStrokeWidth: number = +getComputedStyle(visualBuilder.layers[i])
+                    .getPropertyValue("stroke-width")
+                    .replace('px', '');
+
+                expect(currentStrokeWidth).toBeLessThan(focusedStrokeWidth);
+            }
         });
     });
 });
