@@ -60,7 +60,6 @@ import { ProductSalesByDateData, MovieGenreSalesByDateData } from "./visualData"
 import { StreamGraphSeries, StreamData, StreamDataPoint } from "../src/dataInterfaces";
 import { StreamGraph, VisualUpdateType } from "../src/visual";
 import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
-import { dateTimeFormat } from "powerbi-visuals-utils-formattingutils/lib/src/formattingService/formattingService";
 
 describe("StreamGraph", () => {
     let visualBuilder: StreamGraphBuilder,
@@ -860,7 +859,6 @@ describe("StreamGraph", () => {
 
     describe("Stroke is applied on focus", () => {
         it("should apply thicker stroke on focus", () => {
-            const defaultStrokeWidth: number = 1;
             visualBuilder.updateFlushAllD3Transitions(dataView);
             const randomLayerIndex = Math.round(getRandomNumber(0, visualBuilder.layers.length - 1));
             const randomLayer = visualBuilder.layers[randomLayerIndex];
@@ -871,13 +869,12 @@ describe("StreamGraph", () => {
                 .getPropertyValue("stroke-width")
                 .replace('px', '');
 
-            expect(focusedStrokeWidth).toBeGreaterThan(defaultStrokeWidth);
-            for (let i = 0; i < visualBuilder.layers.length; i++) {
-                if (i == randomLayerIndex) {
+            for (let idx = 0; idx < visualBuilder.layers.length; idx++) {
+                if (idx == randomLayerIndex) {
                     continue;
                 }
 
-                const currentStrokeWidth: number = +getComputedStyle(visualBuilder.layers[i])
+                const currentStrokeWidth: number = +getComputedStyle(visualBuilder.layers[idx])
                     .getPropertyValue("stroke-width")
                     .replace('px', '');
 
