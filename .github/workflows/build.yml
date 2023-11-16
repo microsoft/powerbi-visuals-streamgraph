@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18x, 20.x]
+        node-version: [18.x, 20.x]
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
@@ -21,7 +21,7 @@ jobs:
     - run: npm audit
       continue-on-error: true
     - run: npm outdated
-      countinue-on-error: true
+      continue-on-error: true
     - run: npm ci
     - run: npm run eslint --if-present
     - run: npm run lint --if-present
