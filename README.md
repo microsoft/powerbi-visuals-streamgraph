@@ -2,7 +2,8 @@
 
 > A stacked area chart with smooth interpolation. Often used to display values over time.
 
-![stacked area chart screenshot](https://github.com/microsoft/powerbi-visuals-streamgraph/blob/master/assets/screenshot.png)
+![stacked area chart screenshot](assets/screenshot.png)
+
 # Overview
 A stream graph, is a type of stacked area graph which is displaced around a central axis, resulting in a flowing, organic shape.
 
