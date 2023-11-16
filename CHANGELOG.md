@@ -1,4 +1,4 @@
-# 3.0.2.0
+# 3.0.4.0
 * Add keyboard navigation
 * UPD: powerbi-visuals-tools has been updated to 5.2.1
 

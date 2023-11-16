@@ -1268,7 +1268,7 @@ export class StreamGraph implements IVisual {
     private reverseOrderOfSeries(selectionMerged: Selection<BaseType, any, any, any>) {
         const selectionMergedSize = selectionMerged.size();
         selectionMerged
-            .attr("tabindex", (d, index) => selectionMergedSize > 1 ? selectionMergedSize - index - 1 : 0)
+            .attr("tabindex", (d, index) => selectionMergedSize > 1 ? selectionMergedSize - index : 0)
             .attr("focusable", true);
     }
 
