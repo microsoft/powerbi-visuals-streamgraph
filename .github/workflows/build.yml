@@ -2,16 +2,16 @@ name: build
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main, dev, certification ]
   pull_request:
-    branches: [ master ]
+    branches: [ main, dev, certification ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20.x]
+        node-version: [18x, 20.x]
     steps:
     - uses: actions/checkout@v2
     - name: Use Node.js ${{ matrix.node-version }}
@@ -20,6 +20,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm audit
       continue-on-error: true
+    - run: npm outdated
+      countinue-on-error: true
     - run: npm ci
     - run: npm run eslint --if-present
     - run: npm run lint --if-present
