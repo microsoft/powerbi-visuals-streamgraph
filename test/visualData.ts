@@ -199,7 +199,7 @@ export class MovieGenreSalesByDateData extends TestDataViewBuilder {
         return array;
     }
 
-    public getDataView(columnNames?: string[], withHighlights: boolean = false, hightlightedIndex: number = 0, hightlightedElementNumber: number = 0): DataView {
+    public getDataView(columnNames?: string[], withHighlights: boolean = false, highlightedIndex: number = 0, hightlightedElementNumber: number = 0): DataView {
         const categoriesColumn: TestDataViewBuilderCategoryColumnOptions[] = [{
             source: {
                 displayName: MovieGenreSalesByDateData.ColumnCategory,
@@ -236,11 +236,11 @@ export class MovieGenreSalesByDateData extends TestDataViewBuilder {
         }];
 
         if (withHighlights) {
-            columns[hightlightedIndex].highlights = this.generateHightLightedValues(this.valuesSales[hightlightedIndex], hightlightedElementNumber);
-            columns[hightlightedIndex].source.groupName = ProductSalesByDateData.GroupNames[hightlightedIndex];
+            columns[highlightedIndex].highlights = this.generateHightLightedValues(this.valuesSales[highlightedIndex], hightlightedElementNumber);
+            columns[highlightedIndex].source.groupName = ProductSalesByDateData.GroupNames[highlightedIndex];
 
             for (let i = 0; i < columns.length; i++) {
-                if (i !== hightlightedIndex) {
+                if (i !== highlightedIndex) {
                     columns[i].highlights = this.generateHightLightedValues(this.valuesSales[i]);
                     columns[i].source.groupName = ProductSalesByDateData.GroupNames[i];
                 }

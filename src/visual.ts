@@ -1140,6 +1140,9 @@ export class StreamGraph implements IVisual {
 
         const isHighContrast: boolean = this.colorPalette.isHighContrast;
 
+        // Reverse the order of the series so that the last series is on top.
+        // stackedSeries = stackedSeries.reverse();
+
         const selection: Selection<BaseType, any, any, any> = this.dataPointsContainer
             .selectAll(StreamGraph.LayerSelector.selectorName)
             .data(stackedSeries);
@@ -1154,6 +1157,8 @@ export class StreamGraph implements IVisual {
             .style("opacity", DefaultOpacity)
             .style("fill", (d, index) => isHighContrast ? null : series[index].color)
             .style("stroke", (d, index) => isHighContrast ? series[index].color : null);
+
+        this.reverseOrderOfSeries(selectionMerged);
 
         selectionMerged
             .transition()
@@ -1254,7 +1259,17 @@ export class StreamGraph implements IVisual {
             dataLabelUtils.cleanDataLabels(this.svg);
         }
 
-        return selectionMerged;
+        return selectionMerged        .attr("focusable", true);
+    }
+
+    /**
+     *  Reverse the order of the series so that the focus goes from up to down.
+     */
+    private reverseOrderOfSeries(selectionMerged: Selection<BaseType, any, any, any>) {
+        const selectionMergedSize = selectionMerged.size();
+        selectionMerged
+            .attr("tabindex", (d, index) => selectionMergedSize > 1 ? selectionMergedSize - index : 0)
+            .attr("focusable", true);
     }
 
     private localizeLegendOrientationDropdown(enableLegendCardSettings : EnableLegendCardSettings)

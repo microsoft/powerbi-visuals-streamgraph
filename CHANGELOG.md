@@ -1,3 +1,7 @@
+# 3.0.4.0
+* Add keyboard navigation
+* UPD: powerbi-visuals-tools has been updated to 5.2.1
+
 ## 2.0.2
 * UPD: powerbi-visuals-tools has been updated to 3.0.9 to add IE11 support
 * UPD: API has been updated to 2.3.0 to add IE11 support

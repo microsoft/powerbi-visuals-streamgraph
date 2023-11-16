@@ -28,34 +28,43 @@
  * Imports external styles.
  * We compile it as a less file in order to wrap the external CSS rules.
  */
-@import (less) "/node_modules/powerbi-visuals-utils-interactivityutils/lib/index.css";
+@import (less)
+  "/node_modules/powerbi-visuals-utils-interactivityutils/lib/index.css";
 
 .streamGraph {
-    @streamGraphFontSize: 11px;
+  @streamGraphFontSize: 11px;
 
-    font-family: helvetica, arial, sans-serif;
-    font-size: @streamGraphFontSize;
+  font-family: helvetica, arial, sans-serif;
+  font-size: @streamGraphFontSize;
 
-    position: absolute;
+  position: absolute;
 
-    .axis {
-        path,
-        line {
-            fill: none !important;
-            shape-rendering: auto;
-        }
-
-        text {
-            stroke: transparent !important;
-        }
+  .axis {
+    path,
+    line {
+      fill: none !important;
+      shape-rendering: auto;
     }
 
-    .layer {
-        fill: transparent;
+    text {
+      stroke: transparent !important;
     }
+  }
 
-    .xAxisLabel,
-    .yAxisLabel {
-        text-anchor: middle;
+  .layer {
+    fill: transparent;
+  }
+
+  .xAxisLabel,
+  .yAxisLabel {
+    text-anchor: middle;
+  }
+
+  path {
+    &:focus {
+      outline: none;
+      stroke: black;
+      stroke-width: 3px;
     }
+  }
 }
