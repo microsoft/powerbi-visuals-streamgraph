@@ -60,8 +60,12 @@
     text-anchor: middle;
   }
 
-  path {
+  path.layer {
     &:focus {
+      outline: none;
+    }
+
+    &:focus-visible {
       outline: none;
       stroke: black;
       stroke-width: 3px;
