@@ -1096,8 +1096,6 @@ export class StreamGraph implements IVisual {
         duration: number,
         hasHighlights: boolean = false
     ): Selection<BaseType, StackedStackValue, any, any> {
-        // Reverse the order of the series so that the last series is on top.
-        stackedSeries = stackedSeries.reverse();
 
         const { width, height } = this.viewport;
 
