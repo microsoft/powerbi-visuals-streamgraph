@@ -106,6 +106,7 @@ import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-vis
 
 // powerbi.extensibility.utils.formattingModel
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
+import ISelectionManager = powerbi.extensibility.ISelectionManager;
 
 const ColumnDisplayName: string = "Visual_Column";
 
@@ -198,6 +199,7 @@ export class StreamGraph implements IVisual {
     private dataPointsContainer: Selection<BaseType, StreamGraphSeries, any, any>;
 
     private localizationManager: ILocalizationManager;
+    private selectionManager: ISelectionManager;
 
     private static formattingSettingsService: FormattingSettingsService;
     private static formattingSettings: StreamGraphSettingsModel;
@@ -571,6 +573,7 @@ export class StreamGraph implements IVisual {
         this.visualHost = options.host;
         this.colorPalette = options.host.colorPalette;
         this.localizationManager = options.host.createLocalizationManager();
+        this.selectionManager = options.host.createSelectionManager();
         StreamGraph.formattingSettingsService = new FormattingSettingsService(this.localizationManager);
 
         const element: HTMLElement = options.element;
@@ -582,6 +585,8 @@ export class StreamGraph implements IVisual {
         this.svg = select(element)
             .append("svg")
             .classed(StreamGraph.VisualClassName, true);
+
+        this.handleContextMenu();
 
         this.clearCatcher = appendClearCatcher(this.svg);
 
@@ -1391,5 +1396,21 @@ export class StreamGraph implements IVisual {
 
     public getFormattingModel(): powerbi.visuals.FormattingModel {
         return StreamGraph.formattingSettingsService.buildFormattingModel(StreamGraph.formattingSettings);
+    }
+
+    private handleContextMenu() {
+        this.svg.on("contextmenu", (event: MouseEvent) => {
+            const emptySelection = {
+                "measures": [],
+                "dataMap": {}
+            };
+
+            this.selectionManager.showContextMenu(emptySelection, {
+                x: event.clientX,
+                y: event.clientY
+            })
+
+            event.preventDefault();
+        })
     }
 }
