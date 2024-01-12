@@ -1,3 +1,6 @@
+# 3.0.6.0
+* Added new localizations
+
 # 3.0.5.0
 * Remove outline on non-keyboard focus. Fix stream focus order.
 
