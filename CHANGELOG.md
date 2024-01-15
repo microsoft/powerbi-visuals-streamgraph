@@ -1,4 +1,4 @@
-# 3.0.2.0
+# 3.0.6.0
 * Remove outline on non-keyboard focus. Fix stream focus order.
 * Add keyboard navigation
 * powerbi-visuals-tools has been updated to 5.2.1
