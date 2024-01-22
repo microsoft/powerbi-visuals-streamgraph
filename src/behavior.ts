@@ -102,6 +102,7 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
                     y: event.clientY
                 });
             event.preventDefault();
+            event.stopPropagation();
         });
     }
 

@@ -482,8 +482,7 @@ describe("StreamGraph", () => {
                 dataView,
                 colorPalette,
                 interactivityService,
-                visualBuilder.visualHost,
-                dataViews);
+                visualBuilder.visualHost);
 
             series = data.series;
 
@@ -499,8 +498,7 @@ describe("StreamGraph", () => {
                 dataView,
                 colorPalette,
                 interactivityService,
-                visualBuilder.visualHost,
-                dataViews).series;
+                visualBuilder.visualHost).series;
 
             // Verify the selection has been cleared
             expect(series[0].selected).toBe(false);
@@ -638,16 +636,14 @@ describe("StreamGraph", () => {
                     dataView,
                     colorPalette,
                     interactivityService!,
-                    visualHost,
-                    dataViews);
+                    visualHost);
             }).not.toThrow();
 
             streamData = StreamGraph.converter(
                 dataView,
                 colorPalette,
                 interactivityService!,
-                visualHost,
-                dataViews);
+                visualHost);
 
             return streamData;
         }

@@ -248,7 +248,6 @@ export class StreamGraph implements IVisual {
         colorPalette: IColorPalette,
         interactivityService: IInteractivityService<StreamGraphSeries>,
         visualHost: IVisualHost,
-        dataViews: DataView[]
     ): StreamData {
 
         if (!dataView
@@ -283,7 +282,7 @@ export class StreamGraph implements IVisual {
 
         const colorHelper: ColorHelper = new ColorHelper(colorPalette);
 
-        this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(StreamGraphSettingsModel, dataViews);
+        this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(StreamGraphSettingsModel, dataView);
         this.removeDisabledFormattingSettings(this.formattingSettings);
         const formattingSettings = this.formattingSettings;
         const fontSizeInPx: string = PixelConverter.fromPoint(formattingSettings.enableDataLabelsCardSettings.fontSize.value);
@@ -642,7 +641,6 @@ export class StreamGraph implements IVisual {
             this.colorPalette,
             this.interactivityService,
             this.visualHost,
-            options.dataViews
         );
 
         if (!this.data
@@ -1264,7 +1262,9 @@ export class StreamGraph implements IVisual {
             dataLabelUtils.cleanDataLabels(this.svg);
         }
 
-        return selectionMerged        .attr("focusable", true);
+        selectionMerged.attr("focusable", true);
+
+        return selectionMerged;
     }
 
     private localizeLegendOrientationDropdown(enableLegendCardSettings : EnableLegendCardSettings)
@@ -1399,7 +1399,7 @@ export class StreamGraph implements IVisual {
     }
 
     private handleContextMenu() {
-        this.svg.on("contextmenu", (event: MouseEvent) => {
+        this.svg.on("contextmenu", (event) => {
             const emptySelection = {
                 "measures": [],
                 "dataMap": {}
