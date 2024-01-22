@@ -1,9 +1,13 @@
-# 3.0.5.0
+## 3.0.6.0
+* Add Context Menu calls on empty space
+* Update packages
+
+## 3.0.5.0
 * Remove outline on non-keyboard focus. Fix stream focus order.
 
 # 3.0.4.0
 * Add keyboard navigation
-* UPD: powerbi-visuals-tools has been updated to 5.2.1
+* powerbi-visuals-tools has been updated to 5.2.1
 
 ## 2.0.2
 * UPD: powerbi-visuals-tools has been updated to 3.0.9 to add IE11 support
