@@ -1182,6 +1182,10 @@ export class StreamGraph implements IVisual {
                 .domain([0, series[0].dataPoints.length - 1])
                 .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxReservedTextSize]);
 
+            if (this.colorPalette.isHighContrast) {
+                this.updateLabelColorValueWhenMatchingWithBackgroundColor(this.colorPalette, this.data.formattingSettings);
+            }
+
             const layout: ILabelLayout = StreamGraph.getStreamGraphLabelLayout(
                 labelsXScale,
                 yScale,
@@ -1262,9 +1266,14 @@ export class StreamGraph implements IVisual {
             dataLabelUtils.cleanDataLabels(this.svg);
         }
 
-        selectionMerged.attr("focusable", true);
-
         return selectionMerged;
+    }
+
+    private updateLabelColorValueWhenMatchingWithBackgroundColor(colorPalette: ISandboxExtendedColorPalette, formattingSettings: StreamGraphSettingsModel) {
+        if ((colorPalette.background.value === "#FFFFFF" || colorPalette.background.value === "#000000")
+            && colorPalette.background.value === formattingSettings.enableDataLabelsCardSettings.color.value.value.toUpperCase()) {
+            formattingSettings.enableDataLabelsCardSettings.color.value.value = colorPalette.foreground.value;
+        }
     }
 
     private localizeLegendOrientationDropdown(enableLegendCardSettings : EnableLegendCardSettings)
