@@ -1071,8 +1071,12 @@ export class StreamGraph implements IVisual {
     private static getStreamGraphLabelLayout(
         xScale: ScaleLinear<number, number>,
         yScale: ScaleLinear<number, number>,
-        enableDataLabelsCardSettings: EnableDataLabelsCardSettings
+        enableDataLabelsCardSettings: EnableDataLabelsCardSettings,
+        colorPalette: ISandboxExtendedColorPalette
     ): ILabelLayout {
+
+        const colorHelper = new ColorHelper(colorPalette);
+        const color = enableDataLabelsCardSettings.color.value.value;
 
         const fontSize: string = PixelConverter.fromPoint(enableDataLabelsCardSettings.fontSize.value);
 
@@ -1086,7 +1090,7 @@ export class StreamGraph implements IVisual {
                 return d != null && d.text != null;
             },
             style: {
-                "fill": enableDataLabelsCardSettings.color.value.value,
+                "fill": colorHelper.isHighContrast ? colorHelper.getHighContrastColor("foreground", color) : color,
                 "font-size": fontSize,
             },
         };
@@ -1182,14 +1186,11 @@ export class StreamGraph implements IVisual {
                 .domain([0, series[0].dataPoints.length - 1])
                 .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxReservedTextSize]);
 
-            if (this.colorPalette.isHighContrast) {
-                this.updateLabelColorValueWhenMatchingWithBackgroundColor(this.colorPalette, this.data.formattingSettings);
-            }
-
             const layout: ILabelLayout = StreamGraph.getStreamGraphLabelLayout(
                 labelsXScale,
                 yScale,
-                this.data.formattingSettings.enableDataLabelsCardSettings);
+                this.data.formattingSettings.enableDataLabelsCardSettings,
+                this.colorPalette);
 
             // Merge all points into a single array
             let dataPointsArray: StreamDataPoint[] = [];
@@ -1267,13 +1268,6 @@ export class StreamGraph implements IVisual {
         }
 
         return selectionMerged;
-    }
-
-    private updateLabelColorValueWhenMatchingWithBackgroundColor(colorPalette: ISandboxExtendedColorPalette, formattingSettings: StreamGraphSettingsModel) {
-        if ((colorPalette.background.value === "#FFFFFF" || colorPalette.background.value === "#000000")
-            && colorPalette.background.value === formattingSettings.enableDataLabelsCardSettings.color.value.value.toUpperCase()) {
-            formattingSettings.enableDataLabelsCardSettings.color.value.value = colorPalette.foreground.value;
-        }
     }
 
     private localizeLegendOrientationDropdown(enableLegendCardSettings : EnableLegendCardSettings)

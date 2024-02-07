@@ -1,3 +1,6 @@
+## 3.0.7.0
+* Improve data labels readability in high contrast mode
+
 ## 3.0.6.0
 * Add Context Menu calls on empty space
 * Update packages
