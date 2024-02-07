@@ -221,10 +221,10 @@ export class EnableLegendCardSettings extends Card {
     name: string = "legend";
     displayName: string = "Legend";
     displayNameKey: string = "Visual_Legend";
-    slices = [this.show, this.positionDropDown, this.showAxisTitle, this.legendName, this.labelColor, this.fontSize];
+    slices = [this.positionDropDown, this.showAxisTitle, this.legendName, this.labelColor, this.fontSize];
 }
 
-export class EnableDataLabelsCardSettings extends Card{
+export class EnableDataLabelsCardSettings extends Card {
     show = new formattingSettings.ToggleSwitch({
         name: "show",
         displayName: undefined,
@@ -268,7 +268,7 @@ export class EnableDataLabelsCardSettings extends Card{
     name: string = "labels";
     displayName: string = "Data Labels";
     displayNameKey: string = "Visual_DataPointsLabels";
-    slices = [this.show, this.showValues, this.color, this.fontSize];
+    slices = [this.showValues, this.color, this.fontSize];
 }
 
 export class EnableGraphCurvatureCardSettings extends Card{
