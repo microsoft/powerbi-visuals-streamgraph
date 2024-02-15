@@ -1,4 +1,7 @@
 ## 3.0.7.0
+* Fix colors in high contrast mode for legend and axis
+
+## 3.0.7.0
 * Improve data labels readability in high contrast mode
 
 ## 3.0.6.0
