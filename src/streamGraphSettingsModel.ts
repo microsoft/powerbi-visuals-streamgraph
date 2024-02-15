@@ -299,7 +299,7 @@ export class EnableGraphCurvatureCardSettings extends Card{
     name: string = "curvature";
     displayName: string = "Curvature";
     displayNameKey: string = "Visual_Curvature";
-    slices = [this.enabled, this.value];
+    slices = [this.value];
 }
 
 export class StreamGraphSettingsModel extends Model {

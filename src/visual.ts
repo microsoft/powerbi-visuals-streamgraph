@@ -190,6 +190,7 @@ export class StreamGraph implements IVisual {
     private dataView: DataView;
     private viewport: IViewport;
     private colorPalette: ISandboxExtendedColorPalette;
+    private colorHelper: ColorHelper;
     private behavior: IInteractiveBehavior;
     private interactivityService: IInteractivityService<StreamGraphSeries>;
 
@@ -571,6 +572,7 @@ export class StreamGraph implements IVisual {
 
         this.visualHost = options.host;
         this.colorPalette = options.host.colorPalette;
+        this.colorHelper = new ColorHelper(this.colorPalette);
         this.localizationManager = options.host.createLocalizationManager();
         this.selectionManager = options.host.createSelectionManager();
         StreamGraph.formattingSettingsService = new FormattingSettingsService(this.localizationManager);
@@ -783,7 +785,7 @@ export class StreamGraph implements IVisual {
             if(xAxisTextNodesArray[idx])
             {
                 (xAxisTextNodesArray[idx] as Element)
-                    .setAttribute("fill", categoryAxisLabelColor);
+                    .setAttribute("fill", this.colorHelper.getHighContrastColor("foreground", categoryAxisLabelColor));
                 (xAxisTextNodesArray[idx] as Element)
                     .setAttribute("stroke", categoryAxisLabelColor);
                 (xAxisTextNodesArray[idx] as Element)
@@ -817,7 +819,7 @@ export class StreamGraph implements IVisual {
             if(yAxisTextNodesArray[idx])
             {
                 (yAxisTextNodesArray[idx] as Element)
-                    .setAttribute("fill", valueAxisLabelColor);
+                    .setAttribute("fill", this.colorHelper.getHighContrastColor("foreground", valueAxisLabelColor));
                 (yAxisTextNodesArray[idx] as Element)
                     .setAttribute("stroke", valueAxisLabelColor);
                 (yAxisTextNodesArray[idx] as Element)
@@ -975,7 +977,7 @@ export class StreamGraph implements IVisual {
                 .style("font-style", textSettings.fontStyle)
                 .style("font-weight", textSettings.fontWeight)
                 .attr("transform", StreamGraph.YAxisLabelAngle)
-                .attr("fill", valueAxisSettings.titleColor.value.value)
+                .attr("fill", this.colorHelper.getHighContrastColor("foreground", valueAxisSettings.titleColor.value.value))
                 .attr("x", -(marginTop + (height / StreamGraph.AxisLabelMiddle)))
                 .attr("y", PixelConverter.fromPoint(-(this.margin.left - StreamGraph.YAxisLabelDy)))
                 .classed(StreamGraph.YAxisLabelSelector.className, true)
@@ -1057,7 +1059,7 @@ export class StreamGraph implements IVisual {
             .attr("transform", translate(
                 width / StreamGraph.AxisLabelMiddle,
                 height))
-            .attr("fill", categoryAxisSettings.titleColor.value.value)
+            .attr("fill", this.colorHelper.getHighContrastColor("foreground", categoryAxisSettings.titleColor.value.value))
             .attr("dy", StreamGraph.XAxisLabelDy)
             .classed(StreamGraph.XAxisLabelSelector.className, true)
             .text(xAxisText);
@@ -1090,7 +1092,7 @@ export class StreamGraph implements IVisual {
                 return d != null && d.text != null;
             },
             style: {
-                "fill": colorHelper.isHighContrast ? colorHelper.getHighContrastColor("foreground", color) : color,
+                "fill": colorHelper.getHighContrastColor("foreground", color),
                 "font-size": fontSize,
             },
         };
@@ -1325,7 +1327,7 @@ export class StreamGraph implements IVisual {
             title,
             dataPoints,
             fontSize: enableLegendCardSettings.fontSize.value,
-            labelColor: enableLegendCardSettings.labelColor.value.value,
+            labelColor: this.colorHelper.getHighContrastColor("foreground", enableLegendCardSettings.labelColor.value.value),
             fontFamily: "helvetica, arial, sans-serif"
         };
         
