@@ -1,4 +1,4 @@
-## 3.0.7.0
+## 3.0.8.0
 * Fix colors in high contrast mode for legend and axis
 
 ## 3.0.7.0
