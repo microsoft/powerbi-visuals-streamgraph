@@ -1,3 +1,6 @@
+## 3.0.9.0
+* Bump version
+
 ## 3.0.8.0
 * Fix colors in high contrast mode for legend and axis
 

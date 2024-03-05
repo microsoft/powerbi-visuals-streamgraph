@@ -90,7 +90,7 @@ describe("StreamGraph", () => {
 
             const dataPointsContainer = document.querySelector(".streamGraph .dataPointsContainer");
             const paths = dataPointsContainer!.querySelectorAll("path");
-            paths.forEach(function (element, index) {
+            paths.forEach(function (element) {
                 let nanLocation = element.getAttribute("d")!.indexOf("NaN");
                 expect(nanLocation).toBe(-1);
             });
