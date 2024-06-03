@@ -1,3 +1,23 @@
+## 3.0.9.0
+* Bump version
+
+## 3.0.8.0
+* Fix colors in high contrast mode for legend and axis
+
+## 3.0.7.0
+* Improve data labels readability in high contrast mode
+
+## 3.0.6.0
+* Add Context Menu calls on empty space
+* Update packages
+
+## 3.0.5.0
+* Remove outline on non-keyboard focus. Fix stream focus order.
+
+# 3.0.4.0
+* Add keyboard navigation
+* powerbi-visuals-tools has been updated to 5.2.1
+
 ## 2.0.2
 * UPD: powerbi-visuals-tools has been updated to 3.0.9 to add IE11 support
 * UPD: API has been updated to 2.3.0 to add IE11 support

@@ -106,6 +106,7 @@ import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-vis
 
 // powerbi.extensibility.utils.formattingModel
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
+import ISelectionManager = powerbi.extensibility.ISelectionManager;
 
 const ColumnDisplayName: string = "Visual_Column";
 
@@ -189,6 +190,7 @@ export class StreamGraph implements IVisual {
     private dataView: DataView;
     private viewport: IViewport;
     private colorPalette: ISandboxExtendedColorPalette;
+    private colorHelper: ColorHelper;
     private behavior: IInteractiveBehavior;
     private interactivityService: IInteractivityService<StreamGraphSeries>;
 
@@ -198,6 +200,7 @@ export class StreamGraph implements IVisual {
     private dataPointsContainer: Selection<BaseType, StreamGraphSeries, any, any>;
 
     private localizationManager: ILocalizationManager;
+    private selectionManager: ISelectionManager;
 
     private static formattingSettingsService: FormattingSettingsService;
     private static formattingSettings: StreamGraphSettingsModel;
@@ -246,7 +249,6 @@ export class StreamGraph implements IVisual {
         colorPalette: IColorPalette,
         interactivityService: IInteractivityService<StreamGraphSeries>,
         visualHost: IVisualHost,
-        dataViews: DataView[]
     ): StreamData {
 
         if (!dataView
@@ -281,7 +283,7 @@ export class StreamGraph implements IVisual {
 
         const colorHelper: ColorHelper = new ColorHelper(colorPalette);
 
-        this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(StreamGraphSettingsModel, dataViews);
+        this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(StreamGraphSettingsModel, dataView);
         this.removeDisabledFormattingSettings(this.formattingSettings);
         const formattingSettings = this.formattingSettings;
         const fontSizeInPx: string = PixelConverter.fromPoint(formattingSettings.enableDataLabelsCardSettings.fontSize.value);
@@ -570,7 +572,9 @@ export class StreamGraph implements IVisual {
 
         this.visualHost = options.host;
         this.colorPalette = options.host.colorPalette;
+        this.colorHelper = new ColorHelper(this.colorPalette);
         this.localizationManager = options.host.createLocalizationManager();
+        this.selectionManager = options.host.createSelectionManager();
         StreamGraph.formattingSettingsService = new FormattingSettingsService(this.localizationManager);
 
         const element: HTMLElement = options.element;
@@ -582,6 +586,8 @@ export class StreamGraph implements IVisual {
         this.svg = select(element)
             .append("svg")
             .classed(StreamGraph.VisualClassName, true);
+
+        this.handleContextMenu();
 
         this.clearCatcher = appendClearCatcher(this.svg);
 
@@ -637,7 +643,6 @@ export class StreamGraph implements IVisual {
             this.colorPalette,
             this.interactivityService,
             this.visualHost,
-            options.dataViews
         );
 
         if (!this.data
@@ -780,7 +785,7 @@ export class StreamGraph implements IVisual {
             if(xAxisTextNodesArray[idx])
             {
                 (xAxisTextNodesArray[idx] as Element)
-                    .setAttribute("fill", categoryAxisLabelColor);
+                    .setAttribute("fill", this.colorHelper.getHighContrastColor("foreground", categoryAxisLabelColor));
                 (xAxisTextNodesArray[idx] as Element)
                     .setAttribute("stroke", categoryAxisLabelColor);
                 (xAxisTextNodesArray[idx] as Element)
@@ -814,7 +819,7 @@ export class StreamGraph implements IVisual {
             if(yAxisTextNodesArray[idx])
             {
                 (yAxisTextNodesArray[idx] as Element)
-                    .setAttribute("fill", valueAxisLabelColor);
+                    .setAttribute("fill", this.colorHelper.getHighContrastColor("foreground", valueAxisLabelColor));
                 (yAxisTextNodesArray[idx] as Element)
                     .setAttribute("stroke", valueAxisLabelColor);
                 (yAxisTextNodesArray[idx] as Element)
@@ -972,7 +977,7 @@ export class StreamGraph implements IVisual {
                 .style("font-style", textSettings.fontStyle)
                 .style("font-weight", textSettings.fontWeight)
                 .attr("transform", StreamGraph.YAxisLabelAngle)
-                .attr("fill", valueAxisSettings.titleColor.value.value)
+                .attr("fill", this.colorHelper.getHighContrastColor("foreground", valueAxisSettings.titleColor.value.value))
                 .attr("x", -(marginTop + (height / StreamGraph.AxisLabelMiddle)))
                 .attr("y", PixelConverter.fromPoint(-(this.margin.left - StreamGraph.YAxisLabelDy)))
                 .classed(StreamGraph.YAxisLabelSelector.className, true)
@@ -1054,7 +1059,7 @@ export class StreamGraph implements IVisual {
             .attr("transform", translate(
                 width / StreamGraph.AxisLabelMiddle,
                 height))
-            .attr("fill", categoryAxisSettings.titleColor.value.value)
+            .attr("fill", this.colorHelper.getHighContrastColor("foreground", categoryAxisSettings.titleColor.value.value))
             .attr("dy", StreamGraph.XAxisLabelDy)
             .classed(StreamGraph.XAxisLabelSelector.className, true)
             .text(xAxisText);
@@ -1068,8 +1073,12 @@ export class StreamGraph implements IVisual {
     private static getStreamGraphLabelLayout(
         xScale: ScaleLinear<number, number>,
         yScale: ScaleLinear<number, number>,
-        enableDataLabelsCardSettings: EnableDataLabelsCardSettings
+        enableDataLabelsCardSettings: EnableDataLabelsCardSettings,
+        colorPalette: ISandboxExtendedColorPalette
     ): ILabelLayout {
+
+        const colorHelper = new ColorHelper(colorPalette);
+        const color = enableDataLabelsCardSettings.color.value.value;
 
         const fontSize: string = PixelConverter.fromPoint(enableDataLabelsCardSettings.fontSize.value);
 
@@ -1083,7 +1092,7 @@ export class StreamGraph implements IVisual {
                 return d != null && d.text != null;
             },
             style: {
-                "fill": enableDataLabelsCardSettings.color.value.value,
+                "fill": colorHelper.getHighContrastColor("foreground", color),
                 "font-size": fontSize,
             },
         };
@@ -1140,6 +1149,7 @@ export class StreamGraph implements IVisual {
 
         const isHighContrast: boolean = this.colorPalette.isHighContrast;
 
+
         const selection: Selection<BaseType, any, any, any> = this.dataPointsContainer
             .selectAll(StreamGraph.LayerSelector.selectorName)
             .data(stackedSeries);
@@ -1154,6 +1164,10 @@ export class StreamGraph implements IVisual {
             .style("opacity", DefaultOpacity)
             .style("fill", (d, index) => isHighContrast ? null : series[index].color)
             .style("stroke", (d, index) => isHighContrast ? series[index].color : null);
+
+        selectionMerged
+            .attr("tabindex", 0)
+            .attr("focusable", true);
 
         selectionMerged
             .transition()
@@ -1177,7 +1191,8 @@ export class StreamGraph implements IVisual {
             const layout: ILabelLayout = StreamGraph.getStreamGraphLabelLayout(
                 labelsXScale,
                 yScale,
-                this.data.formattingSettings.enableDataLabelsCardSettings);
+                this.data.formattingSettings.enableDataLabelsCardSettings,
+                this.colorPalette);
 
             // Merge all points into a single array
             let dataPointsArray: StreamDataPoint[] = [];
@@ -1312,7 +1327,7 @@ export class StreamGraph implements IVisual {
             title,
             dataPoints,
             fontSize: enableLegendCardSettings.fontSize.value,
-            labelColor: enableLegendCardSettings.labelColor.value.value,
+            labelColor: this.colorHelper.getHighContrastColor("foreground", enableLegendCardSettings.labelColor.value.value),
             fontFamily: "helvetica, arial, sans-serif"
         };
         
@@ -1386,5 +1401,21 @@ export class StreamGraph implements IVisual {
 
     public getFormattingModel(): powerbi.visuals.FormattingModel {
         return StreamGraph.formattingSettingsService.buildFormattingModel(StreamGraph.formattingSettings);
+    }
+
+    private handleContextMenu() {
+        this.svg.on("contextmenu", (event) => {
+            const emptySelection = {
+                "measures": [],
+                "dataMap": {}
+            };
+
+            this.selectionManager.showContextMenu(emptySelection, {
+                x: event.clientX,
+                y: event.clientY
+            })
+
+            event.preventDefault();
+        })
     }
 }

@@ -62,20 +62,9 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
 
         this.series = options.series;
 
-        this.selection.on('contextmenu', (event: PointerEvent, dataPoint : StackedStackValue) => {
-            this.selectionHandler.handleContextMenu(dataPoint ? this.series[dataPoint.index] : {"selected" : false}, 
-            {    
-                x: event.clientX,
-                y: event.clientY
-            });
-            event.preventDefault();
-        });
-
-        this.selection.on("click", (event : PointerEvent, dataPoint : StackedStackValue) => {
-            event && this.selectionHandler.handleSelection(
-                this.series[dataPoint.index],
-                event.ctrlKey);
-        });
+        this.bindContextMenuEvent();
+        this.bindClickEvents();
+        this.bindKeyboardEvents();
 
         this.clearCatcher.on("click", () => {
             selectionHandler.handleClearSelection();
@@ -102,6 +91,35 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
             return getFillOpacity(
                 isCurrentHighlighted,
                 anyHighlightedAtAll);
+        });
+    }
+
+    private bindContextMenuEvent() {
+        this.selection.on('contextmenu', (event: PointerEvent, dataPoint: StackedStackValue) => {
+            this.selectionHandler.handleContextMenu(dataPoint ? this.series[dataPoint.index] : { "selected": false },
+                {
+                    x: event.clientX,
+                    y: event.clientY
+                });
+            event.preventDefault();
+            event.stopPropagation();
+        });
+    }
+
+    private bindClickEvents() {
+        this.selection.on("click", (event: PointerEvent, dataPoint: StackedStackValue) => {
+            event && this.selectionHandler.handleSelection(
+                this.series[dataPoint.index],
+                event.ctrlKey);
+        });
+    }
+
+    private bindKeyboardEvents() {
+        this.selection.on("keydown", (event: KeyboardEvent, dataPoint: StackedStackValue) => {
+            if (event.code !== "Enter" && event.code !== "Space") {
+                return;
+            }
+            this.selectionHandler.handleSelection(this.series[dataPoint.index], event.ctrlKey || event.metaKey || event.shiftKey);
         });
     }
 }

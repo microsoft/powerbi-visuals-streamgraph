@@ -4,7 +4,7 @@ import { legendInterfaces } from "powerbi-visuals-utils-chartutils";
 import { DataOrder, DataOffset } from "./utils";
 import LegendPosition = legendInterfaces.LegendPosition;
 
-import Card = formattingSettings.Card;
+import Card = formattingSettings.SimpleCard;
 import Model = formattingSettings.Model;
 
 import IEnumMember = powerbi.IEnumMember;
@@ -28,8 +28,10 @@ export class EnableGeneralCardSettings extends Card {
         displayName: "Enable Wiggle",
         displayNameKey: "Visual_Wiggle",
         value: true,
-        topLevelToggle: false
     });
+
+    topLevelSlice = this.wiggle;
+
 
     dataOffsetDropDown = new formattingSettings.ItemDropdown({
         items: dataOffsetOptions,
@@ -53,7 +55,7 @@ export class EnableGeneralCardSettings extends Card {
     slices = [this.wiggle, this.dataOffsetDropDown, this.dataOrderDropDown];
 }
 
-class BaseLabelColorCardSetting extends Card{
+class BaseLabelColorCardSetting extends Card {
     labelColor = new formattingSettings.ColorPicker({
         name: "labelColor",
         displayNameKey: "Visual_AxisFill",
@@ -70,7 +72,7 @@ class BaseLabelColorCardSetting extends Card{
     });
 }
 
-class BaseFontSizeCardSettings extends BaseLabelColorCardSetting{
+class BaseFontSizeCardSettings extends BaseLabelColorCardSetting {
     labelFont = new formattingSettings.FontControl({
         name: "labelFont",
         fontFamily: new formattingSettings.FontPicker({
@@ -108,13 +110,12 @@ class BaseFontSizeCardSettings extends BaseLabelColorCardSetting{
     });
 }
 
-class BaseAxisCardSettings extends BaseFontSizeCardSettings{
+class BaseAxisCardSettings extends BaseFontSizeCardSettings {
     show = new formattingSettings.ToggleSwitch({
         name: "show",
         displayName: "Show Axis",
         displayNameKey: "Visual_ShowAxis",
         value: true,
-        topLevelToggle: false
     });
 
     showAxisTitle = new formattingSettings.ToggleSwitch({
@@ -122,7 +123,6 @@ class BaseAxisCardSettings extends BaseFontSizeCardSettings{
         displayNameKey: "Visual_Title",
         displayName: "Title",
         value: false,
-        topLevelToggle: false
     });
 }
 
@@ -150,7 +150,6 @@ export class EnableValueAxisCardSettings extends BaseAxisCardSettings {
         displayName: "High Precision",
         displayNameKey: "Visual_HighPrecision",
         value: false,
-        topLevelToggle: false
     });
 
     name: string = "valueAxis";
@@ -168,15 +167,15 @@ export class EnableLegendCardSettings extends Card {
         displayName: "show",
         displayNameKey: "Visual_Show",
         value: true,
-        topLevelToggle: true
     });
+
+    topLevelSlice = this.show;
 
     showAxisTitle = new formattingSettings.ToggleSwitch({
         name: "showTitle",
         displayName: "Title",
         displayNameKey: "Visual_Title",
         value: true,
-        topLevelToggle: false
     });
 
     positionDropDown = new formattingSettings.ItemDropdown({
@@ -222,24 +221,24 @@ export class EnableLegendCardSettings extends Card {
     name: string = "legend";
     displayName: string = "Legend";
     displayNameKey: string = "Visual_Legend";
-    slices = [this.show, this.positionDropDown, this.showAxisTitle, this.legendName, this.labelColor, this.fontSize];
+    slices = [this.positionDropDown, this.showAxisTitle, this.legendName, this.labelColor, this.fontSize];
 }
 
-export class EnableDataLabelsCardSettings extends Card{
+export class EnableDataLabelsCardSettings extends Card {
     show = new formattingSettings.ToggleSwitch({
         name: "show",
         displayName: undefined,
         displayNameKey: "Visual_Show",
         value: false,
-        topLevelToggle: true
     });
+
+    topLevelSlice = this.show;
 
     showValues = new formattingSettings.ToggleSwitch({
         name: "showValue",
         displayName: "Show Values",
         displayNameKey: "Visual_ShowValues",
         value: false,
-        topLevelToggle: false
     });
 
     color = new formattingSettings.ColorPicker({
@@ -269,15 +268,16 @@ export class EnableDataLabelsCardSettings extends Card{
     name: string = "labels";
     displayName: string = "Data Labels";
     displayNameKey: string = "Visual_DataPointsLabels";
-    slices = [this.show, this.showValues, this.color, this.fontSize];
+    slices = [this.showValues, this.color, this.fontSize];
 }
 
 export class EnableGraphCurvatureCardSettings extends Card{
     enabled = new formattingSettings.ToggleSwitch({
         name: "enabled",
         value: true,
-        topLevelToggle: true
     });
+
+    topLevelSlice = this.enabled;
 
     value = new formattingSettings.NumUpDown({
         name: "value",
@@ -299,7 +299,7 @@ export class EnableGraphCurvatureCardSettings extends Card{
     name: string = "curvature";
     displayName: string = "Curvature";
     displayNameKey: string = "Visual_Curvature";
-    slices = [this.enabled, this.value];
+    slices = [this.value];
 }
 
 export class StreamGraphSettingsModel extends Model {
