@@ -43,6 +43,7 @@ import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 import DataViewValueColumns = powerbi.DataViewValueColumns;
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 import DataView = powerbi.DataView;
+import VisualUpdateType = powerbi.VisualUpdateType;
 
 // powerbi.extensibility
 import ISelectionId = powerbi.extensibility.ISelectionId;
@@ -61,7 +62,7 @@ import { StreamGraphSettingsModel, BaseAxisCardSettings, DataLabelsCardSettings,
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
 import { createTooltipInfo } from "./tooltipBuilder";
 import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue, StackedStackValue } from "./dataInterfaces";
-
+import { StreamGraphOnObjectService } from "./onObject/onObjectService";
 
 // powerbi.extensibility.utils.svg
 import { IMargin, manipulation, CssConstants } from "powerbi-visuals-utils-svgutils";
@@ -108,16 +109,12 @@ import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-vis
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
 
+// powerbi.visuals.subselections
+import { HtmlSubSelectableClass, SubSelectableDirectEdit, SubSelectableDisplayNameAttribute, SubSelectableObjectNameAttribute, SubSelectableTypeAttribute } from "powerbi-visuals-utils-onobjectutils";
+import CustomVisualSubSelection = powerbi.visuals.CustomVisualSubSelection;
+
 const ColumnDisplayName: string = "Visual_Column";
 
-export enum VisualUpdateType {
-    Data = 2,
-    Resize = 4,
-    ViewMode = 8,
-    Style = 16,
-    ResizeEnd = 32,
-    All = 62,
-}
 
 export class StreamGraph implements IVisual {
     private static VisualClassName = "streamGraph";
@@ -199,6 +196,7 @@ export class StreamGraph implements IVisual {
 
     private localizationManager: ILocalizationManager;
     private selectionManager: ISelectionManager;
+    private visualOnObjectFormatting: StreamGraphOnObjectService;
 
     private static formattingSettingsService: FormattingSettingsService;
     private static formattingSettings: StreamGraphSettingsModel;
@@ -554,6 +552,7 @@ export class StreamGraph implements IVisual {
         this.colorHelper = new ColorHelper(this.colorPalette);
         this.localizationManager = options.host.createLocalizationManager();
         this.selectionManager = options.host.createSelectionManager();
+        this.visualOnObjectFormatting = new StreamGraphOnObjectService(options.element, options.host, this.localizationManager);
         StreamGraph.formattingSettingsService = new FormattingSettingsService(this.localizationManager);
 
         const element: HTMLElement = options.element;
@@ -675,7 +674,8 @@ export class StreamGraph implements IVisual {
                 dataPoints: this.data.series,
                 interactivityServiceOptions: {
                     overrideSelectionFromData: true
-                }
+                },
+                isFormatMode: options.formatMode
             };
 
             interactivityService.bind(
@@ -684,7 +684,22 @@ export class StreamGraph implements IVisual {
 
             this.behavior.renderSelection(interactivityService.hasSelection());
         }
+
+        this.applyOnObjectFormatting(options.formatMode, options.type, options.subSelections);
+
         this.events.renderingFinished(options);
+    }
+
+    private applyOnObjectFormatting(isFormatMode: boolean, updateType: VisualUpdateType, subSelections?: CustomVisualSubSelection[]): void{
+        this.visualOnObjectFormatting.setFormatMode(isFormatMode);
+
+        const shouldUpdateSubSelection = updateType & (powerbi.VisualUpdateType.Data
+            | powerbi.VisualUpdateType.Resize
+            | powerbi.VisualUpdateType.FormattingSubSelectionChange);
+
+        if (isFormatMode && shouldUpdateSubSelection) {
+            this.visualOnObjectFormatting.updateOutlinesFromSubSelections(subSelections, true);
+        }
     }
 
     private setTextNodesPosition(xAxisTextNodes: Selection<BaseType, any, any, any>,

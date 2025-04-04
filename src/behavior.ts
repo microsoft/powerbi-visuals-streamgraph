@@ -40,6 +40,7 @@ export interface BehaviorOptions extends interactivityBaseService.IBehaviorOptio
     clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
     interactivityService: IInteractivityService<StreamGraphSeries>;
     series: StreamGraphSeries[];
+    isFormatMode: boolean;
 }
 
 export class StreamGraphBehavior implements IInteractiveBehavior {
@@ -62,13 +63,7 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
 
         this.series = options.series;
 
-        this.bindContextMenuEvent();
-        this.bindClickEvents();
-        this.bindKeyboardEvents();
-
-        this.clearCatcher.on("click", () => {
-            selectionHandler.handleClearSelection();
-        });
+        this.applyOnObjectFormatMode(options.isFormatMode);
     }
 
     public renderSelection(hasHighlight: boolean): void {
@@ -91,6 +86,34 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
             return getFillOpacity(
                 isCurrentHighlighted,
                 anyHighlightedAtAll);
+        });
+    }
+    
+    private applyOnObjectFormatMode(isFormatMode: boolean){
+        if (isFormatMode){
+            // remove event listeners which are irrelevant for format mode.
+            this.removeEventListeners();
+            this.selectionHandler.handleClearSelection();
+        } else {
+            this.addEventListeners();
+        }
+    }
+
+    private removeEventListeners(): void {
+        this.selection.on("contextmenu", null);
+        this.selection.on("click", null);
+        this.selection.on("keydown", null);
+
+        this.clearCatcher.on("click", null);
+    }
+
+    private addEventListeners(): void {
+        this.bindContextMenuEvent();
+        this.bindClickEvents();
+        this.bindKeyboardEvents();
+
+        this.clearCatcher.on("click", () => {
+            this.selectionHandler.handleClearSelection();
         });
     }
 
