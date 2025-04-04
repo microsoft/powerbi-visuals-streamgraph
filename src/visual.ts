@@ -57,7 +57,7 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
 
 import { DefaultOpacity, DataOrder, DataOffset } from "./utils";
-import { StreamGraphSettingsModel, BaseAxisCardSettings, EnableDataLabelsCardSettings, EnableLegendCardSettings, EnableGeneralCardSettings } from "./streamGraphSettingsModel";
+import { StreamGraphSettingsModel, BaseAxisCardSettings, DataLabelsCardSettings, EnableLegendCardSettings, EnableGeneralCardSettings } from "./streamGraphSettingsModel";
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
 import { createTooltipInfo } from "./tooltipBuilder";
 import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue, StackedStackValue } from "./dataInterfaces";
@@ -267,7 +267,7 @@ export class StreamGraph implements IVisual {
 
         this.formattingSettings = this.formattingSettingsService.populateFormattingSettingsModel(StreamGraphSettingsModel, dataView);
         const formattingSettings = this.formattingSettings;
-        const fontSizeInPx: string = PixelConverter.fromPoint(formattingSettings.enableDataLabelsCardSettings.fontSize.value);
+        const fontSizeInPx: string = PixelConverter.fromPoint(formattingSettings.dataLabels.fontSize.value);
 
         const stackValues: StackValue[] = [];
 
@@ -1054,17 +1054,21 @@ export class StreamGraph implements IVisual {
     private static getStreamGraphLabelLayout(
         xScale: ScaleLinear<number, number>,
         yScale: ScaleLinear<number, number>,
-        enableDataLabelsCardSettings: EnableDataLabelsCardSettings,
+        dataLabels: DataLabelsCardSettings,
         colorPalette: ISandboxExtendedColorPalette
     ): ILabelLayout {
 
         const colorHelper = new ColorHelper(colorPalette);
-        const color = enableDataLabelsCardSettings.color.value.value;
+        const color = dataLabels.color.value.value;
 
-        const fontSize: string = PixelConverter.fromPoint(enableDataLabelsCardSettings.fontSize.value);
+        const fontSize: string = PixelConverter.fromPoint(dataLabels.fontSize.value);
+        const fontFamily = dataLabels.font.fontFamily.value;
+        const bold = dataLabels.font.bold.value ? "bold" : "normal";
+        const italic = dataLabels.font.italic.value ? "italic" : "normal";
+        const underline = dataLabels.font.underline.value ? "underline" : "none";
 
         return {
-            labelText: (d) => d.text + (enableDataLabelsCardSettings.showValues.value ? " " + d.value : ""),
+            labelText: (d) => d.text + (dataLabels.showValues.value ? " " + d.value : ""),
             labelLayout: {
                 x: (d) => xScale(d.x),
                 y: (d) => yScale(d.y0)
@@ -1075,6 +1079,10 @@ export class StreamGraph implements IVisual {
             style: {
                 "fill": colorHelper.getHighContrastColor("foreground", color),
                 "font-size": fontSize,
+                "font-family": fontFamily,
+                "font-weight": bold,
+                "font-style": italic,
+                "text-decoration": underline
             },
         };
     }
@@ -1164,93 +1172,100 @@ export class StreamGraph implements IVisual {
             .exit()
             .remove();
 
-        if (this.data.formattingSettings.enableDataLabelsCardSettings.show.value) {
-            const labelsXScale: ScaleLinear<number, number> = scaleLinear()
-                .domain([0, series[0].dataPoints.length - 1])
-                .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxReservedTextSize]);
-
-            const layout: ILabelLayout = StreamGraph.getStreamGraphLabelLayout(
-                labelsXScale,
-                yScale,
-                this.data.formattingSettings.enableDataLabelsCardSettings,
-                this.colorPalette);
-
-            // Merge all points into a single array
-            let dataPointsArray: StreamDataPoint[] = [];
-
-            stackedSeries.forEach((seriesItem: Series<any, any>) => {
-                const filteredDataPoints: any[] = seriesItem.filter((dataPoint: any) => {
-                    return dataPoint && dataPoint[0] !== null && dataPoint[0] !== undefined;
-                }).map((dataPoint: any) => {
-                    return {
-                        x: dataPoint.data.x,
-                        y0: dataPoint[0],
-                        y: dataPoint[1],
-                        text: seriesItem.key,
-                        value: dataPoint.data[seriesItem.key],
-                        highlight: dataPoint.data.highlight
-                    };
-                });
-
-                if (filteredDataPoints.length > 0) {
-                    dataPointsArray = dataPointsArray.concat(filteredDataPoints);
-                }
-            });
-
-            const viewport: IViewport = {
-                height: height,
-                width: width - (this.margin.right + this.data.xAxisValueMaxReservedTextSize) - margin.left,
-            };
-
-            if (hasHighlights) {
-                const highlightedPointArray: StreamDataPoint[] = dataPointsArray.filter((d: StreamDataPoint) => d.highlight && d.value !== StreamGraph.DefaultValue);
-                const additionalPointsArray: StreamDataPoint[] = dataPointsArray.filter((d: StreamDataPoint) => highlightedPointArray[0] && d.text === highlightedPointArray[0].text && d.x < highlightedPointArray[0].x);
-                dataPointsArray = additionalPointsArray.concat(highlightedPointArray);
-            }
-
-            dataLabelUtils.cleanDataLabels(this.svg);
-
-            const labels: Selection<BaseType, StreamDataPoint, any, any> =
-                dataLabelUtils.drawDefaultLabelsForDataPointChart(
-                    dataPointsArray,
-                    this.svg,
-                    layout,
-                    viewport);
-
-            if (labels) {
-                //If Y axis is on or Y title is on, we need to consider that
-                let divider = 4;
-                if(this.data.formattingSettings.valueAxis.options.show.value)
-                    divider--;
-                if(this.data.formattingSettings.valueAxis.title.show.value)
-                    divider--;
-
-                let offset: number = StreamGraph.DefaultDataLabelsOffset + margin.left / divider;
-
-                //DataLabels value ON, Y axis OFF, Y title OFF
-                if(this.data.formattingSettings.enableDataLabelsCardSettings.showValues.value 
-                        && !this.data.formattingSettings.valueAxis.options.show.value
-                        && !this.data.formattingSettings.valueAxis.title.show.value)
-                    offset = StreamGraph.DefaultDataLabelsOffset - (margin.left * 0.2);
-                
-                //DataLabels value ON, Y axis OFF, Y title ON
-                if(this.data.formattingSettings.enableDataLabelsCardSettings.showValues.value 
-                        && !this.data.formattingSettings.valueAxis.options.show.value
-                        && this.data.formattingSettings.valueAxis.title.show.value)
-                    offset *= 0.5;
-
-                labels.attr("transform", (dataPoint: StreamDataPoint) => {
-                    return translate(
-                        offset + (dataPoint.size.width / StreamGraph.MiddleOfTheLabel),
-                        dataPoint.size.height / StreamGraph.MiddleOfTheLabel);
-                });
-            }
-        }
-        else {
-            dataLabelUtils.cleanDataLabels(this.svg);
-        }
+        this.renderDataLabels(series, stackedSeries, yScale, hasHighlights);
 
         return selectionMerged;
+    }
+
+    private renderDataLabels(series: StreamGraphSeries[], stackedSeries: Series<any, any>[], yScale: ScaleLinear<number, number>, hasHighlights: boolean): void {
+        if (!this.data.formattingSettings.dataLabels.show.value) {
+            dataLabelUtils.cleanDataLabels(this.svg);
+            return;
+        }
+
+        const { width, height } = this.viewport;
+        const margin = this.margin;
+
+        const labelsXScale: ScaleLinear<number, number> = scaleLinear()
+            .domain([0, series[0].dataPoints.length - 1])
+            .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxReservedTextSize]);
+
+        const layout: ILabelLayout = StreamGraph.getStreamGraphLabelLayout(
+            labelsXScale,
+            yScale,
+            this.data.formattingSettings.dataLabels,
+            this.colorPalette);
+
+        // Merge all points into a single array
+        let dataPointsArray: StreamDataPoint[] = [];
+
+        stackedSeries.forEach((seriesItem: Series<any, any>) => {
+            const filteredDataPoints: any[] = seriesItem.filter((dataPoint: any) => {
+                return dataPoint && dataPoint[0] !== null && dataPoint[0] !== undefined;
+            }).map((dataPoint: any) => {
+                return {
+                    x: dataPoint.data.x,
+                    y0: dataPoint[0],
+                    y: dataPoint[1],
+                    text: seriesItem.key,
+                    value: dataPoint.data[seriesItem.key],
+                    highlight: dataPoint.data.highlight
+                };
+            });
+
+            if (filteredDataPoints.length > 0) {
+                dataPointsArray = dataPointsArray.concat(filteredDataPoints);
+            }
+        });
+
+        const viewport: IViewport = {
+            height: height,
+            width: width - (this.margin.right + this.data.xAxisValueMaxReservedTextSize) - margin.left,
+        };
+
+        if (hasHighlights) {
+            const highlightedPointArray: StreamDataPoint[] = dataPointsArray.filter((d: StreamDataPoint) => d.highlight && d.value !== StreamGraph.DefaultValue);
+            const additionalPointsArray: StreamDataPoint[] = dataPointsArray.filter((d: StreamDataPoint) => highlightedPointArray[0] && d.text === highlightedPointArray[0].text && d.x < highlightedPointArray[0].x);
+            dataPointsArray = additionalPointsArray.concat(highlightedPointArray);
+        }
+
+        dataLabelUtils.cleanDataLabels(this.svg);
+
+        const labels: Selection<BaseType, StreamDataPoint, any, any> =
+            dataLabelUtils.drawDefaultLabelsForDataPointChart(
+                dataPointsArray,
+                this.svg,
+                layout,
+                viewport);
+
+        if (labels) {
+            //If Y axis is on or Y title is on, we need to consider that
+            let divider = 4;
+            if(this.data.formattingSettings.valueAxis.options.show.value)
+                divider--;
+            if(this.data.formattingSettings.valueAxis.title.show.value)
+                divider--;
+
+            let offset: number = StreamGraph.DefaultDataLabelsOffset + margin.left / divider;
+
+            //DataLabels value ON, Y axis OFF, Y title OFF
+            if(this.data.formattingSettings.dataLabels.showValues.value 
+                    && !this.data.formattingSettings.valueAxis.options.show.value
+                    && !this.data.formattingSettings.valueAxis.title.show.value)
+                offset = StreamGraph.DefaultDataLabelsOffset - (margin.left * 0.2);
+                
+            //DataLabels value ON, Y axis OFF, Y title ON
+            if(this.data.formattingSettings.dataLabels.showValues.value 
+                    && !this.data.formattingSettings.valueAxis.options.show.value
+                    && this.data.formattingSettings.valueAxis.title.show.value)
+                offset *= 0.5;
+
+            labels.attr("transform", (dataPoint: StreamDataPoint) => {
+                return translate(
+                    offset + (dataPoint.size.width / StreamGraph.MiddleOfTheLabel),
+                    dataPoint.size.height / StreamGraph.MiddleOfTheLabel);
+            });
+        }
     }
 
     private localizeLegendOrientationDropdown(enableLegendCardSettings : EnableLegendCardSettings)

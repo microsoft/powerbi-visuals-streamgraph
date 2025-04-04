@@ -287,6 +287,28 @@
                     "type": {
                         "integer": true
                     }
+                },
+                "labelFontFamily": {
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "labelFontBold": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelFontUnderline": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelFontItalic": {
+                    "type": {
+                        "bool": true
+                    }
                 }
             }
         },

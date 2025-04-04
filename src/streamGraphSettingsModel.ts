@@ -258,7 +258,7 @@ export class EnableLegendCardSettings extends Card {
     slices = [this.positionDropDown, this.showAxisTitle, this.legendName, this.labelColor, this.fontSize];
 }
 
-export class EnableDataLabelsCardSettings extends Card {
+export class DataLabelsCardSettings extends BaseFontCardSettings {
     show = new formattingSettings.ToggleSwitch({
         name: "show",
         displayName: undefined,
@@ -277,32 +277,15 @@ export class EnableDataLabelsCardSettings extends Card {
 
     color = new formattingSettings.ColorPicker({
         name: "color",
-        displayNameKey: "Visual_LabelsFill",
+        displayNameKey: "Visual_Color",
         displayName: "Color",
         value: { value: "#888888" }
-    });
-
-    fontSize = new formattingSettings.NumUpDown({
-        name: "fontSize",
-        displayName: "Text Size",
-        displayNameKey: "Visual_TextSize",
-        value: 9,
-        options: {
-            minValue: {
-                type: powerbiVisualsApi.visuals.ValidatorType.Min,
-                value: 8,
-            },
-            maxValue: {
-                type: powerbiVisualsApi.visuals.ValidatorType.Max,
-                value: 14,
-            }
-        }
     });
 
     name: string = "labels";
     displayName: string = "Data Labels";
     displayNameKey: string = "Visual_DataPointsLabels";
-    slices = [this.showValues, this.color, this.fontSize];
+    slices = [this.showValues, this.font, this.color];
 }
 
 export class EnableGraphCurvatureCardSettings extends Card{
@@ -341,7 +324,7 @@ export class StreamGraphSettingsModel extends Model {
     categoryAxis = new BaseAxisCardSettings("categoryAxis", "Visual_XAxis");
     valueAxis = new BaseAxisCardSettings("valueAxis", "Visual_YAxis", true);
     enableLegendCardSettings = new EnableLegendCardSettings();
-    enableDataLabelsCardSettings = new EnableDataLabelsCardSettings();
+    dataLabels = new DataLabelsCardSettings();
     enableGraphCurvatureCardSettings = new EnableGraphCurvatureCardSettings();
 
     cards = [
@@ -349,7 +332,7 @@ export class StreamGraphSettingsModel extends Model {
         this.categoryAxis,
         this.valueAxis,
         this.enableLegendCardSettings,
-        this.enableDataLabelsCardSettings,
+        this.dataLabels,
         this.enableGraphCurvatureCardSettings
     ];
 }
