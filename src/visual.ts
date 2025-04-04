@@ -169,9 +169,6 @@ export class StreamGraph implements IVisual {
         bottom: StreamGraph.XAxisOnSize,
         top: 0
     };
-    private static isLocalizedLegendOrientationDropdown: boolean = false;
-    private static isLocalizedDataOrderDropdown: boolean = false;
-    private static isLocalizedDataOffsetDropdown: boolean = false;
 
     private events: IVisualEventService;
 
@@ -637,7 +634,6 @@ export class StreamGraph implements IVisual {
             return;
         }
 
-        this.localizeFormattingPanes(this.data);
         this.renderLegend(this.data);
         this.updateViewport();
 
@@ -1270,46 +1266,6 @@ export class StreamGraph implements IVisual {
         }
     }
 
-    private localizeLegendOrientationDropdown(enableLegendCardSettings: LegendCardSettings)
-    {
-        const strToBeLocalized : string = "Visual_LegendPosition_";
-        for(let i = 0; i < enableLegendCardSettings.options.position.items.length; i ++)
-        {
-            enableLegendCardSettings.options.position.items[i].displayName = this.localizationManager.getDisplayName(strToBeLocalized + enableLegendCardSettings.options.position.items[i].displayName)
-        }
-        StreamGraph.isLocalizedLegendOrientationDropdown = true;
-    }
-
-    private localizeDataOrderDropdown(enableGeneralCardSettings : EnableGeneralCardSettings)
-    {
-        const strToBeLocalized : string = "Visual_DataOrder_";
-        for(let i = 0; i < enableGeneralCardSettings.dataOrderDropDown.items.length; i ++)
-        {
-            enableGeneralCardSettings.dataOrderDropDown.items[i].displayName = this.localizationManager.getDisplayName(strToBeLocalized + enableGeneralCardSettings.dataOrderDropDown.items[i].displayName)
-        }
-        StreamGraph.isLocalizedDataOrderDropdown = true;
-    }
-
-    private localizeDataOffsetDropdown(enableGeneralCardSettings : EnableGeneralCardSettings)
-    {
-        const strToBeLocalized : string = "Visual_DataOffset_";
-        for(let i = 0; i < enableGeneralCardSettings.dataOffsetDropDown.items.length; i ++)
-        {
-            enableGeneralCardSettings.dataOffsetDropDown.items[i].displayName = this.localizationManager.getDisplayName(strToBeLocalized + enableGeneralCardSettings.dataOffsetDropDown.items[i].displayName)
-        }
-        StreamGraph.isLocalizedDataOffsetDropdown = true;
-    }
-    
-    private localizeFormattingPanes(streamGraphData: StreamData)
-    {
-        const enableLegendCardSettings: LegendCardSettings = streamGraphData.formattingSettings.legend;
-        const enableGeneralCardSettings: EnableGeneralCardSettings = streamGraphData.formattingSettings.general;
-        
-        if(!StreamGraph.isLocalizedLegendOrientationDropdown) this.localizeLegendOrientationDropdown(enableLegendCardSettings);
-        if(!StreamGraph.isLocalizedDataOrderDropdown) this.localizeDataOrderDropdown(enableGeneralCardSettings);
-        if(!StreamGraph.isLocalizedDataOffsetDropdown) this.localizeDataOffsetDropdown(enableGeneralCardSettings);
-    }
-
     private renderLegend(streamGraphData: StreamData): void {
         const legendSettings: LegendCardSettings = streamGraphData.formattingSettings.legend;
         const title: string = legendSettings.title.show.value
@@ -1407,6 +1363,7 @@ export class StreamGraph implements IVisual {
     }
 
     public getFormattingModel(): powerbi.visuals.FormattingModel {
+        StreamGraph.formattingSettings.setLocalizedOptions(this.localizationManager);
         return StreamGraph.formattingSettingsService.buildFormattingModel(StreamGraph.formattingSettings);
     }
 

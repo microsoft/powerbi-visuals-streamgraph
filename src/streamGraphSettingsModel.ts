@@ -1,4 +1,6 @@
-import powerbiVisualsApi from "powerbi-visuals-api";
+import powerbi from "powerbi-visuals-api";
+import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
+
 import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
 import { legendInterfaces } from "powerbi-visuals-utils-chartutils";
 import { DataOrder, DataOffset } from "./utils";
@@ -10,18 +12,21 @@ import Group = formattingSettings.Group;
 import Model = formattingSettings.Model;
 
 import IEnumMember = powerbi.IEnumMember;
+interface IEnumMemberWithDisplayNameKey extends IEnumMember{
+    key: string;
+}
 
-const dataOrderOptions : IEnumMember[] = [
-    {value : DataOrder[DataOrder.None], displayName : "None"}, 
-    {value : DataOrder[DataOrder.Ascending], displayName : "Ascending"},
-    {value : DataOrder[DataOrder.Descending], displayName : "Descending"}, 
-    {value : DataOrder[DataOrder.InsideOut], displayName : "InsideOut"}, 
-    {value : DataOrder[DataOrder.Reverse], displayName : "Reverse"}
+const dataOrderOptions : IEnumMemberWithDisplayNameKey[] = [
+    {value : DataOrder[DataOrder.None], displayName : "None", key: "Visual_DataOrder_None"}, 
+    {value : DataOrder[DataOrder.Ascending], displayName : "Ascending", key: "Visual_DataOrder_Ascending"},
+    {value : DataOrder[DataOrder.Descending], displayName : "Descending", key: "Visual_DataOrder_Descending"}, 
+    {value : DataOrder[DataOrder.InsideOut], displayName : "InsideOut", key: "Visual_DataOrder_InsideOut"}, 
+    {value : DataOrder[DataOrder.Reverse], displayName : "Reverse", key: "Visual_DataOrder_Reverse"}
 ];
 
-const dataOffsetOptions : IEnumMember[] = [
-    {value : DataOffset[DataOffset.Silhouette], displayName : "Silhouette"},
-    {value : DataOffset[DataOffset.Expand], displayName : "Expand"}
+const dataOffsetOptions : IEnumMemberWithDisplayNameKey[] = [
+    {value : DataOffset[DataOffset.Silhouette], displayName : "Silhouette", key: "Visual_DataOffset_Silhouette"},
+    {value : DataOffset[DataOffset.Expand], displayName : "Expand", key: "Visual_DataOffset_Expand"}
 ];
 
 export class BaseFontCardSettings extends Card {
@@ -37,11 +42,11 @@ export class BaseFontCardSettings extends Card {
         value: 8,
         options: {
             minValue: {
-                type: powerbiVisualsApi.visuals.ValidatorType.Min,
+                type: powerbi.visuals.ValidatorType.Min,
                 value: 8,
             },
             maxValue: {
-                type: powerbiVisualsApi.visuals.ValidatorType.Max,
+                type: powerbi.visuals.ValidatorType.Max,
                 value: 60,
             }
         }
@@ -322,11 +327,11 @@ export class EnableGraphCurvatureCardSettings extends Card{
         value: 5,
         options: {
             minValue: {
-                type: powerbiVisualsApi.visuals.ValidatorType.Min,
+                type: powerbi.visuals.ValidatorType.Min,
                 value: 0,
             },
             maxValue: {
-                type: powerbiVisualsApi.visuals.ValidatorType.Max,
+                type: powerbi.visuals.ValidatorType.Max,
                 value: 50,
             }
         }
@@ -354,4 +359,15 @@ export class StreamGraphSettingsModel extends Model {
         this.dataLabels,
         this.enableGraphCurvatureCardSettings
     ];
+
+    public setLocalizedOptions(localizationManager: ILocalizationManager) {
+        this.setLocalizedDisplayName(dataOrderOptions, localizationManager);
+        this.setLocalizedDisplayName(dataOffsetOptions, localizationManager);
+    }   
+
+    private setLocalizedDisplayName(options: IEnumMemberWithDisplayNameKey[], localizationManager: ILocalizationManager) {
+        options.forEach(option => {
+            option.displayName = localizationManager.getDisplayName(option.key)
+        });
+    }
 }
