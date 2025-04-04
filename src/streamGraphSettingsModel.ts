@@ -5,6 +5,8 @@ import { DataOrder, DataOffset } from "./utils";
 import LegendPosition = legendInterfaces.LegendPosition;
 
 import Card = formattingSettings.SimpleCard;
+import CompositeCard = formattingSettings.CompositeCard;
+import Group = formattingSettings.Group;
 import Model = formattingSettings.Model;
 
 import IEnumMember = powerbi.IEnumMember;
@@ -21,6 +23,114 @@ const dataOffsetOptions : IEnumMember[] = [
     {value : DataOffset[DataOffset.Silhouette], displayName : "Silhouette"},
     {value : DataOffset[DataOffset.Expand], displayName : "Expand"}
 ];
+
+export class BaseFontCardSettings extends Card {
+    public fontFamily = new formattingSettings.FontPicker({
+        name: "labelFontFamily",
+        value: "Segoe UI, wf_segoe-ui_normal, helvetica, arial, sans-serif"
+    });
+
+    public fontSize = new formattingSettings.NumUpDown({
+        name: "fontSize",
+        displayName: "Text Size",
+        displayNameKey: "Visual_TextSize",
+        value: 8,
+        options: {
+            minValue: {
+                type: powerbiVisualsApi.visuals.ValidatorType.Min,
+                value: 8,
+            },
+            maxValue: {
+                type: powerbiVisualsApi.visuals.ValidatorType.Max,
+                value: 60,
+            }
+        }
+    });
+
+    public bold = new formattingSettings.ToggleSwitch({
+        name: "labelFontBold",
+        value: false
+    });
+
+    public italic = new formattingSettings.ToggleSwitch({
+        name: "labelFontItalic",
+        value: false
+    });
+
+    public underline = new formattingSettings.ToggleSwitch({
+        name: "labelFontUnderline",
+        value: false
+    });
+
+    public font = new formattingSettings.FontControl({
+        name: "font",
+        displayNameKey: "Visual_Font",
+        fontFamily: this.fontFamily,
+        fontSize: this.fontSize,
+        bold: this.bold,
+        italic: this.italic,
+        underline: this.underline
+    });
+}
+
+class AxisTitleGroup extends Card {
+    constructor(settingName: string){
+        super();
+
+        this.name = `titleGroup${settingName}`;
+        this.displayNameKey = `Visual_Title`;
+        this.topLevelSlice = this.show;
+
+        this.slices = [this.color];
+    }
+
+    public color = new formattingSettings.ColorPicker({
+        name: "titleColor",
+        displayNameKey: "Visual_Color",
+        displayName: "Color",
+        value: { value: "#000000" }
+    });
+
+    public show = new formattingSettings.ToggleSwitch({
+        name: "showAxisTitle",
+        displayNameKey: "Visual_Title",
+        displayName: "Title",
+        value: false,
+    });
+}
+
+class AxisOptionsGroup extends BaseFontCardSettings {
+    constructor(settingName: string, useHighPrecision: boolean = false){
+        super();
+
+        this.name = `optionsGroup${settingName}`;
+        this.displayNameKey = `Visual_Values`;
+        this.topLevelSlice = this.show;
+
+        this.slices = [...(useHighPrecision ? [this.highPrecision] : []), this.font, this.labelColor];
+    }
+
+    public show = new formattingSettings.ToggleSwitch({
+        name: "show",
+        displayName: "Show Axis",
+        displayNameKey: "Visual_ShowAxis",
+        value: true,
+    });
+
+    public labelColor = new formattingSettings.ColorPicker({
+        name: "labelColor",
+        displayNameKey: "Visual_Color",
+        displayName: "Color",
+        value: { value: "#000000" }
+    });
+
+    public highPrecision = new formattingSettings.ToggleSwitch({
+        name: "highPrecision",
+        displayName: "High Precision",
+        displayNameKey: "Visual_HighPrecision",
+        value: false,
+    });
+}
 
 export class EnableGeneralCardSettings extends Card {
     wiggle = new formattingSettings.ToggleSwitch({
@@ -55,75 +165,20 @@ export class EnableGeneralCardSettings extends Card {
     slices = [this.wiggle, this.dataOffsetDropDown, this.dataOrderDropDown];
 }
 
-class BaseLabelColorCardSetting extends Card {
-    labelColor = new formattingSettings.ColorPicker({
-        name: "labelColor",
-        displayNameKey: "Visual_AxisFill",
-        displayName: "Color",
-        value: { value: "#000000" }
-        // instanceKind: powerbi.VisualEnumerationInstanceKinds.ConstantOrRule
-    });
+export class BaseAxisCardSettings extends CompositeCard {
+    public title: AxisTitleGroup;
+    public options: AxisOptionsGroup;
+    public groups: Group[];
 
-    titleColor = new formattingSettings.ColorPicker({
-        name: "titleColor",
-        displayNameKey: "Visual_TitleLabelsFill",
-        displayName: "Color",
-        value: { value: "#000000" }
-    });
-}
+    constructor(name: string, displayNameKey: string, useHighPrecision: boolean = false){
+        super();
 
-class BaseFontSizeCardSettings extends BaseLabelColorCardSetting {
-    labelFont = new formattingSettings.FontControl({
-        name: "labelFont",
-        fontFamily: new formattingSettings.FontPicker({
-            name: "labelFontFamily",
-            value: "Segoe UI, wf_segoe-ui_normal, helvetica, arial, sans-serif"
-        }),
-        fontSize: new formattingSettings.NumUpDown({
-            name: "fontSize",
-            displayName: "Text Size",
-            displayNameKey: "Visual_TextSize",
-            value: 8,
-            options: {
-                minValue: {
-                    type: powerbiVisualsApi.visuals.ValidatorType.Min,
-                    value: 8,
-                },
-                maxValue: {
-                    type: powerbiVisualsApi.visuals.ValidatorType.Max,
-                    value: 14,
-                }
-            }
-        }),
-        bold: new formattingSettings.ToggleSwitch({
-            name: "labelFontBold",
-            value: false
-        }),
-        italic: new formattingSettings.ToggleSwitch({
-            name: "labelFontItalic",
-            value: false
-        }),
-        underline: new formattingSettings.ToggleSwitch({
-            name: "labelFontUnderline",
-            value: false
-        })
-    });
-}
-
-class BaseAxisCardSettings extends BaseFontSizeCardSettings {
-    show = new formattingSettings.ToggleSwitch({
-        name: "show",
-        displayName: "Show Axis",
-        displayNameKey: "Visual_ShowAxis",
-        value: true,
-    });
-
-    showAxisTitle = new formattingSettings.ToggleSwitch({
-        name: "showAxisTitle",
-        displayNameKey: "Visual_Title",
-        displayName: "Title",
-        value: false,
-    });
+        this.name = name;
+        this.displayNameKey = displayNameKey;
+        this.title = new AxisTitleGroup(name);
+        this.options = new AxisOptionsGroup(name, useHighPrecision);
+        this.groups = [this.options, this.title];
+    }
 }
 
 const positionOptions : IEnumMember[] = [
@@ -136,27 +191,6 @@ const positionOptions : IEnumMember[] = [
     {value : LegendPosition[LegendPosition.LeftCenter], displayName : "LeftCenter"}, 
     {value : LegendPosition[LegendPosition.RightCenter], displayName : "RightCenter"}, 
 ]; 
-
-export class EnableCategoryAxisCardSettings extends BaseAxisCardSettings {
-    name: string = "categoryAxis";
-    displayName: string = "X-Axis";
-    displayNameKey: string = "Visual_XAxis";
-    slices = [this.show, this.labelColor, this.labelFont, this.showAxisTitle, this.titleColor];
-}
-
-export class EnableValueAxisCardSettings extends BaseAxisCardSettings {
-    highPrecision = new formattingSettings.ToggleSwitch({
-        name: "highPrecision",
-        displayName: "High Precision",
-        displayNameKey: "Visual_HighPrecision",
-        value: false,
-    });
-
-    name: string = "valueAxis";
-    displayName: string = "Y-Axis";
-    displayNameKey: string = "Visual_YAxis";
-    slices = [this.show, this.highPrecision, this.labelColor, this.labelFont, this.showAxisTitle, this.titleColor];
-}
 
 export class EnableLegendCardSettings extends Card {
     public static DefaultTitleText: string = "";
@@ -213,7 +247,7 @@ export class EnableLegendCardSettings extends Card {
 
     labelColor = new formattingSettings.ColorPicker({
         name: "labelColor",
-        displayNameKey: "Visual_LabelsFill",
+        displayNameKey: "Visual_Color",
         displayName: "Color",
         value: { value: "#666666" }
     });
@@ -304,16 +338,16 @@ export class EnableGraphCurvatureCardSettings extends Card{
 
 export class StreamGraphSettingsModel extends Model {
     general = new EnableGeneralCardSettings();
-    enableCategoryAxisCardSettings = new EnableCategoryAxisCardSettings();
-    enableValueAxisCardSettings = new EnableValueAxisCardSettings();
+    categoryAxis = new BaseAxisCardSettings("categoryAxis", "Visual_XAxis");
+    valueAxis = new BaseAxisCardSettings("valueAxis", "Visual_YAxis", true);
     enableLegendCardSettings = new EnableLegendCardSettings();
     enableDataLabelsCardSettings = new EnableDataLabelsCardSettings();
     enableGraphCurvatureCardSettings = new EnableGraphCurvatureCardSettings();
 
     cards = [
         this.general,
-        this.enableCategoryAxisCardSettings,
-        this.enableValueAxisCardSettings,
+        this.categoryAxis,
+        this.valueAxis,
         this.enableLegendCardSettings,
         this.enableDataLabelsCardSettings,
         this.enableGraphCurvatureCardSettings

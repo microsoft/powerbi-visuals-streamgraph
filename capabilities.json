@@ -19,7 +19,7 @@
             "name": "Y",
             "kind": "Measure",
             "displayName": "Values",
-            "displayNameKey": "Role_DisplayName_Values"
+            "displayNameKey": "Visual_Values"
         }
     ],
     "dataViewMappings": [
