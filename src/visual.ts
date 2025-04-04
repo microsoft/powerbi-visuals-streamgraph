@@ -112,6 +112,7 @@ import ISelectionManager = powerbi.extensibility.ISelectionManager;
 // powerbi.visuals.subselections
 import { HtmlSubSelectableClass, SubSelectableDirectEdit, SubSelectableDisplayNameAttribute, SubSelectableObjectNameAttribute, SubSelectableTypeAttribute } from "powerbi-visuals-utils-onobjectutils";
 import CustomVisualSubSelection = powerbi.visuals.CustomVisualSubSelection;
+import { titleEditSubSelection } from "./onObject/references";
 
 const ColumnDisplayName: string = "Visual_Column";
 
@@ -633,7 +634,7 @@ export class StreamGraph implements IVisual {
             return;
         }
 
-        this.renderLegend(this.data);
+        this.renderLegend(this.data, options.formatMode);
         this.updateViewport();
 
         this.svg.attr("width", PixelConverter.toString(this.viewport.width));
@@ -1294,7 +1295,7 @@ export class StreamGraph implements IVisual {
             .attr(SubSelectableDisplayNameAttribute, this.localizationManager.getDisplayName("Visual_Labels"));
     }
 
-    private renderLegend(streamGraphData: StreamData): void {
+    private renderLegend(streamGraphData: StreamData, isFormatMode: boolean): void {
         const legendSettings: LegendCardSettings = streamGraphData.formattingSettings.legend;
         const title: string = legendSettings.title.show.value
             ? legendSettings.title.text.value || streamGraphData.legendData.title
@@ -1326,6 +1327,21 @@ export class StreamGraph implements IVisual {
             .style("text-decoration", () => legendSettings.text.font.underline.value ? "underline" : "none");
 
         positionChartArea(this.svg, this.legend);
+
+        this.applyOnObjectStylesToLegend(legendSelection, isFormatMode, legendSettings);
+    }
+
+    private applyOnObjectStylesToLegend(selection: Selection<BaseType, any, any, any>, isFormatMode: boolean, settings: LegendCardSettings): void {
+        selection.select("#legendGroup")
+            .classed(HtmlSubSelectableClass, isFormatMode && settings.show.value)
+            .attr(SubSelectableObjectNameAttribute, StreamGraphObjectNames.Legend)
+            .attr(SubSelectableDisplayNameAttribute, this.localizationManager.getDisplayName("Visual_Legend"));
+
+        selection.select(".legendTitle")
+            .classed(HtmlSubSelectableClass, isFormatMode && settings.show.value && settings.title.show.value)
+            .attr(SubSelectableObjectNameAttribute, StreamGraphObjectNames.LegendTitle)
+            .attr(SubSelectableDisplayNameAttribute, this.localizationManager.getDisplayName("Visual_LegendName"))
+            .attr(SubSelectableDirectEdit, titleEditSubSelection);
     }
 
     private updateViewport(): void {

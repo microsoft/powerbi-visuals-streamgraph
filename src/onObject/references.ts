@@ -2,7 +2,7 @@ import powerbi from "powerbi-visuals-api";
 import SubSelectableDirectEdit = powerbi.visuals.SubSelectableDirectEdit;
 import SubSelectableDirectEditStyle = powerbi.visuals.SubSelectableDirectEditStyle;
 
-import { IDataLabelReference, IFontReference } from "./interfaces";
+import { IDataLabelReference, IFontReference, ILegendReference } from "./interfaces";
 import { StreamGraphObjectNames } from "../streamGraphSettingsModel";
 
 const createBaseFontReference = (objectName: string, settingName: string = ""): IFontReference => {
@@ -47,3 +47,35 @@ export const dataLabelsReferences: IDataLabelReference = {
         propertyName: "showValue"
     }
 }
+
+export const legendReferences: ILegendReference = {
+    ...createBaseFontReference(StreamGraphObjectNames.Legend, "label"),
+    cardUid: "Visual-legend-card",
+    groupUid: "legendOptions-group",
+    show: {
+        objectName: StreamGraphObjectNames.Legend,
+        propertyName: "show"
+    },
+    showTitle: {
+        objectName: StreamGraphObjectNames.Legend,
+        propertyName: "showTitle"
+    },
+    titleText: {
+        objectName: StreamGraphObjectNames.Legend,
+        propertyName: "titleText"
+    },
+    position: {
+        objectName: StreamGraphObjectNames.Legend,
+        propertyName: "position"
+    }
+}
+
+export const TitleEdit: SubSelectableDirectEdit = {
+    reference: {
+        objectName: StreamGraphObjectNames.Legend,
+        propertyName: "titleText"
+    },
+    style: SubSelectableDirectEditStyle.HorizontalLeft,
+}
+
+export const titleEditSubSelection = JSON.stringify(TitleEdit);

@@ -43,7 +43,10 @@
 	"Visual_DataOrder_Reverse" : "Reverse",
 	"Visual_Font": "Font",
 	"Visual_Text": "Text",
-	"Visual_OnObject_FormatDataLabels": "Format data labels",
+	"Visual_OnObject_FormatLabels": "Format data labels",
 	"Visual_OnObject_Delete": "Delete",
-	"Visual_OnObject_DeleteValues": "Delete values"
+	"Visual_OnObject_DeleteValues": "Delete values",
+	"Visual_OnObject_FormatLegend": "Format legend",
+	"Visual_OnObject_FormatTitle": "Format title",
+	"Visual_OnObject_AddTitle": "Add title"
 }

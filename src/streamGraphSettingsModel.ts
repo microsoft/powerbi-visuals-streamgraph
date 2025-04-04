@@ -30,7 +30,9 @@ const dataOffsetOptions : IEnumMemberWithDisplayNameKey[] = [
 ];
 
 export const enum StreamGraphObjectNames {
-    DataLabel = "labels"
+    DataLabel = "labels",
+    Legend = "legend",
+    LegendTitle = "legendTitle"
 }
 
 export class BaseFontCardSettings extends Card {
@@ -242,7 +244,7 @@ export class LegendTextGroup extends BaseFontCardSettings {
 }
 
 export class LegendTitleGroup extends Card {
-    public static DefaultShowTitle: boolean = false;
+    public static DefaultShowTitle: boolean = true;
     public static DefaultTitleText: string = "";
 
     public show = new formattingSettings.ToggleSwitch({
@@ -260,7 +262,7 @@ export class LegendTitleGroup extends Card {
         placeholder: "Title text",
     });
 
-    name: string = "legendTitle";
+    name: string = StreamGraphObjectNames.LegendTitle;
     displayName: string = "Title";
     displayNameKey: string = "Visual_Title";
     slices = [this.text];
@@ -269,7 +271,7 @@ export class LegendTitleGroup extends Card {
 export class LegendCardSettings extends CompositeCard {
     public defaultShow: boolean = true;
 
-    public name: string = "legend";
+    public name: string = StreamGraphObjectNames.Legend;
     public displayNameKey: string = "Visual_Legend";
     public analyticsPane: boolean = false;
 

@@ -16,3 +16,10 @@ export interface IDataLabelReference extends IFontReference {
     show: FormattingId;
     showValue: FormattingId;
 }
+
+export interface ILegendReference extends IFontReference {
+    show: FormattingId;
+    showTitle: FormattingId;
+    position: FormattingId;
+    titleText: FormattingId;
+}
