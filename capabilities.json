@@ -1,6 +1,9 @@
 {
     "supportsKeyboardFocus": true,
     "supportsMultiVisualSelection": true,
+    "supportsOnObjectFormatting": true,
+    "enablePointerEventsFormatMode": true,
+    "supportsHighlight": true,
     "privileges": [],
     "dataRoles": [
         {
@@ -402,6 +405,5 @@
                 }
             }
         }
-    },
-    "supportsHighlight": true
+    }
 }
