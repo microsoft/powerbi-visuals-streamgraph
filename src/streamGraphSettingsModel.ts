@@ -190,29 +190,12 @@ const positionOptions : IEnumMember[] = [
     {value : LegendPosition[LegendPosition.BottomCenter], displayName : "BottomCenter"}, 
     {value : LegendPosition[LegendPosition.LeftCenter], displayName : "LeftCenter"}, 
     {value : LegendPosition[LegendPosition.RightCenter], displayName : "RightCenter"}, 
-]; 
+];
 
-export class EnableLegendCardSettings extends Card {
-    public static DefaultTitleText: string = "";
-    public static DefaultFontSizeInPoints: number = 8;
+class LegendOptionsGroup extends Card {
+    public defaultPosition: IEnumMember = positionOptions[0];
 
-    show = new formattingSettings.ToggleSwitch({
-        name: "show",
-        displayName: "show",
-        displayNameKey: "Visual_Show",
-        value: true,
-    });
-
-    topLevelSlice = this.show;
-
-    showAxisTitle = new formattingSettings.ToggleSwitch({
-        name: "showTitle",
-        displayName: "Title",
-        displayNameKey: "Visual_Title",
-        value: true,
-    });
-
-    positionDropDown = new formattingSettings.ItemDropdown({
+    public position = new formattingSettings.ItemDropdown({
         items: positionOptions,
         value: positionOptions[0],
         displayName: "Position",
@@ -220,42 +203,73 @@ export class EnableLegendCardSettings extends Card {
         name: "position"
     });
 
-    legendName = new formattingSettings.TextInput({
-        placeholder: "",
-        value: "",
-        displayName: "Legend Name",
-        displayNameKey: "Visual_LegendName",
-        name: "titleText"
-    });
+    name: string = "legendOptions";
+    displayName: string = "Options";
+    displayNameKey: string = "Visual_Options";
+    slices = [this.position];
+}
 
-    fontSize = new formattingSettings.NumUpDown({
-        name: "fontSize",
-        displayName: "Text Size",
-        displayNameKey: "Visual_TextSize",
-        value: 8,
-        options: {
-            minValue: {
-                type: powerbiVisualsApi.visuals.ValidatorType.Min,
-                value: 8,
-            },
-            maxValue: {
-                type: powerbiVisualsApi.visuals.ValidatorType.Max,
-                value: 60,
-            }
-        }
-    });
+export class LegendTextGroup extends BaseFontCardSettings {
+    public static DefaultLabelColor: string = "#000000";
+    public static DefaultFontSizeInPoints: number = 8;
 
-    labelColor = new formattingSettings.ColorPicker({
+    public labelColor = new formattingSettings.ColorPicker({
         name: "labelColor",
         displayNameKey: "Visual_Color",
-        displayName: "Color",
-        value: { value: "#666666" }
+        value: { value: LegendTextGroup.DefaultLabelColor },
     });
 
-    name: string = "legend";
-    displayName: string = "Legend";
-    displayNameKey: string = "Visual_Legend";
-    slices = [this.positionDropDown, this.showAxisTitle, this.legendName, this.labelColor, this.fontSize];
+    name: string = "legendText";
+    displayName: string = "Text";
+    displayNameKey: string = "Visual_Text";
+    slices = [this.font, this.labelColor];
+}
+
+export class LegendTitleGroup extends Card {
+    public static DefaultShowTitle: boolean = false;
+    public static DefaultTitleText: string = "";
+
+    public show = new formattingSettings.ToggleSwitch({
+        name: "showTitle",
+        displayNameKey: "Visual_ShowTitle",
+        value: LegendTitleGroup.DefaultShowTitle,
+    });
+
+    topLevelSlice = this.show;
+
+    public text = new formattingSettings.TextInput({
+        name: "titleText",
+        displayNameKey: "Visual_TitleText",
+        value: LegendTitleGroup.DefaultTitleText,
+        placeholder: "Title text",
+    });
+
+    name: string = "legendTitle";
+    displayName: string = "Title";
+    displayNameKey: string = "Visual_Title";
+    slices = [this.text];
+}
+
+export class LegendCardSettings extends CompositeCard {
+    public defaultShow: boolean = true;
+
+    public name: string = "legend";
+    public displayNameKey: string = "Visual_Legend";
+    public analyticsPane: boolean = false;
+
+    public show = new formattingSettings.ToggleSwitch({
+        name: "show",
+        displayNameKey: "Visual_LegendShow",
+        value: this.defaultShow,
+    });
+
+    public topLevelSlice: formattingSettings.ToggleSwitch = this.show;
+
+    public options: LegendOptionsGroup = new LegendOptionsGroup();
+    public text: LegendTextGroup = new LegendTextGroup();
+    public title: LegendTitleGroup = new LegendTitleGroup();
+
+    public groups = [this.options, this.text, this.title];
 }
 
 export class DataLabelsCardSettings extends BaseFontCardSettings {
@@ -286,6 +300,11 @@ export class DataLabelsCardSettings extends BaseFontCardSettings {
     displayName: string = "Data Labels";
     displayNameKey: string = "Visual_DataPointsLabels";
     slices = [this.showValues, this.font, this.color];
+
+    constructor(){
+        super();
+        this.fontSize.value = 9;
+    }
 }
 
 export class EnableGraphCurvatureCardSettings extends Card{
@@ -323,7 +342,7 @@ export class StreamGraphSettingsModel extends Model {
     general = new EnableGeneralCardSettings();
     categoryAxis = new BaseAxisCardSettings("categoryAxis", "Visual_XAxis");
     valueAxis = new BaseAxisCardSettings("valueAxis", "Visual_YAxis", true);
-    enableLegendCardSettings = new EnableLegendCardSettings();
+    legend = new LegendCardSettings();
     dataLabels = new DataLabelsCardSettings();
     enableGraphCurvatureCardSettings = new EnableGraphCurvatureCardSettings();
 
@@ -331,7 +350,7 @@ export class StreamGraphSettingsModel extends Model {
         this.general,
         this.categoryAxis,
         this.valueAxis,
-        this.enableLegendCardSettings,
+        this.legend,
         this.dataLabels,
         this.enableGraphCurvatureCardSettings
     ];

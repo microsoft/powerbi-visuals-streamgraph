@@ -10,6 +10,7 @@
 	"Visual_ShowAxis": "Show Axis",
 	"Visual_LabelsRotate": "Rotate labels",
 	"Visual_Title": "Title",
+	"Visual_TitleText": "Title text",
 	"Visual_YAxis": "Y-Axis",
 	"Visual_Legend": "Legend",
 	"Visual_LegendName": "Legend Name",
@@ -40,5 +41,6 @@
 	"Visual_DataOrder_Descending" : "Descending",
 	"Visual_DataOrder_InsideOut" : "Inside Out",
 	"Visual_DataOrder_Reverse" : "Reverse",
-	"Visual_Font": "Font"
+	"Visual_Font": "Font",
+	"Visual_Text": "Text"
 }

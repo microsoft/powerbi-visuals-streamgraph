@@ -57,7 +57,7 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
 
 import { DefaultOpacity, DataOrder, DataOffset } from "./utils";
-import { StreamGraphSettingsModel, BaseAxisCardSettings, DataLabelsCardSettings, EnableLegendCardSettings, EnableGeneralCardSettings } from "./streamGraphSettingsModel";
+import { StreamGraphSettingsModel, BaseAxisCardSettings, DataLabelsCardSettings, LegendTitleGroup, EnableGeneralCardSettings, LegendCardSettings, LegendTextGroup } from "./streamGraphSettingsModel";
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
 import { createTooltipInfo } from "./tooltipBuilder";
 import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue, StackedStackValue } from "./dataInterfaces";
@@ -195,6 +195,7 @@ export class StreamGraph implements IVisual {
     private interactivityService: IInteractivityService<StreamGraphSeries>;
 
     private tooltipServiceWrapper: ITooltipServiceWrapper;
+    private element: Selection<BaseType, any, any, any>;
     private svg: Selection<BaseType, any, any, any>;
     private clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
     private dataPointsContainer: Selection<BaseType, StreamGraphSeries, any, any>;
@@ -255,7 +256,7 @@ export class StreamGraph implements IVisual {
                 dataPoints: [],
                 title: values.source
                     ? values.source.displayName
-                    : EnableLegendCardSettings.DefaultTitleText,
+                    : LegendTitleGroup.DefaultTitleText,
             };
         let value: number = 0;
 
@@ -559,6 +560,7 @@ export class StreamGraph implements IVisual {
         StreamGraph.formattingSettingsService = new FormattingSettingsService(this.localizationManager);
 
         const element: HTMLElement = options.element;
+        this.element = select(element);
 
         this.tooltipServiceWrapper = createTooltipServiceWrapper(
             this.visualHost.tooltipService,
@@ -1268,12 +1270,12 @@ export class StreamGraph implements IVisual {
         }
     }
 
-    private localizeLegendOrientationDropdown(enableLegendCardSettings : EnableLegendCardSettings)
+    private localizeLegendOrientationDropdown(enableLegendCardSettings: LegendCardSettings)
     {
         const strToBeLocalized : string = "Visual_LegendPosition_";
-        for(let i = 0; i < enableLegendCardSettings.positionDropDown.items.length; i ++)
+        for(let i = 0; i < enableLegendCardSettings.options.position.items.length; i ++)
         {
-            enableLegendCardSettings.positionDropDown.items[i].displayName = this.localizationManager.getDisplayName(strToBeLocalized + enableLegendCardSettings.positionDropDown.items[i].displayName)
+            enableLegendCardSettings.options.position.items[i].displayName = this.localizationManager.getDisplayName(strToBeLocalized + enableLegendCardSettings.options.position.items[i].displayName)
         }
         StreamGraph.isLocalizedLegendOrientationDropdown = true;
     }
@@ -1300,7 +1302,7 @@ export class StreamGraph implements IVisual {
     
     private localizeFormattingPanes(streamGraphData: StreamData)
     {
-        const enableLegendCardSettings: EnableLegendCardSettings = streamGraphData.formattingSettings.enableLegendCardSettings;
+        const enableLegendCardSettings: LegendCardSettings = streamGraphData.formattingSettings.legend;
         const enableGeneralCardSettings: EnableGeneralCardSettings = streamGraphData.formattingSettings.general;
         
         if(!StreamGraph.isLocalizedLegendOrientationDropdown) this.localizeLegendOrientationDropdown(enableLegendCardSettings);
@@ -1309,12 +1311,12 @@ export class StreamGraph implements IVisual {
     }
 
     private renderLegend(streamGraphData: StreamData): void {
-        const enableLegendCardSettings: EnableLegendCardSettings = streamGraphData.formattingSettings.enableLegendCardSettings;
-        const title: string = enableLegendCardSettings.showAxisTitle.value
-            ? enableLegendCardSettings.legendName.value || streamGraphData.legendData.title
+        const legendSettings: LegendCardSettings = streamGraphData.formattingSettings.legend;
+        const title: string = legendSettings.title.show.value
+            ? legendSettings.title.text.value || streamGraphData.legendData.title
             : undefined;
 
-        const dataPoints: LegendDataPoint[] = enableLegendCardSettings.show.value
+        const dataPoints: LegendDataPoint[] = legendSettings.show.value
             ? streamGraphData.legendData.dataPoints
             : [];
 
@@ -1322,14 +1324,23 @@ export class StreamGraph implements IVisual {
             ...streamGraphData.legendData,
             title,
             dataPoints,
-            fontSize: enableLegendCardSettings.fontSize.value,
-            labelColor: this.colorHelper.getHighContrastColor("foreground", enableLegendCardSettings.labelColor.value.value),
-            fontFamily: "helvetica, arial, sans-serif"
+            fontSize: legendSettings.text.fontSize.value,
+            labelColor: this.colorHelper.getHighContrastColor("foreground", legendSettings.text.labelColor.value.value),
+            fontFamily: legendSettings.text.fontFamily.value
         };
         
-        this.legend.changeOrientation(LegendPosition[enableLegendCardSettings.positionDropDown.value.value]);
+        this.legend.changeOrientation(LegendPosition[legendSettings.options.position.value.value]);
 
         this.legend.drawLegend(legendData, { ...this.viewport });
+
+        const legendSelection = this.element
+            .select(".legend");
+
+        legendSelection.selectAll("text")
+            .style("font-weight",  () => legendSettings.text.font.bold.value ? "bold" : "normal")
+            .style("font-style",  () => legendSettings.text.font.italic.value ? "italic" : "normal")
+            .style("text-decoration", () => legendSettings.text.font.underline.value ? "underline" : "none");
+
         positionChartArea(this.svg, this.legend);
     }
 
@@ -1385,7 +1396,7 @@ export class StreamGraph implements IVisual {
 
     private static getTextPropertiesFunction(text: string): TextProperties {
         const fontFamily: string = StreamGraph.DefaultFontFamily,
-            fontSize: string = PixelConverter.fromPoint(EnableLegendCardSettings.DefaultFontSizeInPoints),
+            fontSize: string = PixelConverter.fromPoint(LegendTextGroup.DefaultFontSizeInPoints),
             fontWeight: string = StreamGraph.DefaultFontWeight;
         return {
             text,
