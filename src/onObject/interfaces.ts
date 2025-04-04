@@ -11,3 +11,8 @@ export interface IFontReference extends GroupFormattingModelReference {
     fontSize: FormattingId;
     color: FormattingId;
 }
+
+export interface IDataLabelReference extends IFontReference {
+    show: FormattingId;
+    showValue: FormattingId;
+}

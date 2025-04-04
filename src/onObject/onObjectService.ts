@@ -13,6 +13,9 @@ import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 import { select as d3Select } from "d3-selection";
 import { HtmlSubSelectionHelper, SubSelectableObjectNameAttribute } from "powerbi-visuals-utils-onobjectutils";
 
+import { StreamGraphObjectNames } from "../streamGraphSettingsModel";
+import { SubSelectionStylesService, SubSelectionShortcutsService } from "./helperServices";
+
 export class StreamGraphOnObjectService implements VisualOnObjectFormatting {
     private localizationManager: ILocalizationManager;
     private htmlSubSelectionHelper: HtmlSubSelectionHelper;
@@ -43,7 +46,8 @@ export class StreamGraphOnObjectService implements VisualOnObjectFormatting {
         const visualObject = subSelections[0]?.customVisualObjects[0];
         if (visualObject) {
             switch (visualObject.objectName) {
-                default: return undefined;
+                case StreamGraphObjectNames.DataLabel:
+                    return SubSelectionStylesService.GetLabelsStyles();
             }
         }
     }
@@ -52,7 +56,8 @@ export class StreamGraphOnObjectService implements VisualOnObjectFormatting {
         const visualObject = subSelections[0]?.customVisualObjects[0];
         if (visualObject) {
             switch (visualObject.objectName) {
-                default: return undefined;
+                case StreamGraphObjectNames.DataLabel:
+                    return SubSelectionShortcutsService.GetLabelsShortcuts(this.localizationManager);
             }
         }
     }

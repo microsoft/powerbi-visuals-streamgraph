@@ -29,6 +29,10 @@ const dataOffsetOptions : IEnumMemberWithDisplayNameKey[] = [
     {value : DataOffset[DataOffset.Expand], displayName : "Expand", key: "Visual_DataOffset_Expand"}
 ];
 
+export const enum StreamGraphObjectNames {
+    DataLabel = "labels"
+}
+
 export class BaseFontCardSettings extends Card {
     public fontFamily: formattingSettings.FontPicker;
     public fontSize: formattingSettings.NumUpDown;
@@ -308,7 +312,7 @@ export class DataLabelsCardSettings extends BaseFontCardSettings {
         value: { value: "#888888" }
     });
 
-    name: string = "labels";
+    name: string = StreamGraphObjectNames.DataLabel;
     displayName: string = "Data Labels";
     displayNameKey: string = "Visual_DataPointsLabels";
     slices = [this.showValues, this.font, this.color];

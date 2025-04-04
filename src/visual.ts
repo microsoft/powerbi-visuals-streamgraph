@@ -58,7 +58,7 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
 
 import { DefaultOpacity, DataOrder, DataOffset } from "./utils";
-import { StreamGraphSettingsModel, BaseAxisCardSettings, DataLabelsCardSettings, LegendTitleGroup, LegendCardSettings, BaseFontCardSettings } from "./streamGraphSettingsModel";
+import { StreamGraphSettingsModel, BaseAxisCardSettings, DataLabelsCardSettings, LegendTitleGroup, LegendCardSettings, BaseFontCardSettings, StreamGraphObjectNames } from "./streamGraphSettingsModel";
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
 import { createTooltipInfo } from "./tooltipBuilder";
 import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue, StackedStackValue } from "./dataInterfaces";
@@ -646,6 +646,7 @@ export class StreamGraph implements IVisual {
             this.data.series,
             this.data.stackedSeries,
             StreamGraph.AnimationDuration,
+            options.formatMode,
             hasHighlights
         );
 
@@ -1107,6 +1108,7 @@ export class StreamGraph implements IVisual {
         series: StreamGraphSeries[],
         stackedSeries: Series<any, any>[],
         duration: number,
+        isFormatMode: boolean,
         hasHighlights: boolean = false
     ): Selection<BaseType, StackedStackValue, any, any> {
 
@@ -1187,12 +1189,12 @@ export class StreamGraph implements IVisual {
             .exit()
             .remove();
 
-        this.renderDataLabels(series, stackedSeries, yScale, hasHighlights);
+        this.renderDataLabels(series, stackedSeries, yScale, hasHighlights, isFormatMode);
 
         return selectionMerged;
     }
 
-    private renderDataLabels(series: StreamGraphSeries[], stackedSeries: Series<any, any>[], yScale: ScaleLinear<number, number>, hasHighlights: boolean): void {
+    private renderDataLabels(series: StreamGraphSeries[], stackedSeries: Series<any, any>[], yScale: ScaleLinear<number, number>, hasHighlights: boolean, isFormatMode: boolean): void {
         if (!this.data.formattingSettings.dataLabels.show.value) {
             dataLabelUtils.cleanDataLabels(this.svg);
             return;
@@ -1253,34 +1255,43 @@ export class StreamGraph implements IVisual {
                 layout,
                 viewport);
 
-        if (labels) {
-            //If Y axis is on or Y title is on, we need to consider that
-            let divider = 4;
-            if(this.data.formattingSettings.valueAxis.options.show.value)
-                divider--;
-            if(this.data.formattingSettings.valueAxis.title.show.value)
-                divider--;
+        if (!labels) return;
 
-            let offset: number = StreamGraph.DefaultDataLabelsOffset + margin.left / divider;
+        //If Y axis is on or Y title is on, we need to consider that
+        let divider = 4;
+        if(this.data.formattingSettings.valueAxis.options.show.value)
+            divider--;
+        if(this.data.formattingSettings.valueAxis.title.show.value)
+            divider--;
 
-            //DataLabels value ON, Y axis OFF, Y title OFF
-            if(this.data.formattingSettings.dataLabels.showValues.value 
-                    && !this.data.formattingSettings.valueAxis.options.show.value
-                    && !this.data.formattingSettings.valueAxis.title.show.value)
-                offset = StreamGraph.DefaultDataLabelsOffset - (margin.left * 0.2);
+        let offset: number = StreamGraph.DefaultDataLabelsOffset + margin.left / divider;
+
+        //DataLabels value ON, Y axis OFF, Y title OFF
+        if(this.data.formattingSettings.dataLabels.showValues.value 
+                && !this.data.formattingSettings.valueAxis.options.show.value
+                && !this.data.formattingSettings.valueAxis.title.show.value)
+            offset = StreamGraph.DefaultDataLabelsOffset - (margin.left * 0.2);
                 
-            //DataLabels value ON, Y axis OFF, Y title ON
-            if(this.data.formattingSettings.dataLabels.showValues.value 
-                    && !this.data.formattingSettings.valueAxis.options.show.value
-                    && this.data.formattingSettings.valueAxis.title.show.value)
-                offset *= 0.5;
+        //DataLabels value ON, Y axis OFF, Y title ON
+        if(this.data.formattingSettings.dataLabels.showValues.value 
+                && !this.data.formattingSettings.valueAxis.options.show.value
+                && this.data.formattingSettings.valueAxis.title.show.value)
+            offset *= 0.5;
 
-            labels.attr("transform", (dataPoint: StreamDataPoint) => {
-                return translate(
-                    offset + (dataPoint.size.width / StreamGraph.MiddleOfTheLabel),
-                    dataPoint.size.height / StreamGraph.MiddleOfTheLabel);
-            });
-        }
+        labels.attr("transform", (dataPoint: StreamDataPoint) => {
+            return translate(
+                offset + (dataPoint.size.width / StreamGraph.MiddleOfTheLabel),
+                dataPoint.size.height / StreamGraph.MiddleOfTheLabel);
+        });
+
+        this.applyOnObjectStylesToDataLabels(labels, isFormatMode);
+    }
+
+    private applyOnObjectStylesToDataLabels(labelSelection: Selection<BaseType, StreamDataPoint, any, any>, isFormatMode: boolean): void {
+        labelSelection
+            .classed(HtmlSubSelectableClass, isFormatMode)
+            .attr(SubSelectableObjectNameAttribute, StreamGraphObjectNames.DataLabel)
+            .attr(SubSelectableDisplayNameAttribute, this.localizationManager.getDisplayName("Visual_Labels"));
     }
 
     private renderLegend(streamGraphData: StreamData): void {

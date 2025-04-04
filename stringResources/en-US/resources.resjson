@@ -42,5 +42,8 @@
 	"Visual_DataOrder_InsideOut" : "Inside Out",
 	"Visual_DataOrder_Reverse" : "Reverse",
 	"Visual_Font": "Font",
-	"Visual_Text": "Text"
+	"Visual_Text": "Text",
+	"Visual_OnObject_FormatDataLabels": "Format data labels",
+	"Visual_OnObject_Delete": "Delete",
+	"Visual_OnObject_DeleteValues": "Delete values"
 }
