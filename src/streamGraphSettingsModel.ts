@@ -36,7 +36,10 @@ export const enum StreamGraphObjectNames {
     XAxis = "categoryAxis",
     XAxisLabel = "titleGroupcategoryAxis",
     YAxis = "valueAxis",
-    YAxisLabel = "titleGroupvalueAxis"
+    YAxisLabel = "titleGroupvalueAxis",
+    Layers = "layers",
+    General = "general",
+    Curvature = "curvature"
 }
 
 export class BaseFontCardSettings extends Card {
@@ -180,7 +183,7 @@ export class GeneralCardSettings extends Card {
         name: "dataOrder"
     });
 
-    name: string = "general";
+    name: string = StreamGraphObjectNames.General;
     displayName: string = "General";
     displayNameKey: string = "Visual_General";
     slices = [this.wiggle, this.dataOffsetDropDown, this.dataOrderDropDown];
@@ -353,7 +356,7 @@ export class GraphCurvatureCardSettings extends Card{
         }
     });
 
-    name: string = "curvature";
+    name: string = StreamGraphObjectNames.Curvature;
     displayName: string = "Curvature";
     displayNameKey: string = "Visual_Curvature";
     slices = [this.value];

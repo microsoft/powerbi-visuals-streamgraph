@@ -8,7 +8,7 @@ import VisualShortcutType = powerbi.visuals.VisualShortcutType;
 import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 
 import { IAxisReference, IFontReference, IYAxisReference } from "./interfaces";
-import { dataLabelsReferences, legendReferences, xAxisReferences, yAxisReferences } from "./references";
+import { dataLabelsReferences, layerReference, legendReferences, xAxisReferences, yAxisReferences } from "./references";
 
 export class SubSelectionStylesService {
     private static GetSubselectionStylesForText(objectReference: IFontReference): SubSelectionStyles {
@@ -269,5 +269,55 @@ export class SubSelectionShortcutsService {
 
     public static GetYAxisTitleShortcuts(localizationManager: ILocalizationManager): VisualSubSelectionShortcuts {
         return SubSelectionShortcutsService.GetAxisTitleShortcuts(yAxisReferences, localizationManager);
+    }
+
+    public static GetLayersShortcuts(localizationManager: ILocalizationManager): VisualSubSelectionShortcuts{
+        return [
+            {
+                type: VisualShortcutType.Picker,
+                ...layerReference.dataOffset,
+                label: localizationManager.getDisplayName("Visual_DataOffset")
+            },
+            {
+                type: VisualShortcutType.Picker,
+                ...layerReference.dataOrder,
+                label: localizationManager.getDisplayName("Visual_DataOrder")
+            },
+            {
+                type: VisualShortcutType.Toggle,
+                ...layerReference.wiggle,
+                disabledLabel: localizationManager.getDisplayName("Visual_OnObject_DisableWiggle"),
+                enabledLabel: localizationManager.getDisplayName("Visual_OnObject_EnableWiggle")
+            },
+            {
+                type: VisualShortcutType.Toggle,
+                ...layerReference.curvatureEnable,
+                disabledLabel: localizationManager.getDisplayName("Visual_OnObject_DisableCurvature"),
+                enabledLabel: localizationManager.getDisplayName("Visual_OnObject_EnableCurvature")
+            },
+            {
+                type: VisualShortcutType.Divider,
+            },
+            {
+                type: VisualShortcutType.Reset,
+                relatedResetFormattingIds: [
+                    layerReference.dataOffset,
+                    layerReference.dataOrder,
+                    layerReference.wiggle,
+                    layerReference.curvatureEnable,
+                    layerReference.curvatureValue
+                ]
+            },
+            {
+                type: VisualShortcutType.Navigate,
+                destinationInfo: { cardUid: layerReference.cardUid, groupUid: layerReference.groupUid },
+                label: localizationManager.getDisplayName("Visual_OnObject_FormatGeneral")
+            },
+            {
+                type: VisualShortcutType.Navigate,
+                destinationInfo: { cardUid: layerReference.curvatureCardUid},
+                label: localizationManager.getDisplayName("Visual_OnObject_FormatCurvative")
+            }
+        ];
     }
 }

@@ -1,26 +1,36 @@
 import powerbi from "powerbi-visuals-api";
 
+import IPoint = powerbi.extensibility.IPoint;
 import IVisualHost = powerbi.extensibility.visual.IVisualHost;
+import VisualOnObjectFormatting = powerbi.extensibility.visual.VisualOnObjectFormatting;
+import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 
+import ISelectionId = powerbi.visuals.ISelectionId;
 import CustomVisualSubSelection = powerbi.visuals.CustomVisualSubSelection;
 import SubSelectionStyles = powerbi.visuals.SubSelectionStyles;
 import VisualSubSelectionShortcuts = powerbi.visuals.VisualSubSelectionShortcuts;
 import SubSelectionStylesType = powerbi.visuals.SubSelectionStylesType;
-import VisualOnObjectFormatting = powerbi.extensibility.visual.VisualOnObjectFormatting;
-import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 
 import { select as d3Select } from "d3-selection";
 import { HtmlSubSelectionHelper, SubSelectableObjectNameAttribute } from "powerbi-visuals-utils-onobjectutils";
 
 import { StreamGraphObjectNames } from "../streamGraphSettingsModel";
 import { SubSelectionStylesService, SubSelectionShortcutsService } from "./helperServices";
+import { StackedStackValue } from "../dataInterfaces";
 
 export class StreamGraphOnObjectService implements VisualOnObjectFormatting {
     private localizationManager: ILocalizationManager;
     private htmlSubSelectionHelper: HtmlSubSelectionHelper;
+    private getSelectionId: (stackedValue: StackedStackValue) => ISelectionId;
+    private calculatePoints: (identity: ISelectionId) => IPoint[];
 
-    constructor(element: HTMLElement, host: IVisualHost, localizationManager: ILocalizationManager) {
+    constructor(element: HTMLElement, host: IVisualHost, localizationManager: ILocalizationManager,
+        getSelectionId: (stackedValue: StackedStackValue) => ISelectionId,
+        calculatePoints: (identity: ISelectionId) => IPoint[]
+    ) {
         this.localizationManager = localizationManager;
+        this.getSelectionId = getSelectionId;
+        this.calculatePoints = calculatePoints;
         this.htmlSubSelectionHelper = HtmlSubSelectionHelper.createHtmlSubselectionHelper({
             hostElement: element,
             subSelectionService: host.subSelectionService,
@@ -79,6 +89,8 @@ export class StreamGraphOnObjectService implements VisualOnObjectFormatting {
                     return SubSelectionShortcutsService.GetYAxisShortcuts(this.localizationManager);
                 case StreamGraphObjectNames.YAxisLabel:
                     return SubSelectionShortcutsService.GetYAxisTitleShortcuts(this.localizationManager);
+                case StreamGraphObjectNames.Layers:
+                    return SubSelectionShortcutsService.GetLayersShortcuts(this.localizationManager);
             }
         }
     }
@@ -87,6 +99,11 @@ export class StreamGraphOnObjectService implements VisualOnObjectFormatting {
         const elementType: string = d3Select(e).attr(SubSelectableObjectNameAttribute);
 
         switch (elementType) {
+            case StreamGraphObjectNames.Layers: {
+                const datum: StackedStackValue = d3Select<Element, any>(e).datum();
+                const identity = this.getSelectionId(datum);
+                return identity;
+            }
             default:
                 return undefined;
         }
@@ -96,6 +113,20 @@ export class StreamGraphOnObjectService implements VisualOnObjectFormatting {
         const elementType: string = subSelections.customVisualObjects[0].objectName;
 
         switch (elementType) {
+            case StreamGraphObjectNames.Layers:
+                {
+                    const subSelectionIdentity: powerbi.visuals.ISelectionId = subSelections.customVisualObjects[0].selectionId;
+                    const points = this.calculatePoints(subSelectionIdentity);
+
+                    const result: powerbi.visuals.SubSelectionRegionOutlineFragment[] = [{
+                        id: subSelectionIdentity.getKey(),
+                        outline: {
+                            type: powerbi.visuals.SubSelectionOutlineType.Polygon,
+                            points: points
+                        }
+                    }]
+                    return result;
+                }
             default:
                 return undefined;
         }

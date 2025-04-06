@@ -29,7 +29,7 @@ import "./../style/visual.less";
 import "d3-transition";
 import { BaseType, Selection, select } from "d3-selection";
 import { scaleLinear, ScaleLinear } from "d3-scale";
-import { stackOrderNone, stackOrderAscending, stackOrderDescending, stackOrderInsideOut, stackOrderReverse } from "d3-shape";
+import { stackOrderNone, stackOrderAscending, stackOrderDescending, stackOrderInsideOut, stackOrderReverse, SeriesPoint } from "d3-shape";
 import { stackOffsetNone, stackOffsetExpand, stackOffsetSilhouette } from "d3-shape";
 import { curveCatmullRom, area, stack, Stack, Area, Series } from "d3-shape";
 import { min, max, range } from "d3-array";
@@ -56,6 +56,7 @@ import IColorPalette = powerbi.extensibility.IColorPalette;
 import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
+import IPoint = powerbi.extensibility.IPoint;
 
 import { DefaultOpacity, DataOrder, DataOffset } from "./utils";
 import { StreamGraphSettingsModel, BaseAxisCardSettings, DataLabelsCardSettings, LegendTitleGroup, LegendCardSettings, BaseFontCardSettings, StreamGraphObjectNames } from "./streamGraphSettingsModel";
@@ -110,8 +111,10 @@ import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
 
 // powerbi.visuals.subselections
-import { HtmlSubSelectableClass, SubSelectableDirectEdit, SubSelectableDisplayNameAttribute, SubSelectableObjectNameAttribute } from "powerbi-visuals-utils-onobjectutils";
+import { HtmlSubSelectableClass, SubSelectableDirectEdit, SubSelectableDisplayNameAttribute, SubSelectableObjectNameAttribute, SubSelectableTypeAttribute } from "powerbi-visuals-utils-onobjectutils";
 import CustomVisualSubSelection = powerbi.visuals.CustomVisualSubSelection;
+import SubSelectionStylesType = powerbi.visuals.SubSelectionStylesType;
+
 import { titleEditSubSelection } from "./onObject/references";
 
 const ColumnDisplayName: string = "Visual_Column";
@@ -553,7 +556,7 @@ export class StreamGraph implements IVisual {
         this.colorHelper = new ColorHelper(this.colorPalette);
         this.localizationManager = options.host.createLocalizationManager();
         this.selectionManager = options.host.createSelectionManager();
-        this.visualOnObjectFormatting = new StreamGraphOnObjectService(options.element, options.host, this.localizationManager);
+        this.visualOnObjectFormatting = new StreamGraphOnObjectService(options.element, options.host, this.localizationManager, this.getDataPointSelectionId.bind(this), this.calculatePoints.bind(this));
         StreamGraph.formattingSettingsService = new FormattingSettingsService(this.localizationManager);
 
         const element: HTMLElement = options.element;
@@ -1183,7 +1186,6 @@ export class StreamGraph implements IVisual {
 
         const isHighContrast: boolean = this.colorPalette.isHighContrast;
 
-
         const selection: Selection<BaseType, any, any, any> = this.dataPointsContainer
             .selectAll(StreamGraph.LayerSelector.selectorName)
             .data(stackedSeries);
@@ -1217,9 +1219,99 @@ export class StreamGraph implements IVisual {
             .exit()
             .remove();
 
+        this.applyOnObjectStylesToLayers(selectionMerged, isFormatMode);
         this.renderDataLabels(series, stackedSeries, yScale, hasHighlights, isFormatMode);
 
         return selectionMerged;
+    }
+
+    private applyOnObjectStylesToLayers(selection: Selection<BaseType,any, any, any>, isFormatMode: boolean): void {
+        const getSeriesName = (dataPoint: StackedStackValue) => {
+            const displayName = this.localizationManager.getDisplayName("Visual_Group");
+            return `"${dataPoint.key}" ${displayName}`;
+        };
+
+        selection
+            .attr(SubSelectableObjectNameAttribute, StreamGraphObjectNames.Layers)
+            .attr(SubSelectableDisplayNameAttribute, getSeriesName)
+            .attr(SubSelectableTypeAttribute, SubSelectionStylesType.Shape)
+            .classed(HtmlSubSelectableClass, isFormatMode);
+    }
+
+    private getDataPointSelectionId(stackedValue: StackedStackValue): powerbi.visuals.ISelectionId {
+        const dataPointIdentity = this.data.series[stackedValue.index].identity;
+        return (dataPointIdentity as powerbi.visuals.ISelectionId);
+    }
+
+    private calculatePoints(identity: powerbi.visuals.ISelectionId): IPoint[] {
+        const dataPoints: IPoint[] = [];
+        const currentDataPoint = this.data.series.find((dataPoint: StreamGraphSeries) => (dataPoint.identity as powerbi.visuals.ISelectionId).equals(identity));
+        const currentDataPointIndex = this.data.series.indexOf(currentDataPoint);
+        const stackedDataPoint = this.data.stackedSeries.find((dataPoint) => dataPoint.index === currentDataPointIndex);
+      
+        const length = stackedDataPoint.length - 1;
+        const yMin: number = min(this.data.stackedSeries, serie => min(serie, d => d[0]));
+        const yMax: number = max(this.data.stackedSeries, serie => max(serie, d => d[1]));
+
+        const {height, width} = this.viewport;
+        const margin = this.margin;
+        const xScale: ScaleLinear<number, number> = scaleLinear()
+            .domain([0, length])
+            .range([margin.left, width - (margin.right + this.data.xAxisValueMaxReservedTextSize)]);
+        const yScale: ScaleLinear<number, number> = scaleLinear()
+            .domain([Math.min(yMin, 0), yMax])
+            .range([height - (margin.bottom + StreamGraph.TickHeight), (this.margin.top + this.data.yAxisFontHalfSize)]);
+        
+        const yShift: number = this.getYShift();
+        const xShift: number = this.getXShift();
+
+        const transformPoint = (point: IPoint) => {
+            const x = xScale(point.x) + xShift;
+            const y = yScale(point.y) + yShift;
+            return {x, y};
+        }
+
+        stackedDataPoint.forEach((series, x) => {
+            const dataPoint: IPoint = transformPoint({x: x, y: series[0]})
+            dataPoints.push(dataPoint);
+        });
+
+        const reversedArray: SeriesPoint<any>[] = stackedDataPoint.slice().reverse();
+
+        reversedArray.forEach((series, x) => {
+            const dataPoint: IPoint = transformPoint({x: length-x, y: series[1]})
+            dataPoints.push(dataPoint);
+        });
+
+        return dataPoints;
+    }
+
+    private getYShift(): number {
+        const legendMargins: IViewport = this.legend.getMargins(),
+            legendPosition: LegendPosition = this.legend.getOrientation();
+
+        switch (legendPosition) {
+            case LegendPosition.Top:
+            case LegendPosition.TopCenter: {
+                return legendMargins.height;
+            }
+            default:
+                return 0;
+        }
+    }
+
+    private getXShift(): number {
+        const legendMargins: IViewport = this.legend.getMargins(),
+            legendPosition: LegendPosition = this.legend.getOrientation();
+
+        switch (legendPosition) {
+            case LegendPosition.Left:
+            case LegendPosition.LeftCenter: {
+                return legendMargins.width;
+            }
+            default:
+                return 0;
+        }
     }
 
     private renderDataLabels(series: StreamGraphSeries[], stackedSeries: Series<any, any>[], yScale: ScaleLinear<number, number>, hasHighlights: boolean, isFormatMode: boolean): void {

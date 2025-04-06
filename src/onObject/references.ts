@@ -2,9 +2,8 @@ import powerbi from "powerbi-visuals-api";
 import SubSelectableDirectEdit = powerbi.visuals.SubSelectableDirectEdit;
 import SubSelectableDirectEditStyle = powerbi.visuals.SubSelectableDirectEditStyle;
 
-import { IAxisReference, IDataLabelReference, IFontReference, ILegendReference, IYAxisReference } from "./interfaces";
-import { LegendTitleGroup, StreamGraphObjectNames } from "../streamGraphSettingsModel";
-import { StreamGraphOnObjectService } from "./onObjectService";
+import { IAxisReference, IDataLabelReference, IFontReference, ILayerInterface, ILegendReference, IYAxisReference } from "./interfaces";
+import { StreamGraphObjectNames } from "../streamGraphSettingsModel";
 
 const createBaseFontReference = (objectName: string, colorName: string = "", settingName: string = ""): IFontReference => {
     const baseSettingName: string = "label";
@@ -124,5 +123,31 @@ export const yAxisReferences: IYAxisReference = {
     highPrecision: {
         objectName: StreamGraphObjectNames.YAxis,
         propertyName: "highPrecision"
+    }
+}
+
+export const layerReference: ILayerInterface = {
+    cardUid: "Visual-general-card",
+    groupUid: "general-group",
+    curvatureCardUid: "Visual-curvature-card",
+    curvatureEnable: {
+        objectName: StreamGraphObjectNames.Curvature,
+        propertyName: "enabled"
+    },
+    curvatureValue: {
+        objectName: StreamGraphObjectNames.Curvature,
+        propertyName: "value"
+    },
+    wiggle: {
+        objectName: StreamGraphObjectNames.General,
+        propertyName: "wiggle"
+    },
+    dataOrder: {
+        objectName: StreamGraphObjectNames.General,
+        propertyName: "dataOrder"
+    },
+    dataOffset: {
+        objectName: StreamGraphObjectNames.General,
+        propertyName: "dataOffset"
     }
 }

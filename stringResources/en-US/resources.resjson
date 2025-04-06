@@ -53,5 +53,12 @@
 	"Visual_OnObject_Axis": "Axis",
 	"Visual_OnObject_FormatYAxis": "Format Y-Axis",
 	"Visual_OnObject_EnableHighPrecision": "Enable high precision",
-	"Visual_OnObject_DisableHighPrecision": "Disable high precision"
+	"Visual_OnObject_DisableHighPrecision": "Disable high precision",
+	"Visual_OnObject_Layer": "Layer",
+	"Visual_OnObject_DisableWiggle": "Disable wiggle",
+	"Visual_OnObject_EnableWiggle": "Enable wiggle",
+	"Visual_OnObject_DisableCurvature": "Disable curvature",
+	"Visual_OnObject_EnableCurvature": "Enable curvature",
+	"Visual_OnObject_FormatGeneral": "Format general",
+	"Visual_OnObject_FormatCurvative": "Format curvative"
 }

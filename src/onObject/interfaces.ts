@@ -36,3 +36,12 @@ export interface IAxisReference extends IFontReference {
 export interface IYAxisReference extends IAxisReference {
     highPrecision: FormattingId;
 }
+
+export interface ILayerInterface extends GroupFormattingModelReference {
+    curvatureEnable: FormattingId;
+    curvatureValue: FormattingId;
+    wiggle: FormattingId;
+    dataOrder: FormattingId;
+    dataOffset: FormattingId;
+    curvatureCardUid: string;
+}
