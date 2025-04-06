@@ -144,7 +144,7 @@ class AxisOptionsGroup extends BaseFontCardSettings {
     });
 }
 
-export class EnableGeneralCardSettings extends Card {
+export class GeneralCardSettings extends Card {
     wiggle = new formattingSettings.ToggleSwitch({
         name: "wiggle",
         displayName: "Enable Wiggle",
@@ -319,7 +319,7 @@ export class DataLabelsCardSettings extends BaseFontCardSettings {
     }
 }
 
-export class EnableGraphCurvatureCardSettings extends Card{
+export class GraphCurvatureCardSettings extends Card{
     enabled = new formattingSettings.ToggleSwitch({
         name: "enabled",
         value: true,
@@ -351,12 +351,12 @@ export class EnableGraphCurvatureCardSettings extends Card{
 }
 
 export class StreamGraphSettingsModel extends Model {
-    general = new EnableGeneralCardSettings();
+    general = new GeneralCardSettings();
     categoryAxis = new BaseAxisCardSettings("categoryAxis", "Visual_XAxis");
     valueAxis = new BaseAxisCardSettings("valueAxis", "Visual_YAxis", true);
     legend = new LegendCardSettings();
     dataLabels = new DataLabelsCardSettings();
-    enableGraphCurvatureCardSettings = new EnableGraphCurvatureCardSettings();
+    graphCurvature = new GraphCurvatureCardSettings();
 
     cards = [
         this.general,
@@ -364,7 +364,7 @@ export class StreamGraphSettingsModel extends Model {
         this.valueAxis,
         this.legend,
         this.dataLabels,
-        this.enableGraphCurvatureCardSettings
+        this.graphCurvature
     ];
 
     public setLocalizedOptions(localizationManager: ILocalizationManager) {

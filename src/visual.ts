@@ -1132,8 +1132,8 @@ export class StreamGraph implements IVisual {
             .y1(d => yScale(d[1]))
             .defined(d => StreamGraph.isNumber(d[0]) && StreamGraph.isNumber(d[1]));
         
-        if(this.data.formattingSettings.enableGraphCurvatureCardSettings.enabled.value) {
-            areaVar = areaVar.curve(curveCatmullRom.alpha(this.data.formattingSettings.enableGraphCurvatureCardSettings.value.value / 10.0))
+        if(this.data.formattingSettings.graphCurvature.enabled.value) {
+            areaVar = areaVar.curve(curveCatmullRom.alpha(this.data.formattingSettings.graphCurvature.value.value / 10.0))
         }
 
         const isHighContrast: boolean = this.colorPalette.isHighContrast;
