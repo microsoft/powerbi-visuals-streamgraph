@@ -32,7 +32,9 @@ const dataOffsetOptions : IEnumMemberWithDisplayNameKey[] = [
 export const enum StreamGraphObjectNames {
     DataLabel = "labels",
     Legend = "legend",
-    LegendTitle = "legendTitle"
+    LegendTitle = "legendTitle",
+    XAxis = "categoryAxis",
+    XAxisLabel = "titleGroupcategoryAxis"
 }
 
 export class BaseFontCardSettings extends Card {
@@ -120,7 +122,6 @@ class AxisTitleGroup extends BaseFontCardSettings {
 class AxisOptionsGroup extends BaseFontCardSettings {
     constructor(settingName: string, useHighPrecision: boolean = false){
         super();
-
         this.name = `optionsGroup${settingName}`;
         this.displayNameKey = `Visual_Values`;
         this.topLevelSlice = this.show;
@@ -358,7 +359,7 @@ export class GraphCurvatureCardSettings extends Card{
 
 export class StreamGraphSettingsModel extends Model {
     general = new GeneralCardSettings();
-    categoryAxis = new BaseAxisCardSettings("categoryAxis", "Visual_XAxis");
+    categoryAxis = new BaseAxisCardSettings(StreamGraphObjectNames.XAxis, "Visual_XAxis");
     valueAxis = new BaseAxisCardSettings("valueAxis", "Visual_YAxis", true);
     legend = new LegendCardSettings();
     dataLabels = new DataLabelsCardSettings();

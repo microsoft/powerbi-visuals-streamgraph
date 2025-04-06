@@ -23,3 +23,10 @@ export interface ILegendReference extends IFontReference {
     position: FormattingId;
     titleText: FormattingId;
 }
+
+export interface IAxisReference extends IFontReference {
+    show: FormattingId;
+    showAxisTitle: FormattingId;
+    titleColor: FormattingId;
+    title: IFontReference;
+}

@@ -50,6 +50,10 @@ export class StreamGraphOnObjectService implements VisualOnObjectFormatting {
                     return SubSelectionStylesService.GetLabelsStyles();
                 case StreamGraphObjectNames.Legend:
                     return SubSelectionStylesService.GetLegendStyles();
+                case StreamGraphObjectNames.XAxis:
+                    return SubSelectionStylesService.GetXAxisStyles();
+                case StreamGraphObjectNames.XAxisLabel:
+                    return SubSelectionStylesService.GetXAxisTitleStyles();
             }
         }
     }
@@ -64,6 +68,10 @@ export class StreamGraphOnObjectService implements VisualOnObjectFormatting {
                     return SubSelectionShortcutsService.GetLegendShortcuts(this.localizationManager);
                 case StreamGraphObjectNames.LegendTitle:
                     return SubSelectionShortcutsService.GetLegendTitleShortcuts(this.localizationManager);
+                case StreamGraphObjectNames.XAxis:
+                    return SubSelectionShortcutsService.GetXAxisShortcuts(this.localizationManager);
+                case StreamGraphObjectNames.XAxisLabel:
+                    return SubSelectionShortcutsService.GetXAxisTitleShortcuts(this.localizationManager);
             }
         }
     }

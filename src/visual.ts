@@ -651,7 +651,7 @@ export class StreamGraph implements IVisual {
             hasHighlights
         );
 
-        this.calculateAxes();
+        this.calculateAxes(options.formatMode);
 
         this.tooltipServiceWrapper.addTooltip(
             selection,
@@ -831,7 +831,7 @@ export class StreamGraph implements IVisual {
             }
         }
     }
-    private calculateAxes() {
+    private calculateAxes(isFormatMode: boolean) {
         const showAxisTitle: boolean = this.data.formattingSettings.categoryAxis.title.show.value,
             xShow: boolean = this.data.formattingSettings.categoryAxis.options.show.value,
 
@@ -862,10 +862,10 @@ export class StreamGraph implements IVisual {
             isScalarVal = false;
         }
 
-        this.renderXAxis(effectiveWidth, dataDomainVals, isScalarVal);
+        this.renderXAxis(effectiveWidth, dataDomainVals, isScalarVal, isFormatMode);
         this.renderYAxis(effectiveHeight, metaDataColumnPercent);
 
-        this.renderXAxisLabels();
+        this.renderXAxisLabels(isFormatMode);
         this.renderYAxisLabels();
 
         this.axes.attr("transform", translate(this.margin.left, 0));
@@ -875,8 +875,8 @@ export class StreamGraph implements IVisual {
         this.toggleAxisVisibility(xShow, StreamGraph.XAxis.className, this.axisX);
         this.toggleAxisVisibility(yShow, StreamGraph.YAxis.className, this.axisY);
     }
-
-    private renderXAxis(effectiveWidth: number, dataDomainVals: number[], isScalarVal: boolean): void {
+    
+    private renderXAxis(effectiveWidth: number, dataDomainVals: number[], isScalarVal: boolean, isFormatMode: boolean): void {
         const axisOptions: CreateAxisOptions = {
             pixelSpan: effectiveWidth,
             dataDomain: dataDomainVals,
@@ -893,11 +893,13 @@ export class StreamGraph implements IVisual {
                     return new Date(value);
                 } else if (dataType.text) {
                     return this.data.categoriesText[value];
-                }   return value;
+                }
+                return value;
             }
         };
 
         this.xAxisProperties = AxisHelper.createAxis(axisOptions);
+
         this.axisX.call(this.xAxisProperties.axis);
 
         this.hideFirstAndLastTickXAxis();
@@ -912,6 +914,15 @@ export class StreamGraph implements IVisual {
             StreamGraph.AxisTextNodeDYForAngel0);
 
         StreamGraph.applyWordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.categoryAxis.options.fontSize.value.toString());
+
+        this.applyOnObjectStylesToXAxis(isFormatMode);
+    }
+
+    private applyOnObjectStylesToXAxis(isFormatMode: boolean): void {
+        this.axisX
+            .classed(HtmlSubSelectableClass, isFormatMode)
+            .attr(SubSelectableObjectNameAttribute, StreamGraphObjectNames.XAxis)
+            .attr(SubSelectableDisplayNameAttribute, this.localizationManager.getDisplayName("Visual_XAxis"));
     }
 
     private renderYAxis(effectiveHeight: number, metaDataColumnPercent: powerbi.DataViewMetadataColumn): void {
@@ -927,10 +938,11 @@ export class StreamGraph implements IVisual {
             useTickIntervalForDisplayUnits: true,
             disableNice : this.data.formattingSettings.valueAxis.options.highPrecision.value
         });
-        
+
         this.axisY.call(this.yAxisProperties.axis);
 
         const yAxisTextNodes: Selection<BaseType, any, any, any> = this.axisY.selectAll("text");
+
         this.setColorFontYAxis(yAxisTextNodes);
     }
 
@@ -1015,7 +1027,7 @@ export class StreamGraph implements IVisual {
         return valueFormatter.formatListAnd(valuesNames);
     }
 
-    private renderXAxisLabels(): void {
+    private renderXAxisLabels(isFormatMode: boolean): void {
         this.axes
             .selectAll(StreamGraph.XAxisLabelSelector.selectorName)
             .remove();
@@ -1066,6 +1078,15 @@ export class StreamGraph implements IVisual {
             AxisHelper.LabelLayoutStrategy.clip,
             width,
             textMeasurementService.svgEllipsis);
+
+        this.applyOnObjectStylesToXAxisLabels(xAxisLabel, isFormatMode);
+    }
+
+    private applyOnObjectStylesToXAxisLabels(label: Selection<BaseType, any,any,any>, isFormatMode: boolean){
+        label
+            .classed(HtmlSubSelectableClass, isFormatMode)
+            .attr(SubSelectableObjectNameAttribute, StreamGraphObjectNames.XAxisLabel)
+            .attr(SubSelectableDisplayNameAttribute, this.localizationManager.getDisplayName("Visual_Title"));
     }
 
     private static getStreamGraphLabelLayout(

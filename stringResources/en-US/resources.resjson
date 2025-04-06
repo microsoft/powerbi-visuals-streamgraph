@@ -48,5 +48,6 @@
 	"Visual_OnObject_DeleteValues": "Delete values",
 	"Visual_OnObject_FormatLegend": "Format legend",
 	"Visual_OnObject_FormatTitle": "Format title",
-	"Visual_OnObject_AddTitle": "Add title"
+	"Visual_OnObject_AddTitle": "Add title",
+	"Visual_OnObject_FormatXAxis": "Format X-Axis"
 }

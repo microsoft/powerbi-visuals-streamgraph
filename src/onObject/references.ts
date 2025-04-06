@@ -2,30 +2,31 @@ import powerbi from "powerbi-visuals-api";
 import SubSelectableDirectEdit = powerbi.visuals.SubSelectableDirectEdit;
 import SubSelectableDirectEditStyle = powerbi.visuals.SubSelectableDirectEditStyle;
 
-import { IDataLabelReference, IFontReference, ILegendReference } from "./interfaces";
+import { IAxisReference, IDataLabelReference, IFontReference, ILegendReference } from "./interfaces";
 import { StreamGraphObjectNames } from "../streamGraphSettingsModel";
 
 const createBaseFontReference = (objectName: string, settingName: string = ""): IFontReference => {
+    const baseSettingName: string = "label";
     return {
         fontFamily: {
             objectName: objectName,
-            propertyName: "labelFontFamily"
+            propertyName: `${settingName || baseSettingName}FontFamily`
         },
         bold: {
             objectName: objectName,
-            propertyName: "labelFontBold"
+            propertyName: `${settingName || baseSettingName}FontBold`
         },
         italic: {
             objectName: objectName,
-            propertyName: "labelFontItalic"
+            propertyName: `${settingName || baseSettingName}FontItalic`
         },
         underline: {
             objectName: objectName,
-            propertyName: "labelFontUnderline"
+            propertyName: `${settingName || baseSettingName}FontUnderline`
         },
         fontSize: {
             objectName: objectName,
-            propertyName: "fontSize"
+            propertyName: settingName ? `${settingName}FontSize` : `fontSize`
         },
         color: {
             objectName: objectName,
@@ -79,3 +80,22 @@ export const TitleEdit: SubSelectableDirectEdit = {
 }
 
 export const titleEditSubSelection = JSON.stringify(TitleEdit);
+
+export const xAxisReferences: IAxisReference = {
+    ...createBaseFontReference(StreamGraphObjectNames.XAxis, "label"),
+    title: {...createBaseFontReference(StreamGraphObjectNames.XAxis, "title")},
+    cardUid: "Visual-categoryAxis-card",
+    groupUid: "optionsGroupcategoryAxis-group",
+    show: {
+        objectName: StreamGraphObjectNames.XAxis,
+        propertyName: "show"
+    },
+    showAxisTitle: {
+        objectName: StreamGraphObjectNames.XAxis,
+        propertyName: "showAxisTitle"
+    },
+    titleColor: {
+        objectName: StreamGraphObjectNames.XAxis,
+        propertyName: "titleColor"
+    }
+}
