@@ -2,10 +2,11 @@ import powerbi from "powerbi-visuals-api";
 import SubSelectableDirectEdit = powerbi.visuals.SubSelectableDirectEdit;
 import SubSelectableDirectEditStyle = powerbi.visuals.SubSelectableDirectEditStyle;
 
-import { IAxisReference, IDataLabelReference, IFontReference, ILegendReference } from "./interfaces";
-import { StreamGraphObjectNames } from "../streamGraphSettingsModel";
+import { IAxisReference, IDataLabelReference, IFontReference, ILegendReference, IYAxisReference } from "./interfaces";
+import { LegendTitleGroup, StreamGraphObjectNames } from "../streamGraphSettingsModel";
+import { StreamGraphOnObjectService } from "./onObjectService";
 
-const createBaseFontReference = (objectName: string, settingName: string = ""): IFontReference => {
+const createBaseFontReference = (objectName: string, colorName: string = "", settingName: string = ""): IFontReference => {
     const baseSettingName: string = "label";
     return {
         fontFamily: {
@@ -30,7 +31,7 @@ const createBaseFontReference = (objectName: string, settingName: string = ""): 
         },
         color: {
             objectName: objectName,
-            propertyName: settingName ? `${settingName}Color` : "color"
+            propertyName: colorName ? `${colorName}Color` : `color`
         }
     }
 }
@@ -53,6 +54,7 @@ export const legendReferences: ILegendReference = {
     ...createBaseFontReference(StreamGraphObjectNames.Legend, "label"),
     cardUid: "Visual-legend-card",
     groupUid: "legendOptions-group",
+    titleGroupUid: `${StreamGraphObjectNames.LegendTitle}-group`,
     show: {
         objectName: StreamGraphObjectNames.Legend,
         propertyName: "show"
@@ -83,9 +85,10 @@ export const titleEditSubSelection = JSON.stringify(TitleEdit);
 
 export const xAxisReferences: IAxisReference = {
     ...createBaseFontReference(StreamGraphObjectNames.XAxis, "label"),
-    title: {...createBaseFontReference(StreamGraphObjectNames.XAxis, "title")},
+    title: {...createBaseFontReference(StreamGraphObjectNames.XAxis, "title", "title")},
     cardUid: "Visual-categoryAxis-card",
-    groupUid: "optionsGroupcategoryAxis-group",
+    groupUid: `${StreamGraphObjectNames.XAxisLabel}-group`,
+    titleGroupUid: "titleGroupcategoryAxis-group",
     show: {
         objectName: StreamGraphObjectNames.XAxis,
         propertyName: "show"
@@ -97,5 +100,29 @@ export const xAxisReferences: IAxisReference = {
     titleColor: {
         objectName: StreamGraphObjectNames.XAxis,
         propertyName: "titleColor"
+    }
+}
+
+export const yAxisReferences: IYAxisReference = {
+    ...createBaseFontReference(StreamGraphObjectNames.YAxis, "label"),
+    title: {...createBaseFontReference(StreamGraphObjectNames.YAxis, "title", "title")},
+    cardUid: "Visual-valueAxis-card",
+    groupUid: `${StreamGraphObjectNames.YAxisLabel}-group`,
+    titleGroupUid: "titleGroupvalueAxis-group",
+    show: {
+        objectName: StreamGraphObjectNames.YAxis,
+        propertyName: "show"
+    },
+    showAxisTitle: {
+        objectName: StreamGraphObjectNames.YAxis,
+        propertyName: "showAxisTitle"
+    },
+    titleColor: {
+        objectName: StreamGraphObjectNames.YAxis,
+        propertyName: "titleColor"
+    },
+    highPrecision: {
+        objectName: StreamGraphObjectNames.YAxis,
+        propertyName: "highPrecision"
     }
 }

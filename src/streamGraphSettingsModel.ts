@@ -34,7 +34,9 @@ export const enum StreamGraphObjectNames {
     Legend = "legend",
     LegendTitle = "legendTitle",
     XAxis = "categoryAxis",
-    XAxisLabel = "titleGroupcategoryAxis"
+    XAxisLabel = "titleGroupcategoryAxis",
+    YAxis = "valueAxis",
+    YAxisLabel = "titleGroupvalueAxis"
 }
 
 export class BaseFontCardSettings extends Card {
@@ -360,7 +362,7 @@ export class GraphCurvatureCardSettings extends Card{
 export class StreamGraphSettingsModel extends Model {
     general = new GeneralCardSettings();
     categoryAxis = new BaseAxisCardSettings(StreamGraphObjectNames.XAxis, "Visual_XAxis");
-    valueAxis = new BaseAxisCardSettings("valueAxis", "Visual_YAxis", true);
+    valueAxis = new BaseAxisCardSettings(StreamGraphObjectNames.YAxis, "Visual_YAxis", true);
     legend = new LegendCardSettings();
     dataLabels = new DataLabelsCardSettings();
     graphCurvature = new GraphCurvatureCardSettings();

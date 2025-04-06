@@ -110,7 +110,7 @@ import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel
 import ISelectionManager = powerbi.extensibility.ISelectionManager;
 
 // powerbi.visuals.subselections
-import { HtmlSubSelectableClass, SubSelectableDirectEdit, SubSelectableDisplayNameAttribute, SubSelectableObjectNameAttribute, SubSelectableTypeAttribute } from "powerbi-visuals-utils-onobjectutils";
+import { HtmlSubSelectableClass, SubSelectableDirectEdit, SubSelectableDisplayNameAttribute, SubSelectableObjectNameAttribute } from "powerbi-visuals-utils-onobjectutils";
 import CustomVisualSubSelection = powerbi.visuals.CustomVisualSubSelection;
 import { titleEditSubSelection } from "./onObject/references";
 
@@ -863,10 +863,10 @@ export class StreamGraph implements IVisual {
         }
 
         this.renderXAxis(effectiveWidth, dataDomainVals, isScalarVal, isFormatMode);
-        this.renderYAxis(effectiveHeight, metaDataColumnPercent);
+        this.renderYAxis(effectiveHeight, metaDataColumnPercent, isFormatMode);
 
         this.renderXAxisLabels(isFormatMode);
-        this.renderYAxisLabels();
+        this.renderYAxisLabels(isFormatMode);
 
         this.axes.attr("transform", translate(this.margin.left, 0));
         this.axisX.attr("transform", translate(0, this.viewport.height - this.margin.bottom));
@@ -915,17 +915,10 @@ export class StreamGraph implements IVisual {
 
         StreamGraph.applyWordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.categoryAxis.options.fontSize.value.toString());
 
-        this.applyOnObjectStylesToXAxis(isFormatMode);
+        this.applyOnObjectStylesToAxis(this.axisX, isFormatMode, StreamGraphObjectNames.XAxis);
     }
 
-    private applyOnObjectStylesToXAxis(isFormatMode: boolean): void {
-        this.axisX
-            .classed(HtmlSubSelectableClass, isFormatMode)
-            .attr(SubSelectableObjectNameAttribute, StreamGraphObjectNames.XAxis)
-            .attr(SubSelectableDisplayNameAttribute, this.localizationManager.getDisplayName("Visual_XAxis"));
-    }
-
-    private renderYAxis(effectiveHeight: number, metaDataColumnPercent: powerbi.DataViewMetadataColumn): void {
+    private renderYAxis(effectiveHeight: number, metaDataColumnPercent: powerbi.DataViewMetadataColumn, isFormatMode: boolean): void {
         this.yAxisProperties = AxisHelper.createAxis({
             pixelSpan: effectiveHeight,
             dataDomain: [Math.min(this.data.yMinValue, 0), this.data.yMaxValue],
@@ -944,9 +937,18 @@ export class StreamGraph implements IVisual {
         const yAxisTextNodes: Selection<BaseType, any, any, any> = this.axisY.selectAll("text");
 
         this.setColorFontYAxis(yAxisTextNodes);
+
+        this.applyOnObjectStylesToAxis(this.axisY, isFormatMode, StreamGraphObjectNames.YAxis);
     }
 
-    private renderYAxisLabels(): void {
+    private applyOnObjectStylesToAxis(axis: Selection<BaseType, any, any, any>, isFormatMode: boolean, objectName: string): void {
+        axis
+            .classed(HtmlSubSelectableClass, isFormatMode)
+            .attr(SubSelectableObjectNameAttribute, objectName)
+            .attr(SubSelectableDisplayNameAttribute, this.localizationManager.getDisplayName("Visual_Axis"));
+    }
+
+    private renderYAxisLabels(isFormatMode: boolean): void {
         this.axes
             .selectAll(StreamGraph.YAxisLabelSelector.selectorName)
             .remove();
@@ -956,47 +958,51 @@ export class StreamGraph implements IVisual {
             ? StreamGraph.YAxisOnSize + this.data.yAxisValueMaxTextSize
             : StreamGraph.YAxisOffSize;
 
-        if (valueAxisSettings.title.show.value) {
-            this.margin.left += StreamGraph.YAxisLabelSize;
-
-            const categoryAxisSettings: BaseAxisCardSettings = this.data.formattingSettings.categoryAxis,
-                isXAxisOn: boolean = categoryAxisSettings.options.show.value,
-                isXTitleOn: boolean = categoryAxisSettings.title.show.value,
-                marginTop: number = (this.margin.top + this.data.yAxisFontHalfSize),
-                height: number = this.viewport.height
-                    - marginTop
-                    - (isXAxisOn
-                        ? StreamGraph.XAxisOnSize + this.data.xAxisFontSize
-                        : StreamGraph.XAxisOffSize)
-                    - (isXTitleOn
-                        ? StreamGraph.XAxisLabelSize
-                        : StreamGraph.MinLabelSize),
-                values = this.dataView.categorical.values;
-
-            let yAxisText: string = values.source
-                ? values.source.displayName
-                : StreamGraph.getYAxisTitleFromValues(values);
-
-            const textSettings: TextProperties = StreamGraph.getTextPropertiesFunction(yAxisText, valueAxisSettings.title);
-            yAxisText = textMeasurementService.getTailoredTextOrDefault(textSettings, height);
-            const yAxisLabel: Selection<BaseType, any, any, any> = this.axes.append("text")
-                .style("font-family", textSettings.fontFamily)
-                .style("font-size", textSettings.fontSize)
-                .style("font-style", textSettings.fontStyle)
-                .style("font-weight", textSettings.fontWeight)
-                .style("text-decoration", valueAxisSettings.title.underline.value ? "underline" : "none")
-                .attr("transform", StreamGraph.YAxisLabelAngle)
-                .attr("fill", this.colorHelper.getHighContrastColor("foreground", valueAxisSettings.title.color.value.value))
-                .attr("x", -(marginTop + (height / StreamGraph.AxisLabelMiddle)))
-                .attr("y", PixelConverter.fromPoint(-(this.margin.left - StreamGraph.YAxisLabelDy)))
-                .classed(StreamGraph.YAxisLabelSelector.className, true)
-                .text(yAxisText);
-
-            yAxisLabel.call(
-                AxisHelper.LabelLayoutStrategy.clip,
-                height,
-                textMeasurementService.svgEllipsis);
+        if (!valueAxisSettings.title.show.value) {
+            return;
         }
+
+        this.margin.left += StreamGraph.YAxisLabelSize;
+
+        const categoryAxisSettings: BaseAxisCardSettings = this.data.formattingSettings.categoryAxis,
+            isXAxisOn: boolean = categoryAxisSettings.options.show.value,
+            isXTitleOn: boolean = categoryAxisSettings.title.show.value,
+            marginTop: number = (this.margin.top + this.data.yAxisFontHalfSize),
+            height: number = this.viewport.height
+                - marginTop
+                - (isXAxisOn
+                    ? StreamGraph.XAxisOnSize + this.data.xAxisFontSize
+                    : StreamGraph.XAxisOffSize)
+                - (isXTitleOn
+                    ? StreamGraph.XAxisLabelSize
+                    : StreamGraph.MinLabelSize),
+            values = this.dataView.categorical.values;
+
+        let yAxisText: string = values.source
+            ? values.source.displayName
+            : StreamGraph.getYAxisTitleFromValues(values);
+
+        const textSettings: TextProperties = StreamGraph.getTextPropertiesFunction(yAxisText, valueAxisSettings.title);
+        yAxisText = textMeasurementService.getTailoredTextOrDefault(textSettings, height);
+        const yAxisLabel: Selection<BaseType, any, any, any> = this.axes.append("text")
+            .style("font-family", textSettings.fontFamily)
+            .style("font-size", textSettings.fontSize)
+            .style("font-style", textSettings.fontStyle)
+            .style("font-weight", textSettings.fontWeight)
+            .style("text-decoration", valueAxisSettings.title.underline.value ? "underline" : "none")
+            .attr("transform", StreamGraph.YAxisLabelAngle)
+            .attr("fill", this.colorHelper.getHighContrastColor("foreground", valueAxisSettings.title.color.value.value))
+            .attr("x", -(marginTop + (height / StreamGraph.AxisLabelMiddle)))
+            .attr("y", PixelConverter.fromPoint(-(this.margin.left - StreamGraph.YAxisLabelDy)))
+            .classed(StreamGraph.YAxisLabelSelector.className, true)
+            .text(yAxisText);
+
+        yAxisLabel.call(
+            AxisHelper.LabelLayoutStrategy.clip,
+            height,
+            textMeasurementService.svgEllipsis);
+
+        this.applyOnObjectStylesToAxisLabels(yAxisLabel, StreamGraphObjectNames.YAxisLabel, isFormatMode);
     }
 
     private static getYAxisTitleFromValues(values: DataViewValueColumns): string {
@@ -1079,13 +1085,13 @@ export class StreamGraph implements IVisual {
             width,
             textMeasurementService.svgEllipsis);
 
-        this.applyOnObjectStylesToXAxisLabels(xAxisLabel, isFormatMode);
+        this.applyOnObjectStylesToAxisLabels(xAxisLabel, StreamGraphObjectNames.XAxisLabel, isFormatMode);
     }
 
-    private applyOnObjectStylesToXAxisLabels(label: Selection<BaseType, any,any,any>, isFormatMode: boolean){
+    private applyOnObjectStylesToAxisLabels(label: Selection<BaseType, any,any,any>, objectName: string, isFormatMode: boolean){
         label
             .classed(HtmlSubSelectableClass, isFormatMode)
-            .attr(SubSelectableObjectNameAttribute, StreamGraphObjectNames.XAxisLabel)
+            .attr(SubSelectableObjectNameAttribute, objectName)
             .attr(SubSelectableDisplayNameAttribute, this.localizationManager.getDisplayName("Visual_Title"));
     }
 

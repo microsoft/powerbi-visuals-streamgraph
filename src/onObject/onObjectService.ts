@@ -4,7 +4,6 @@ import IVisualHost = powerbi.extensibility.visual.IVisualHost;
 
 import CustomVisualSubSelection = powerbi.visuals.CustomVisualSubSelection;
 import SubSelectionStyles = powerbi.visuals.SubSelectionStyles;
-import SubSelectionShortcutsKey = powerbi.visuals.SubSelectionShortcutsKey;
 import VisualSubSelectionShortcuts = powerbi.visuals.VisualSubSelectionShortcuts;
 import SubSelectionStylesType = powerbi.visuals.SubSelectionStylesType;
 import VisualOnObjectFormatting = powerbi.extensibility.visual.VisualOnObjectFormatting;
@@ -54,6 +53,10 @@ export class StreamGraphOnObjectService implements VisualOnObjectFormatting {
                     return SubSelectionStylesService.GetXAxisStyles();
                 case StreamGraphObjectNames.XAxisLabel:
                     return SubSelectionStylesService.GetXAxisTitleStyles();
+                case StreamGraphObjectNames.YAxis:
+                    return SubSelectionStylesService.GetYAxisStyles();
+                case StreamGraphObjectNames.YAxisLabel:
+                    return SubSelectionStylesService.GetYAxisTitleStyles();
             }
         }
     }
@@ -72,6 +75,10 @@ export class StreamGraphOnObjectService implements VisualOnObjectFormatting {
                     return SubSelectionShortcutsService.GetXAxisShortcuts(this.localizationManager);
                 case StreamGraphObjectNames.XAxisLabel:
                     return SubSelectionShortcutsService.GetXAxisTitleShortcuts(this.localizationManager);
+                case StreamGraphObjectNames.YAxis:
+                    return SubSelectionShortcutsService.GetYAxisShortcuts(this.localizationManager);
+                case StreamGraphObjectNames.YAxisLabel:
+                    return SubSelectionShortcutsService.GetYAxisTitleShortcuts(this.localizationManager);
             }
         }
     }

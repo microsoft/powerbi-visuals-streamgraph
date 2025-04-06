@@ -1,6 +1,5 @@
 import powerbi from "powerbi-visuals-api";
 
-import CustomVisualSubSelection = powerbi.visuals.CustomVisualSubSelection;
 import SubSelectionStyles = powerbi.visuals.SubSelectionStyles;
 import VisualSubSelectionShortcuts = powerbi.visuals.VisualSubSelectionShortcuts;
 import SubSelectionStylesType = powerbi.visuals.SubSelectionStylesType;
@@ -8,8 +7,8 @@ import VisualShortcutType = powerbi.visuals.VisualShortcutType;
 
 import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 
-import { IFontReference } from "./interfaces";
-import { dataLabelsReferences, legendReferences, xAxisReferences } from "./references";
+import { IAxisReference, IFontReference, IYAxisReference } from "./interfaces";
+import { dataLabelsReferences, legendReferences, xAxisReferences, yAxisReferences } from "./references";
 
 export class SubSelectionStylesService {
     private static GetSubselectionStylesForText(objectReference: IFontReference): SubSelectionStyles {
@@ -68,6 +67,14 @@ export class SubSelectionStylesService {
 
     public static GetXAxisTitleStyles(): SubSelectionStyles {
         return SubSelectionStylesService.GetSubselectionStylesForText(xAxisReferences.title);
+    }
+
+    public static GetYAxisStyles(): SubSelectionStyles {
+        return SubSelectionStylesService.GetSubselectionStylesForText(yAxisReferences);
+    }
+
+    public static GetYAxisTitleStyles(): SubSelectionStyles {
+        return SubSelectionStylesService.GetSubselectionStylesForText(yAxisReferences.title);
     }
 }
 
@@ -169,75 +176,98 @@ export class SubSelectionShortcutsService {
             },
             {
                 type: VisualShortcutType.Navigate,
-                destinationInfo: { cardUid: legendReferences.cardUid, groupUid: "legendTitle-group" },
+                destinationInfo: { cardUid: legendReferences.cardUid, groupUid: legendReferences.titleGroupUid },
+                label: localizationManager.getDisplayName("Visual_OnObject_FormatTitle")
+            }
+        ];
+    }
+
+    private static GetAxisShortcuts(axisReference: IAxisReference, displayKey: string, localizationManager: ILocalizationManager): VisualSubSelectionShortcuts {
+        const yAxisInterface = (axisReference as IYAxisReference);
+        return [
+            {
+                type: VisualShortcutType.Toggle,
+                ...axisReference.show,
+                disabledLabel: localizationManager.getDisplayName("Visual_OnObject_Delete")
+            },
+            {
+                type: VisualShortcutType.Toggle,
+                ...axisReference.showAxisTitle,
+                enabledLabel: localizationManager.getDisplayName("Visual_OnObject_AddTitle")
+            },
+            yAxisInterface?.highPrecision ? {
+                type: VisualShortcutType.Toggle,
+                ...yAxisInterface.highPrecision,
+                enabledLabel: localizationManager.getDisplayName("Visual_OnObject_EnableHighPrecision"),
+                disabledLabel: localizationManager.getDisplayName("Visual_OnObject_DisableHighPrecision")
+            } : null,
+            {
+                type: VisualShortcutType.Divider,
+            },
+            {
+                type: VisualShortcutType.Reset,
+                relatedResetFormattingIds: [
+                    axisReference.bold,
+                    axisReference.fontFamily,
+                    axisReference.fontSize,
+                    axisReference.italic,
+                    axisReference.underline,
+                    axisReference.color,
+                    axisReference.show,
+                    axisReference.showAxisTitle
+                ]
+            },
+            {
+                type: VisualShortcutType.Navigate,
+                destinationInfo: { cardUid: axisReference.cardUid, groupUid: axisReference.groupUid },
+                label: localizationManager.getDisplayName(displayKey)
+            }
+        ];
+    }
+
+    private static GetAxisTitleShortcuts(axisTitleReference: IAxisReference, localizationManager: ILocalizationManager): VisualSubSelectionShortcuts {
+        return [
+            {
+                type: VisualShortcutType.Toggle,
+                ...axisTitleReference.showAxisTitle,
+                disabledLabel: localizationManager.getDisplayName("Visual_OnObject_Delete")
+            },
+            {
+                type: VisualShortcutType.Divider,
+            },
+            {
+                type: VisualShortcutType.Reset,
+                relatedResetFormattingIds: [
+                    axisTitleReference.showAxisTitle,
+                    axisTitleReference.title.bold,
+                    axisTitleReference.title.fontFamily,
+                    axisTitleReference.title.fontSize,
+                    axisTitleReference.title.italic,
+                    axisTitleReference.title.underline,
+                    axisTitleReference.title.color,
+                ]
+            },
+            {
+                type: VisualShortcutType.Navigate,
+                destinationInfo: { cardUid: axisTitleReference.cardUid, groupUid: axisTitleReference.titleGroupUid},
                 label: localizationManager.getDisplayName("Visual_OnObject_FormatTitle")
             }
         ];
     }
 
     public static GetXAxisShortcuts(localizationManager: ILocalizationManager): VisualSubSelectionShortcuts {
-        return [
-            {
-                type: VisualShortcutType.Toggle,
-                ...xAxisReferences.show,
-                disabledLabel: localizationManager.getDisplayName("Visual_OnObject_Delete")
-            },
-            {
-                type: VisualShortcutType.Toggle,
-                ...xAxisReferences.showAxisTitle,
-                enabledLabel: localizationManager.getDisplayName("Visual_OnObject_AddTitle")
-            },
-            {
-                type: VisualShortcutType.Divider,
-            },
-            {
-                type: VisualShortcutType.Reset,
-                relatedResetFormattingIds: [
-                    xAxisReferences.bold,
-                    xAxisReferences.fontFamily,
-                    xAxisReferences.fontSize,
-                    xAxisReferences.italic,
-                    xAxisReferences.underline,
-                    xAxisReferences.color,
-                    xAxisReferences.show,
-                    xAxisReferences.showAxisTitle
-                ]
-            },
-            {
-                type: VisualShortcutType.Navigate,
-                destinationInfo: { cardUid: xAxisReferences.cardUid, groupUid: xAxisReferences.groupUid },
-                label: localizationManager.getDisplayName("Visual_OnObject_FormatXAxis")
-            }
-        ];
+       return SubSelectionShortcutsService.GetAxisShortcuts(xAxisReferences, "Visual_OnObject_FormatXAxis", localizationManager);
     }
 
     public static GetXAxisTitleShortcuts(localizationManager: ILocalizationManager): VisualSubSelectionShortcuts {
-        return [
-            {
-                type: VisualShortcutType.Toggle,
-                ...xAxisReferences.showAxisTitle,
-                disabledLabel: localizationManager.getDisplayName("Visual_OnObject_Delete")
-            },
-            {
-                type: VisualShortcutType.Divider,
-            },
-            {
-                type: VisualShortcutType.Reset,
-                relatedResetFormattingIds: [
-                    xAxisReferences.showAxisTitle,
-                    xAxisReferences.title.bold,
-                    xAxisReferences.title.fontFamily,
-                    xAxisReferences.title.fontSize,
-                    xAxisReferences.title.italic,
-                    xAxisReferences.title.underline,
-                    xAxisReferences.title.color,
-                ]
-            },
-            {
-                type: VisualShortcutType.Navigate,
-                destinationInfo: { cardUid: xAxisReferences.cardUid, groupUid: "titleGroupcategoryAxis-group"},
-                label: localizationManager.getDisplayName("Visual_OnObject_FormatTitle")
-            }
-        ];
+        return SubSelectionShortcutsService.GetAxisTitleShortcuts(xAxisReferences, localizationManager);
+    }
+
+    public static GetYAxisShortcuts(localizationManager: ILocalizationManager): VisualSubSelectionShortcuts {
+        return SubSelectionShortcutsService.GetAxisShortcuts(yAxisReferences, "Visual_OnObject_FormatYAxis", localizationManager);
+    }
+
+    public static GetYAxisTitleShortcuts(localizationManager: ILocalizationManager): VisualSubSelectionShortcuts {
+        return SubSelectionShortcutsService.GetAxisTitleShortcuts(yAxisReferences, localizationManager);
     }
 }

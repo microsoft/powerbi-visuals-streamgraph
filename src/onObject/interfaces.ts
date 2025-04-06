@@ -22,6 +22,7 @@ export interface ILegendReference extends IFontReference {
     showTitle: FormattingId;
     position: FormattingId;
     titleText: FormattingId;
+    titleGroupUid: string;
 }
 
 export interface IAxisReference extends IFontReference {
@@ -29,4 +30,9 @@ export interface IAxisReference extends IFontReference {
     showAxisTitle: FormattingId;
     titleColor: FormattingId;
     title: IFontReference;
+    titleGroupUid: string;
+}
+
+export interface IYAxisReference extends IAxisReference {
+    highPrecision: FormattingId;
 }
