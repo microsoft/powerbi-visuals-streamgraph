@@ -1,3 +1,11 @@
+## 3.1.0.0
+
+### New features
+* Added font setting for data labels
+* Added font setting for legend
+* Added font setting for x-axis
+* Added font setting for y-axis
+
 ## 3.0.9.0
 * Bump version
 
