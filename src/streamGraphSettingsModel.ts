@@ -30,63 +30,70 @@ const dataOffsetOptions : IEnumMemberWithDisplayNameKey[] = [
 ];
 
 export class BaseFontCardSettings extends Card {
-    public fontFamily = new formattingSettings.FontPicker({
-        name: "labelFontFamily",
-        value: "Segoe UI, wf_segoe-ui_normal, helvetica, arial, sans-serif"
-    });
+    public fontFamily: formattingSettings.FontPicker;
+    public fontSize: formattingSettings.NumUpDown;
+    public bold: formattingSettings.ToggleSwitch;
+    public italic: formattingSettings.ToggleSwitch;
+    public underline: formattingSettings.ToggleSwitch;
+    public font: formattingSettings.FontControl;
+    private defaultSettingName: string = "label";
 
-    public fontSize = new formattingSettings.NumUpDown({
-        name: "fontSize",
-        displayName: "Text Size",
-        displayNameKey: "Visual_TextSize",
-        value: 8,
-        options: {
-            minValue: {
-                type: powerbi.visuals.ValidatorType.Min,
-                value: 8,
-            },
-            maxValue: {
-                type: powerbi.visuals.ValidatorType.Max,
-                value: 60,
+    constructor(settingName: string = ""){
+        super();
+
+        this.fontFamily = new formattingSettings.FontPicker({
+            name: `${settingName || this.defaultSettingName}FontFamily`,
+            value: "Segoe UI, wf_segoe-ui_normal, helvetica, arial, sans-serif"
+        });
+        this.fontSize = new formattingSettings.NumUpDown({
+            name: settingName ? `${settingName}FontSize` : "fontSize",
+            displayName: "Text Size",
+            displayNameKey: "Visual_TextSize",
+            value: 8,
+            options: {
+                minValue: {
+                    type: powerbi.visuals.ValidatorType.Min,
+                    value: 8,
+                },
+                maxValue: {
+                    type: powerbi.visuals.ValidatorType.Max,
+                    value: 60,
+                }
             }
-        }
-    });
-
-    public bold = new formattingSettings.ToggleSwitch({
-        name: "labelFontBold",
-        value: false
-    });
-
-    public italic = new formattingSettings.ToggleSwitch({
-        name: "labelFontItalic",
-        value: false
-    });
-
-    public underline = new formattingSettings.ToggleSwitch({
-        name: "labelFontUnderline",
-        value: false
-    });
-
-    public font = new formattingSettings.FontControl({
-        name: "font",
-        displayNameKey: "Visual_Font",
-        fontFamily: this.fontFamily,
-        fontSize: this.fontSize,
-        bold: this.bold,
-        italic: this.italic,
-        underline: this.underline
-    });
+        });
+        this.bold = new formattingSettings.ToggleSwitch({
+            name: `${settingName || this.defaultSettingName}FontBold`,
+            value: false
+        });
+        this.italic = new formattingSettings.ToggleSwitch({
+            name: `${settingName || this.defaultSettingName}FontItalic`,
+            value: false
+        });
+        this.underline = new formattingSettings.ToggleSwitch({
+            name: `${settingName || this.defaultSettingName}FontUnderline`,
+            value: false
+        });
+        this.font = new formattingSettings.FontControl({
+            name: `${settingName}font`,
+            displayNameKey: "Visual_Font",
+            fontFamily: this.fontFamily,
+            fontSize: this.fontSize,
+            bold: this.bold,
+            italic: this.italic,
+            underline: this.underline
+        });
+    }
 }
 
-class AxisTitleGroup extends Card {
+class AxisTitleGroup extends BaseFontCardSettings {
     constructor(settingName: string){
-        super();
+        super("title");
 
         this.name = `titleGroup${settingName}`;
         this.displayNameKey = `Visual_Title`;
         this.topLevelSlice = this.show;
 
-        this.slices = [this.color];
+        this.slices = [this.font, this.color];
     }
 
     public color = new formattingSettings.ColorPicker({

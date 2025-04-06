@@ -57,7 +57,7 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
 
 import { DefaultOpacity, DataOrder, DataOffset } from "./utils";
-import { StreamGraphSettingsModel, BaseAxisCardSettings, DataLabelsCardSettings, LegendTitleGroup, EnableGeneralCardSettings, LegendCardSettings, LegendTextGroup } from "./streamGraphSettingsModel";
+import { StreamGraphSettingsModel, BaseAxisCardSettings, DataLabelsCardSettings, LegendTitleGroup, LegendCardSettings, BaseFontCardSettings } from "./streamGraphSettingsModel";
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
 import { createTooltipInfo } from "./tooltipBuilder";
 import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue, StackedStackValue } from "./dataInterfaces";
@@ -845,66 +845,8 @@ export class StreamGraph implements IVisual {
             isScalarVal = false;
         }
 
-        if (xShow) {
-            const axisOptions: CreateAxisOptions = {
-                pixelSpan: effectiveWidth,
-                dataDomain: dataDomainVals,
-                metaDataColumn: this.data.metadata,
-                outerPadding: StreamGraph.outerPadding,
-                innerPadding: 0,
-                formatString: null,
-                isScalar: isScalarVal,
-                isVertical: false,
-                useRangePoints: true, //will use scalePoint instead of scaleBand (https://d3-graph-gallery.com/graph/custom_axis.html)
-                // todo fix types issue
-                getValueFn: (value, dataType): any => {
-                    if (dataType.dateTime) {
-                        return new Date(value);
-                    } else if (dataType.text) {
-                        return this.data.categoriesText[value];
-                    }
-                    return value;
-                }
-            };
-
-            this.xAxisProperties = AxisHelper.createAxis(axisOptions);
-
-            this.axisX.call(this.xAxisProperties.axis);
-
-            this.hideFirstAndLastTickXAxis();
-            
-            const xAxisTextNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("text");
-            
-            this.setColorFontXAxis(xAxisTextNodes);
-
-            this.setTextNodesPosition(xAxisTextNodes, 
-                StreamGraph.AxisTextNodeTextAnchorForAngel0, 
-                StreamGraph.AxisTextNodeDXForAngel0,
-                StreamGraph.AxisTextNodeDYForAngel0);
-
-            StreamGraph.applyWordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.categoryAxis.options.fontSize.value.toString());
-        }
-
-        if (yShow) {
-            this.yAxisProperties = AxisHelper.createAxis({
-                pixelSpan: effectiveHeight,
-                dataDomain: [Math.min(this.data.yMinValue, 0), this.data.yMaxValue],
-                metaDataColumn: metaDataColumnPercent,
-                formatString: null,
-                outerPadding: StreamGraph.outerPadding,
-                isCategoryAxis: false,
-                isScalar: true,
-                isVertical: true,
-                useTickIntervalForDisplayUnits: true,
-                disableNice : this.data.formattingSettings.valueAxis.options.highPrecision.value
-            });
-
-            this.axisY.call(this.yAxisProperties.axis);
-
-            const yAxisTextNodes: Selection<BaseType, any, any, any> = this.axisY.selectAll("text");
-
-            this.setColorFontYAxis(yAxisTextNodes);
-        }
+        this.renderXAxis(effectiveWidth, dataDomainVals, isScalarVal);
+        this.renderYAxis(effectiveHeight, metaDataColumnPercent);
 
         this.renderXAxisLabels();
         this.renderYAxisLabels();
@@ -915,6 +857,64 @@ export class StreamGraph implements IVisual {
 
         this.toggleAxisVisibility(xShow, StreamGraph.XAxis.className, this.axisX);
         this.toggleAxisVisibility(yShow, StreamGraph.YAxis.className, this.axisY);
+    }
+
+    private renderXAxis(effectiveWidth: number, dataDomainVals: number[], isScalarVal: boolean): void {
+        const axisOptions: CreateAxisOptions = {
+            pixelSpan: effectiveWidth,
+            dataDomain: dataDomainVals,
+            metaDataColumn: this.data.metadata,
+            outerPadding: StreamGraph.outerPadding,
+            innerPadding: 0,
+            formatString: null,
+            isScalar: isScalarVal,
+            isVertical: false,
+            useRangePoints: true, //will use scalePoint instead of scaleBand (https://d3-graph-gallery.com/graph/custom_axis.html)
+            // todo fix types issue
+            getValueFn: (value, dataType): any => {
+                if (dataType.dateTime) {
+                    return new Date(value);
+                } else if (dataType.text) {
+                    return this.data.categoriesText[value];
+                }   return value;
+            }
+        };
+
+        this.xAxisProperties = AxisHelper.createAxis(axisOptions);
+        this.axisX.call(this.xAxisProperties.axis);
+
+        this.hideFirstAndLastTickXAxis();
+        
+        const xAxisTextNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("text");
+        
+        this.setColorFontXAxis(xAxisTextNodes);
+
+        this.setTextNodesPosition(xAxisTextNodes, 
+            StreamGraph.AxisTextNodeTextAnchorForAngel0, 
+            StreamGraph.AxisTextNodeDXForAngel0,
+            StreamGraph.AxisTextNodeDYForAngel0);
+
+        StreamGraph.applyWordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.categoryAxis.options.fontSize.value.toString());
+    }
+
+    private renderYAxis(effectiveHeight: number, metaDataColumnPercent: powerbi.DataViewMetadataColumn): void {
+        this.yAxisProperties = AxisHelper.createAxis({
+            pixelSpan: effectiveHeight,
+            dataDomain: [Math.min(this.data.yMinValue, 0), this.data.yMaxValue],
+            metaDataColumn: metaDataColumnPercent,
+            formatString: null,
+            outerPadding: StreamGraph.outerPadding,
+            isCategoryAxis: false,
+            isScalar: true,
+            isVertical: true,
+            useTickIntervalForDisplayUnits: true,
+            disableNice : this.data.formattingSettings.valueAxis.options.highPrecision.value
+        });
+        
+        this.axisY.call(this.yAxisProperties.axis);
+
+        const yAxisTextNodes: Selection<BaseType, any, any, any> = this.axisY.selectAll("text");
+        this.setColorFontYAxis(yAxisTextNodes);
     }
 
     private renderYAxisLabels(): void {
@@ -948,13 +948,14 @@ export class StreamGraph implements IVisual {
                 ? values.source.displayName
                 : StreamGraph.getYAxisTitleFromValues(values);
 
-            const textSettings: TextProperties = StreamGraph.getTextPropertiesFunction(yAxisText);
+            const textSettings: TextProperties = StreamGraph.getTextPropertiesFunction(yAxisText, valueAxisSettings.title);
             yAxisText = textMeasurementService.getTailoredTextOrDefault(textSettings, height);
             const yAxisLabel: Selection<BaseType, any, any, any> = this.axes.append("text")
                 .style("font-family", textSettings.fontFamily)
                 .style("font-size", textSettings.fontSize)
                 .style("font-style", textSettings.fontStyle)
                 .style("font-weight", textSettings.fontWeight)
+                .style("text-decoration", valueAxisSettings.title.underline.value ? "underline" : "none")
                 .attr("transform", StreamGraph.YAxisLabelAngle)
                 .attr("fill", this.colorHelper.getHighContrastColor("foreground", valueAxisSettings.title.color.value.value))
                 .attr("x", -(marginTop + (height / StreamGraph.AxisLabelMiddle)))
@@ -1026,8 +1027,7 @@ export class StreamGraph implements IVisual {
             height: number = this.viewport.height + StreamGraph.XAxisLabelSize + StreamGraph.TickHeight;
 
         let xAxisText: string = this.dataView.categorical.categories[0].source.displayName;
-
-        const textSettings: TextProperties = StreamGraph.getTextPropertiesFunction(xAxisText);
+        const textSettings: TextProperties = StreamGraph.getTextPropertiesFunction(xAxisText, categoryAxisSettings.title);
 
         xAxisText = textMeasurementService.getTailoredTextOrDefault(textSettings, width);
 
@@ -1035,6 +1035,8 @@ export class StreamGraph implements IVisual {
             .style("font-family", textSettings.fontFamily)
             .style("font-size", textSettings.fontSize)
             .style("font-weight", textSettings.fontWeight)
+            .style("font-style", textSettings.fontStyle)
+            .style("text-decoration", categoryAxisSettings.title.underline.value ? "underline" : "none")
             .attr("transform", translate(
                 width / StreamGraph.AxisLabelMiddle,
                 height))
@@ -1350,15 +1352,17 @@ export class StreamGraph implements IVisual {
             .remove();
     }
 
-    private static getTextPropertiesFunction(text: string): TextProperties {
-        const fontFamily: string = StreamGraph.DefaultFontFamily,
-            fontSize: string = PixelConverter.fromPoint(LegendTextGroup.DefaultFontSizeInPoints),
-            fontWeight: string = StreamGraph.DefaultFontWeight;
+    private static getTextPropertiesFunction(text: string, settings: BaseFontCardSettings): TextProperties {
+        const fontFamily: string = settings.fontFamily.value,
+            fontSize: string = PixelConverter.fromPoint(settings.fontSize.value),
+            fontWeight: string = settings.bold.value ? "bold" : StreamGraph.DefaultFontWeight,
+            fontStyle: string = settings.italic.value ? "italic" : StreamGraph.DefaultFontWeight;
         return {
             text,
             fontSize,
             fontWeight,
-            fontFamily
+            fontFamily,
+            fontStyle
         };
     }
 

@@ -153,6 +153,33 @@
                             }
                         }
                     }
+                },
+                "titleFontSize": {
+                    "type": {
+                        "integer": true
+                    }
+                },
+                "titleFontFamily": {
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "titleFontBold": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "titleFontUnderline": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "titleFontItalic": {
+                    "type": {
+                        "bool": true
+                    }
                 }
             }
         },
@@ -218,6 +245,33 @@
                                 "color": true
                             }
                         }
+                    }
+                },
+                "titleFontSize": {
+                    "type": {
+                        "integer": true
+                    }
+                },
+                "titleFontFamily": {
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "titleFontBold": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "titleFontUnderline": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "titleFontItalic": {
+                    "type": {
+                        "bool": true
                     }
                 }
             }
