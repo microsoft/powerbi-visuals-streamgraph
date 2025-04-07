@@ -200,7 +200,7 @@ export class StreamGraph implements IVisual {
 
     private localizationManager: ILocalizationManager;
     private selectionManager: ISelectionManager;
-    private visualOnObjectFormatting: StreamGraphOnObjectService;
+    public visualOnObjectFormatting: StreamGraphOnObjectService;
 
     private static formattingSettingsService: FormattingSettingsService;
     private static formattingSettings: StreamGraphSettingsModel;
