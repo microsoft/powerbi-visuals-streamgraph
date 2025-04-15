@@ -26,6 +26,8 @@
 
 import powerbi from "powerbi-visuals-api";
 
+import VisualUpdateType = powerbi.VisualUpdateType;
+
 // powerbi.visuals
 import ISelectionId = powerbi.visuals.ISelectionId;
 
@@ -58,7 +60,7 @@ import { StreamGraphBuilder } from "./visualBuilder";
 import { isColorAppliedToElements, getSolidColorStructuralObject } from "./helpers/helpers";
 import { ProductSalesByDateData, MovieGenreSalesByDateData } from "./visualData";
 import { StreamGraphSeries, StreamData, StreamDataPoint } from "../src/dataInterfaces";
-import { StreamGraph, VisualUpdateType } from "../src/visual";
+import { StreamGraph } from "../src/visual";
 import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
 
 describe("StreamGraph", () => {

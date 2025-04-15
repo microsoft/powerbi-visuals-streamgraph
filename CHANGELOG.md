@@ -1,3 +1,16 @@
+## 3.1.0.0
+
+### New features
+* Add font setting for data labels
+* Add font setting for legend
+* Add font setting for x-axis
+* Add font setting for y-axis
+* Add onObject formatting for settings
+
+### Other
+* API 5.11.0
+* Update dependencies
+
 ## 3.0.9.0
 * Bump version
 
