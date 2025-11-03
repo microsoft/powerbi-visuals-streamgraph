@@ -36,7 +36,7 @@ import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 
 const HighlightedValueDisplayName: string = "Visual_Tooltips_Highlighted";
-const VisualTooltipsValues: string = "Visual_Tooltips_Values";
+const VisualTooltipsValues: string = "Visual_Values";
 const DefaultSeriesIndex: number = 0;
 
 export interface TooltipSeriesDataItem {

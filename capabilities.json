@@ -19,7 +19,7 @@
             "name": "Y",
             "kind": "Measure",
             "displayName": "Values",
-            "displayNameKey": "Role_DisplayName_Values"
+            "displayNameKey": "Visual_Values"
         }
     ],
     "dataViewMappings": [
@@ -153,6 +153,33 @@
                             }
                         }
                     }
+                },
+                "titleFontSize": {
+                    "type": {
+                        "integer": true
+                    }
+                },
+                "titleFontFamily": {
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "titleFontBold": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "titleFontUnderline": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "titleFontItalic": {
+                    "type": {
+                        "bool": true
+                    }
                 }
             }
         },
@@ -219,6 +246,33 @@
                             }
                         }
                     }
+                },
+                "titleFontSize": {
+                    "type": {
+                        "integer": true
+                    }
+                },
+                "titleFontFamily": {
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "titleFontBold": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "titleFontUnderline": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "titleFontItalic": {
+                    "type": {
+                        "bool": true
+                    }
                 }
             }
         },
@@ -259,6 +313,28 @@
                     "type": {
                         "integer": true
                     }
+                },
+                "labelFontFamily": {
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "labelFontBold": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelFontUnderline": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelFontItalic": {
+                    "type": {
+                        "bool": true
+                    }
                 }
             }
         },
@@ -286,6 +362,28 @@
                 "fontSize": {
                     "type": {
                         "integer": true
+                    }
+                },
+                "labelFontFamily": {
+                    "type": {
+                        "formatting": {
+                            "fontFamily": true
+                        }
+                    }
+                },
+                "labelFontBold": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelFontUnderline": {
+                    "type": {
+                        "bool": true
+                    }
+                },
+                "labelFontItalic": {
+                    "type": {
+                        "bool": true
                     }
                 }
             }
