@@ -3,7 +3,7 @@ import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 
 import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
 import { legendInterfaces } from "powerbi-visuals-utils-chartutils";
-import { DataOrder, DataOffset } from "./utils";
+import { DataOrder, DataOffset, LabelOrientationMode } from "./utils";
 import LegendPosition = legendInterfaces.LegendPosition;
 
 import Card = formattingSettings.SimpleCard;
@@ -27,6 +27,11 @@ const dataOrderOptions : IEnumMemberWithDisplayNameKey[] = [
 const dataOffsetOptions : IEnumMemberWithDisplayNameKey[] = [
     {value : DataOffset[DataOffset.Silhouette], displayName : "Silhouette", key: "Visual_DataOffset_Silhouette"},
     {value : DataOffset[DataOffset.Expand], displayName : "Expand", key: "Visual_DataOffset_Expand"}
+];
+
+const labelOrientationModeOptions : IEnumMemberWithDisplayNameKey[] = [
+    {value : LabelOrientationMode[LabelOrientationMode.Default], displayName : "Default (Auto)", key: "Visual_LabelOrientation_Default"},
+    {value : LabelOrientationMode[LabelOrientationMode.ForceRotate], displayName : "Force Rotate", key: "Visual_LabelOrientation_ForceRotate"}
 ];
 
 export class BaseFontCardSettings extends Card {
@@ -112,14 +117,19 @@ class AxisTitleGroup extends BaseFontCardSettings {
 }
 
 class AxisOptionsGroup extends BaseFontCardSettings {
-    constructor(settingName: string, useHighPrecision: boolean = false){
+    constructor(settingName: string, useHighPrecision: boolean = false, showLabelOrientation: boolean = false){
         super();
 
         this.name = `optionsGroup${settingName}`;
         this.displayNameKey = `Visual_Values`;
         this.topLevelSlice = this.show;
 
-        this.slices = [...(useHighPrecision ? [this.highPrecision] : []), this.font, this.labelColor];
+        this.slices = [
+            ...(useHighPrecision ? [this.highPrecision] : []), 
+            this.font, 
+            this.labelColor,
+            ...(showLabelOrientation ? [this.labelOrientationMode] : [])
+        ];
     }
 
     public show = new formattingSettings.ToggleSwitch({
@@ -141,6 +151,14 @@ class AxisOptionsGroup extends BaseFontCardSettings {
         displayName: "High Precision",
         displayNameKey: "Visual_HighPrecision",
         value: false,
+    });
+
+    public labelOrientationMode = new formattingSettings.ItemDropdown({
+        items: labelOrientationModeOptions,
+        value: labelOrientationModeOptions[0],
+        displayName: "Label Orientation",
+        displayNameKey: "Visual_LabelOrientation",
+        name: "labelOrientationMode"
     });
 }
 
@@ -182,13 +200,13 @@ export class BaseAxisCardSettings extends CompositeCard {
     public options: AxisOptionsGroup;
     public groups: Group[];
 
-    constructor(name: string, displayNameKey: string, useHighPrecision: boolean = false){
+    constructor(name: string, displayNameKey: string, useHighPrecision: boolean = false, showLabelOrientation: boolean = false){
         super();
 
         this.name = name;
         this.displayNameKey = displayNameKey;
         this.title = new AxisTitleGroup(name);
-        this.options = new AxisOptionsGroup(name, useHighPrecision);
+        this.options = new AxisOptionsGroup(name, useHighPrecision, showLabelOrientation);
         this.groups = [this.options, this.title];
     }
 }
@@ -352,7 +370,7 @@ export class GraphCurvatureCardSettings extends Card{
 
 export class StreamGraphSettingsModel extends Model {
     general = new GeneralCardSettings();
-    categoryAxis = new BaseAxisCardSettings("categoryAxis", "Visual_XAxis");
+    categoryAxis = new BaseAxisCardSettings("categoryAxis", "Visual_XAxis", false, true);
     valueAxis = new BaseAxisCardSettings("valueAxis", "Visual_YAxis", true);
     legend = new LegendCardSettings();
     dataLabels = new DataLabelsCardSettings();
@@ -370,6 +388,7 @@ export class StreamGraphSettingsModel extends Model {
     public setLocalizedOptions(localizationManager: ILocalizationManager) {
         this.setLocalizedDisplayName(dataOrderOptions, localizationManager);
         this.setLocalizedDisplayName(dataOffsetOptions, localizationManager);
+        this.setLocalizedDisplayName(labelOrientationModeOptions, localizationManager);
     }   
 
     private setLocalizedDisplayName(options: IEnumMemberWithDisplayNameKey[], localizationManager: ILocalizationManager) {

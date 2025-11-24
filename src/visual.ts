@@ -56,7 +56,7 @@ import VisualTooltipDataItem = powerbi.extensibility.VisualTooltipDataItem;
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
 
-import { DefaultOpacity, DataOrder, DataOffset } from "./utils";
+import { DefaultOpacity, DataOrder, DataOffset, LabelOrientationMode } from "./utils";
 import { StreamGraphSettingsModel, BaseAxisCardSettings, DataLabelsCardSettings, LegendTitleGroup, LegendCardSettings, BaseFontCardSettings } from "./streamGraphSettingsModel";
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
 import { createTooltipInfo } from "./tooltipBuilder";
@@ -143,6 +143,7 @@ export class StreamGraph implements IVisual {
     private static Axis: ClassAndSelector = createClassAndSelector("axis");
     private static YAxis: ClassAndSelector = createClassAndSelector("yAxis");
     private static XAxis: ClassAndSelector = createClassAndSelector("xAxis");
+    private static LabelMiddleSelector: ClassAndSelector = createClassAndSelector("labelMiddle");
     private static axisGraphicsContext: ClassAndSelector = createClassAndSelector("axisGraphicsContext");
     private axes: Selection<BaseType, any, any, any>;
     private axisX: Selection<BaseType, any, any, any>;
@@ -159,7 +160,12 @@ export class StreamGraph implements IVisual {
     private static AxisTextNodeTextAnchorForAngel0: string = "middle";
     private static AxisTextNodeDXForAngel0: string = "0em";
     private static AxisTextNodeDYForAngel0: string = "1em";
+    // Constants for rotated labels
+    private static AxisTextNodeTextAnchorForRotated: string = "end";
+    private static AxisTextNodeDXForRotated: string = "-0.8em";
+    private static AxisTextNodeDYForRotated: string = "0.15em";
     private static YAxisLabelAngle: string = "rotate(-90)";
+    private static CategoryTextRotataionDegree: number = 45.0;
     private static YAxisLabelDy: number = 30;
     private static XAxisLabelDy: string = "-0.5em";
     private static curvatureValue = 0.5;
@@ -171,7 +177,7 @@ export class StreamGraph implements IVisual {
     };
 
     private events: IVisualEventService;
-
+    private xAxisBaseline: number
     private static XAxisLabelSelector: ClassAndSelector = createClassAndSelector("xAxisLabel");
     private static YAxisLabelSelector: ClassAndSelector = createClassAndSelector("yAxisLabel");
 
@@ -852,7 +858,7 @@ export class StreamGraph implements IVisual {
         this.renderYAxisLabels();
 
         this.axes.attr("transform", translate(this.margin.left, 0));
-        this.axisX.attr("transform", translate(0, this.viewport.height - this.margin.bottom));
+        this.axisX.attr("transform", translate(0, this.xAxisBaseline));
         this.axisY.attr("transform", translate(0, (this.margin.top + this.data.yAxisFontHalfSize)));
 
         this.toggleAxisVisibility(xShow, StreamGraph.XAxis.className, this.axisX);
@@ -889,14 +895,82 @@ export class StreamGraph implements IVisual {
         
         this.setColorFontXAxis(xAxisTextNodes);
 
-        this.setTextNodesPosition(xAxisTextNodes, 
-            StreamGraph.AxisTextNodeTextAnchorForAngel0, 
-            StreamGraph.AxisTextNodeDXForAngel0,
-            StreamGraph.AxisTextNodeDYForAngel0);
-
-        StreamGraph.applyWordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.categoryAxis.options.fontSize.value.toString());
+        // Handle label rotation based on orientation mode
+        const orientationMode = this.data.formattingSettings.categoryAxis.options.labelOrientationMode.value.value;
+        
+        if (orientationMode === LabelOrientationMode[LabelOrientationMode.ForceRotate]) {
+            xAxisTextNodes
+                .classed(StreamGraph.LabelMiddleSelector.className, true)
+                .attr("dx", StreamGraph.AxisTextNodeDXForAngel0)
+                .attr("dy", StreamGraph.AxisTextNodeDYForAngel0)
+                .attr("transform", `rotate(-${StreamGraph.CategoryTextRotataionDegree})`);
+            
+            // Fix positions for rotated labels
+            const categoryLabels = this.axisX.selectAll(".tick");
+            categoryLabels.each(function () {
+                const shiftX: number = (<any>this).getBBox().width / Math.tan(StreamGraph.CategoryTextRotataionDegree * Math.PI / 180) / 2.0;
+                const shiftY: number = (<any>this).getBBox().width * Math.tan(StreamGraph.CategoryTextRotataionDegree * Math.PI / 180) / 2.0;
+                const currTransform: string = (<any>this).attributes.transform.value;
+                const translate: [number, number, number] = StreamGraph.getTranslation(currTransform);
+                select(<any>this)
+                    .attr("transform", () => {
+                        return manipulation.translate(+translate[0] - shiftX, +translate[1] + shiftY);
+                    });
+            });
+        } else {
+            this.setTextNodesPosition(xAxisTextNodes, 
+                StreamGraph.AxisTextNodeTextAnchorForAngel0, 
+                StreamGraph.AxisTextNodeDXForAngel0,
+                StreamGraph.AxisTextNodeDYForAngel0);
+                xAxisTextNodes.attr("transform", null);
+            // Apply word break for non-rotated labels
+            StreamGraph.applyWordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.categoryAxis.options.fontSize.value.toString());
+        }
     }
 
+     public static getTranslation(transform): [number, number, number] {
+        // eslint-disable-next-line powerbi-visuals/no-http-string
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttributeNS(null, "transform", transform);
+        const matrix = g.transform.baseVal.consolidate().matrix;
+        return [matrix.e, matrix.f, -Math.asin(matrix.a) * 180 / Math.PI];
+    }
+
+    private calculateXAxisAdditionalHeight(categories: PrimitiveValue[]): number {
+        if (!categories || categories.length === 0) {
+            return 0;
+        }
+
+        const sortedByLength: PrimitiveValue[] = [...categories].sort((a: string, b: string) => 
+            (a ? a.toString().length : 0) > (b ? b.toString().length : 0) ? 1 : -1);
+        let longestCategory: PrimitiveValue = sortedByLength[categories.length - 1] || "";
+
+        if (longestCategory instanceof Date) {
+            const metadataColumn: DataViewMetadataColumn = this.dataView.categorical.categories[0].source;
+            const formatString: string = valueFormatter.getFormatStringByColumn(metadataColumn);
+
+            const formatter = valueFormatter.create({
+                format: formatString,
+                value: longestCategory,
+                columnType: {
+                    dateTime: true
+                }
+            });
+
+            longestCategory = formatter.format(longestCategory);
+        }
+
+        const textProperties: TextProperties = {
+            text: longestCategory.toString(),
+            fontFamily: "sans-serif",
+            fontSize: PixelConverter.toString(this.data.formattingSettings.categoryAxis.options.fontSize.value)
+        };
+
+        const longestCategoryWidth = textMeasurementService.measureSvgTextWidth(textProperties);
+        const requiredHeight = longestCategoryWidth * Math.tan(StreamGraph.CategoryTextRotataionDegree * Math.PI / 180);
+        return requiredHeight;
+    }
+    
     private renderYAxis(effectiveHeight: number, metaDataColumnPercent: powerbi.DataViewMetadataColumn): void {
         this.yAxisProperties = AxisHelper.createAxis({
             pixelSpan: effectiveHeight,
@@ -1014,6 +1088,14 @@ export class StreamGraph implements IVisual {
             return;
         }
 
+        let shiftTitle: number = 0;
+        const orientationMode = this.data.formattingSettings.categoryAxis.options.labelOrientationMode.value.value;
+
+        if (orientationMode === LabelOrientationMode[LabelOrientationMode.ForceRotate]) {
+            // Calculate additional height needed for rotated labels
+            shiftTitle = this.calculateXAxisAdditionalHeight(this.data.categoriesText);
+        }
+
         const valueAxisSettings: BaseAxisCardSettings = this.data.formattingSettings.valueAxis,
             isYAxisOn: boolean = valueAxisSettings.options.show.value,
             isYTitleOn: boolean = valueAxisSettings.title.show.value,
@@ -1039,7 +1121,7 @@ export class StreamGraph implements IVisual {
             .style("text-decoration", categoryAxisSettings.title.underline.value ? "underline" : "none")
             .attr("transform", translate(
                 width / StreamGraph.AxisLabelMiddle,
-                height))
+                height + shiftTitle))
             .attr("fill", this.colorHelper.getHighContrastColor("foreground", categoryAxisSettings.title.color.value.value))
             .attr("dy", StreamGraph.XAxisLabelDy)
             .classed(StreamGraph.XAxisLabelSelector.className, true)
@@ -1087,7 +1169,6 @@ export class StreamGraph implements IVisual {
         };
     }
 
-    /* eslint-disable-next-line max-lines-per-function */
     private renderChart(
         series: StreamGraphSeries[],
         stackedSeries: Series<any, any>[],
@@ -1105,8 +1186,9 @@ export class StreamGraph implements IVisual {
             this.margin.left += StreamGraph.YAxisLabelSize;
         }
 
+        const additionalMarginForRotation = this.getAdditionalMarginForRotatedLabels();
         this.margin.bottom = this.data.formattingSettings.categoryAxis.options.show.value
-            ? StreamGraph.XAxisOnSize + this.data.xAxisFontSize
+            ? StreamGraph.XAxisOnSize + this.data.xAxisFontSize + additionalMarginForRotation
             : StreamGraph.XAxisOffSize;
 
         if (this.data.formattingSettings.categoryAxis.title.show.value) {
@@ -1121,11 +1203,14 @@ export class StreamGraph implements IVisual {
 
         const yMin: number = min(stackedSeries, serie => min(serie, d => d[0]));
         const yMax: number = max(stackedSeries, serie => max(serie, d => d[1]));
+        const baselineY: number = height - (margin.bottom + StreamGraph.TickHeight);
 
         const yScale: ScaleLinear<number, number> = scaleLinear()
             .domain([Math.min(yMin, 0), yMax])
-            .range([height - (margin.bottom + StreamGraph.TickHeight), (this.margin.top + this.data.yAxisFontHalfSize)]);
+            .range([baselineY, (this.margin.top + this.data.yAxisFontHalfSize)]);
 
+        // remember baseline for axis positioning
+        this.xAxisBaseline = baselineY;
         let areaVar: Area<StreamDataPoint> = area<StreamDataPoint>()
             .x((d, i) => xScale(i))
             .y0(d => yScale(d[0]))
@@ -1364,6 +1449,33 @@ export class StreamGraph implements IVisual {
             fontFamily,
             fontStyle
         };
+    }
+
+    private getAdditionalMarginForRotatedLabels(): number {
+        const orientationMode = this.data.formattingSettings.categoryAxis.options.labelOrientationMode.value.value;
+        if (orientationMode !== LabelOrientationMode[LabelOrientationMode.ForceRotate]) {
+            return 0;
+        }
+
+        // get the longest category label
+        const longestText = this.data.categoriesText
+            .map(c => c ? c.toString() : "")
+            .reduce((a, b) => a.length > b.length ? a : b, "");
+
+        // measure rotated text height precisely
+        const fontSize = this.data.formattingSettings.categoryAxis.options.fontSize.value;
+        const textProps: TextProperties = {
+            text: longestText,
+            fontFamily: "sans-serif",
+            fontSize: PixelConverter.toString(fontSize),
+        };
+
+        const textWidth = textMeasurementService.measureSvgTextWidth(textProps);
+        // true height of rotated text:
+        // height = width * sin(45°)
+        const extraHeight = textWidth * Math.sin(StreamGraph.CategoryTextRotataionDegree * Math.PI / 180);
+        const maxAdditionalMargin = Math.min(extraHeight, fontSize * 2.5);
+        return maxAdditionalMargin + 5; // +5px small safe padding
     }
 
     public getFormattingModel(): powerbi.visuals.FormattingModel {
