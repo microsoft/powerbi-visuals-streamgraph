@@ -323,7 +323,7 @@ export class StreamGraph implements IVisual {
                 valueIndex,
                 colorHelper,
                 seriesObject,
-            )
+            );
             const color: string = colorHelper.getHighContrastColor(
                 "foreground",
                fillColor,
@@ -657,7 +657,7 @@ export class StreamGraph implements IVisual {
             this.visualHost,
         );
 
-        this.data.formattingSettings.populateStreams(this.data.series)
+        this.data.formattingSettings.populateStreams(this.data.series);
 
         if (!this.data
             || !this.data.series

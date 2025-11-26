@@ -387,12 +387,13 @@ export class StreamGraphSettingsModel extends Model {
         });
     }
   
-     public populateStreams(streams: StreamGraphSeries[]) {
+    public populateStreams(streams: StreamGraphSeries[]) {
         
         if (!streams || streams.length === 0) {
             return;
         }
-        
+    
+        this.streams.groups = [];   
         const colorSlices: formattingSettings.ColorPicker[] = [];
         
         for (const stream of streams) {
