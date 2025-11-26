@@ -161,14 +161,10 @@ export class StreamGraph implements IVisual {
     private static AxisTextNodeDXForAngel0: string = "0em";
     private static AxisTextNodeDYForAngel0: string = "1em";
     // Constants for rotated labels
-    private static AxisTextNodeTextAnchorForRotated: string = "end";
-    private static AxisTextNodeDXForRotated: string = "-0.8em";
-    private static AxisTextNodeDYForRotated: string = "0.15em";
     private static YAxisLabelAngle: string = "rotate(-90)";
-    private static CategoryTextRotataionDegree: number = 45.0;
+    private static CategoryTextRotationDegree: number = 45.0;
     private static YAxisLabelDy: number = 30;
     private static XAxisLabelDy: string = "-0.5em";
-    private static curvatureValue = 0.5;
     private margin: IMargin = {
         left: StreamGraph.YAxisOnSize,
         right: -20,
@@ -177,7 +173,7 @@ export class StreamGraph implements IVisual {
     };
 
     private events: IVisualEventService;
-    private xAxisBaseline: number
+    private xAxisBaseline: number;  
     private static XAxisLabelSelector: ClassAndSelector = createClassAndSelector("xAxisLabel");
     private static YAxisLabelSelector: ClassAndSelector = createClassAndSelector("yAxisLabel");
 
@@ -903,13 +899,13 @@ export class StreamGraph implements IVisual {
                 .classed(StreamGraph.LabelMiddleSelector.className, true)
                 .attr("dx", StreamGraph.AxisTextNodeDXForAngel0)
                 .attr("dy", StreamGraph.AxisTextNodeDYForAngel0)
-                .attr("transform", `rotate(-${StreamGraph.CategoryTextRotataionDegree})`);
+                .attr("transform", `rotate(-${StreamGraph.CategoryTextRotationDegree})`);
             
             // Fix positions for rotated labels
             const categoryLabels = this.axisX.selectAll(".tick");
             categoryLabels.each(function () {
-                const shiftX: number = (<any>this).getBBox().width / Math.tan(StreamGraph.CategoryTextRotataionDegree * Math.PI / 180) / 2.0;
-                const shiftY: number = (<any>this).getBBox().width * Math.tan(StreamGraph.CategoryTextRotataionDegree * Math.PI / 180) / 2.0;
+                const shiftX: number = (<any>this).getBBox().width / Math.tan(StreamGraph.CategoryTextRotationDegree * Math.PI / 180) / 2.0;
+                const shiftY: number = (<any>this).getBBox().width * Math.tan(StreamGraph.CategoryTextRotationDegree * Math.PI / 180) / 2.0;
                 const currTransform: string = (<any>this).attributes.transform.value;
                 const translate: [number, number, number] = StreamGraph.getTranslation(currTransform);
                 select(<any>this)
@@ -921,14 +917,15 @@ export class StreamGraph implements IVisual {
             this.setTextNodesPosition(xAxisTextNodes, 
                 StreamGraph.AxisTextNodeTextAnchorForAngel0, 
                 StreamGraph.AxisTextNodeDXForAngel0,
-                StreamGraph.AxisTextNodeDYForAngel0);
-                xAxisTextNodes.attr("transform", null);
+                StreamGraph.AxisTextNodeDYForAngel0
+            );  
+            xAxisTextNodes.attr("transform", null);
             // Apply word break for non-rotated labels
             StreamGraph.applyWordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.categoryAxis.options.fontSize.value.toString());
         }
     }
 
-     public static getTranslation(transform): [number, number, number] {
+     public static getTranslation(transform: string): [number, number, number] {
         // eslint-disable-next-line powerbi-visuals/no-http-string
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.setAttributeNS(null, "transform", transform);
@@ -967,7 +964,7 @@ export class StreamGraph implements IVisual {
         };
 
         const longestCategoryWidth = textMeasurementService.measureSvgTextWidth(textProperties);
-        const requiredHeight = longestCategoryWidth * Math.tan(StreamGraph.CategoryTextRotataionDegree * Math.PI / 180);
+        const requiredHeight = longestCategoryWidth * Math.tan(StreamGraph.CategoryTextRotationDegree * Math.PI / 180);
         return requiredHeight;
     }
     
@@ -1462,6 +1459,9 @@ export class StreamGraph implements IVisual {
             .map(c => c ? c.toString() : "")
             .reduce((a, b) => a.length > b.length ? a : b, "");
 
+        if (!longestText) {
+            return 0;
+        }
         // measure rotated text height precisely
         const fontSize = this.data.formattingSettings.categoryAxis.options.fontSize.value;
         const textProps: TextProperties = {
@@ -1473,7 +1473,7 @@ export class StreamGraph implements IVisual {
         const textWidth = textMeasurementService.measureSvgTextWidth(textProps);
         // true height of rotated text:
         // height = width * sin(45°)
-        const extraHeight = textWidth * Math.sin(StreamGraph.CategoryTextRotataionDegree * Math.PI / 180);
+        const extraHeight = textWidth * Math.sin(StreamGraph.CategoryTextRotationDegree * Math.PI / 180);
         const maxAdditionalMargin = Math.min(extraHeight, fontSize * 2.5);
         return maxAdditionalMargin + 5; // +5px small safe padding
     }

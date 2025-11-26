@@ -26,7 +26,7 @@
 	"Visual_LabelOrientation": "Label Orientation",
 	"Visual_LabelOrientation_Default": "Default (Auto)",
 	"Visual_LabelOrientation_ForceRotate": "Force Rotate",
-    "Visual_Options": "Options",
+	"Visual_Options": "Options",
 	"Visual_TextSize": "Text Size",
 	"Visual_TitleLabelsFill": "Title Color",
 	"Visual_DataPointsLabels": "Data Labels",
