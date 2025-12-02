@@ -25,7 +25,7 @@
  */
 
 // d3
-import { BaseType, Selection } from "d3-selection";
+import { BaseType, Selection, select } from "d3-selection";
 
 // powerbi.extensibility.utils.interactivity
 import { interactivityBaseService } from "powerbi-visuals-utils-interactivityutils";
@@ -40,6 +40,7 @@ export interface BehaviorOptions extends interactivityBaseService.IBehaviorOptio
     clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
     interactivityService: IInteractivityService<StreamGraphSeries>;
     series: StreamGraphSeries[];
+    labelsSelection?: Selection<BaseType, any, any, any>;
 }
 
 export class StreamGraphBehavior implements IInteractiveBehavior {
@@ -47,6 +48,7 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
     private clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
     private interactivityService: IInteractivityService<StreamGraphSeries>;
     private series: StreamGraphSeries[] = null;
+    private labelsSelection: Selection<BaseType, any, any, any>;
 
     protected options: BehaviorOptions;
     protected selectionHandler: ISelectionHandler;
@@ -59,6 +61,7 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
         this.clearCatcher = options.clearCatcher;
         this.interactivityService = options.interactivityService;
         this.selectionHandler = selectionHandler;
+        this.labelsSelection = options.labelsSelection;
 
         this.series = options.series;
 
@@ -72,26 +75,75 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
     }
 
     public renderSelection(hasHighlight: boolean): void {
+        // Pre-calculate highlight states for all series to avoid redundant loops
+        const highlightStates = this.calculateHighlightStates(hasHighlight);
+
+        if (highlightStates.length === 0) {
+            return;
+        }
+
+        // Update main selection opacity
         this.selection.style("opacity", (dataPoint: StackedStackValue) => {
-            const currentIdx = dataPoint.index;
-            const series = this.series[currentIdx];
-            let isCurrentHighlighted : boolean = series.selected;
-            let anyHighlightedAtAll : boolean = hasHighlight;
-
-            //SupportHighlight Logic
-            for(let idx = 0; idx < this.series.length; idx ++) {
-                for(let innerIdx = 0; innerIdx < this.series[idx].dataPoints.length; innerIdx ++) {
-                    if(idx == currentIdx) {
-                        isCurrentHighlighted ||= this.series[idx].dataPoints[innerIdx].highlight;
-                    }
-                    anyHighlightedAtAll ||= this.series[idx].dataPoints[innerIdx].highlight;
-                } 
+            const currentIdx = dataPoint?.index;
+            if (currentIdx >= 0 && currentIdx < highlightStates.length) {
+                const { isCurrentHighlighted, anyHighlightedAtAll } = highlightStates[currentIdx];
+                return getFillOpacity(isCurrentHighlighted, anyHighlightedAtAll);
             }
-
-            return getFillOpacity(
-                isCurrentHighlighted,
-                anyHighlightedAtAll);
+            return getFillOpacity(false, false);
         });
+
+        // Update data labels visibility - labels bound to streams
+        if (this.labelsSelection && !this.labelsSelection.empty()) {
+            this.labelsSelection.style("opacity", (d: any, i: number) => {
+                if (i >= 0 && i < highlightStates.length) {
+                    const { isCurrentHighlighted, anyHighlightedAtAll } = highlightStates[i];
+                    return getFillOpacity(isCurrentHighlighted, anyHighlightedAtAll);
+                }
+                return getFillOpacity(false, false);
+            });
+
+            // Update nested stream labels
+            this.labelsSelection.selectAll("g.stream-labels").each((d: any, i: number, nodes: any) => {
+                if (nodes[i] && i >= 0 && i < highlightStates.length) {
+                    const streamGroup = nodes[i];
+                    const { isCurrentHighlighted, anyHighlightedAtAll } = highlightStates[i];
+                    const opacity = getFillOpacity(isCurrentHighlighted, anyHighlightedAtAll);
+                    select(streamGroup).style("opacity", opacity);
+                }
+            });
+        }
+    }
+
+    //Pre-calculates highlight states for all series to avoid redundant nested loops
+  
+    private calculateHighlightStates(hasHighlight: boolean): Array<{ isCurrentHighlighted: boolean, anyHighlightedAtAll: boolean }> {
+        if (!this.series || this.series.length === 0) {
+            return [];
+        }
+
+        // First pass: check if any data point has highlights across all series
+        let globalHighlightFound = hasHighlight;
+        const seriesHighlightStates: boolean[] = new Array(this.series.length).fill(false);
+        
+        for (let idx = 0; idx < this.series.length; idx++) {
+            let seriesHasHighlight = false;
+            const dataPoints = this.series[idx].dataPoints;
+            
+            for (let innerIdx = 0; innerIdx < dataPoints.length; innerIdx++) {
+                if (dataPoints[innerIdx]?.highlight) {
+                    seriesHasHighlight = true;
+                    globalHighlightFound = true;
+                    break; // Early exit for performance
+                }
+            }
+            seriesHighlightStates[idx] = seriesHasHighlight;
+        }
+
+        // Second pass: build result array with calculated states
+        return this.series.map((series, idx) => ({
+            isCurrentHighlighted: Boolean(series.selected) || seriesHighlightStates[idx],
+            anyHighlightedAtAll: globalHighlightFound
+        }));
     }
 
     private bindContextMenuEvent() {

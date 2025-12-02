@@ -57,10 +57,10 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
 
 import { DefaultOpacity, DataOrder, DataOffset } from "./utils";
-import { StreamGraphSettingsModel, BaseAxisCardSettings, DataLabelsCardSettings, LegendTitleGroup, LegendCardSettings, BaseFontCardSettings } from "./streamGraphSettingsModel";
+import { StreamGraphSettingsModel, BaseAxisCardSettings, LegendTitleGroup, LegendCardSettings, BaseFontCardSettings } from "./streamGraphSettingsModel";
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
 import { createTooltipInfo } from "./tooltipBuilder";
-import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue, StackedStackValue } from "./dataInterfaces";
+import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue, StackedStackValue, LabelStyleProperties, LabelDataItem } from "./dataInterfaces";
 
 
 // powerbi.extensibility.utils.svg
@@ -80,13 +80,12 @@ import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
 import createInteractivitySelectionService = interactivitySelectionService.createInteractivitySelectionService;
 
 // powerbi.extensibility.utils.chart
-import { legendInterfaces, axis, legend, dataLabelUtils, dataLabelInterfaces, axisInterfaces } from "powerbi-visuals-utils-chartutils";
+import { legendInterfaces, axis, legend, axisInterfaces } from "powerbi-visuals-utils-chartutils";
 import ILegend = legendInterfaces.ILegend;
 import LegendData = legendInterfaces.LegendData;
 import createLegend = legend.createLegend;
 import LegendPosition = legendInterfaces.LegendPosition;
 import AxisHelper = axis;
-import ILabelLayout = dataLabelInterfaces.ILabelLayout;
 import IAxisProperties = axisInterfaces.IAxisProperties;
 import LegendDataPoint = legendInterfaces.LegendDataPoint;
 import { positionChartArea } from "powerbi-visuals-utils-chartutils/lib/legend/legend";
@@ -136,6 +135,11 @@ export class StreamGraph implements IVisual {
     private static EmptyDisplayName: string = "";
     private static MinLabelSize: number = 0;
     private static MiddleOfTheLabel: number = 2;
+
+    //cache style properties
+    private cachedLabelStyles: LabelStyleProperties | null = null;
+    private lastStyleUpdate: number = 0;
+    private readonly STYLE_CACHE_DURATION = 1000; // 1 second cache
 
     private static DefaultDataLabelsOffset: number = 4;
     // Axis
@@ -196,6 +200,7 @@ export class StreamGraph implements IVisual {
     private svg: Selection<BaseType, any, any, any>;
     private clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
     private dataPointsContainer: Selection<BaseType, StreamGraphSeries, any, any>;
+    private labelsSelection: Selection<BaseType, any, any, any>;
 
     private localizationManager: ILocalizationManager;
     private selectionManager: ISelectionManager;
@@ -673,6 +678,7 @@ export class StreamGraph implements IVisual {
                 series: this.data.series,
                 clearCatcher: this.clearCatcher,
                 dataPoints: this.data.series,
+                labelsSelection: this.labelsSelection,
                 interactivityServiceOptions: {
                     overrideSelectionFromData: true
                 }
@@ -1051,42 +1057,6 @@ export class StreamGraph implements IVisual {
             textMeasurementService.svgEllipsis);
     }
 
-    private static getStreamGraphLabelLayout(
-        xScale: ScaleLinear<number, number>,
-        yScale: ScaleLinear<number, number>,
-        dataLabels: DataLabelsCardSettings,
-        colorPalette: ISandboxExtendedColorPalette
-    ): ILabelLayout {
-
-        const colorHelper = new ColorHelper(colorPalette);
-        const color = dataLabels.color.value.value;
-
-        const fontSize: string = PixelConverter.fromPoint(dataLabels.fontSize.value);
-        const fontFamily = dataLabels.font.fontFamily.value;
-        const bold = dataLabels.font.bold.value ? "bold" : "normal";
-        const italic = dataLabels.font.italic.value ? "italic" : "normal";
-        const underline = dataLabels.font.underline.value ? "underline" : "none";
-
-        return {
-            labelText: (d) => d.text + (dataLabels.showValues.value ? " " + d.value : ""),
-            labelLayout: {
-                x: (d) => xScale(d.x),
-                y: (d) => yScale(d.y0)
-            },
-            filter: (d: StreamDataPoint) => {
-                return d != null && d.text != null;
-            },
-            style: {
-                "fill": colorHelper.getHighContrastColor("foreground", color),
-                "font-size": fontSize,
-                "font-family": fontFamily,
-                "font-weight": bold,
-                "font-style": italic,
-                "text-decoration": underline
-            },
-        };
-    }
-
     /* eslint-disable-next-line max-lines-per-function */
     private renderChart(
         series: StreamGraphSeries[],
@@ -1152,9 +1122,7 @@ export class StreamGraph implements IVisual {
             .classed(StreamGraph.LayerSelector.className, true)
             .style("opacity", DefaultOpacity)
             .style("fill", (d, index) => isHighContrast ? null : series[index].color)
-            .style("stroke", (d, index) => isHighContrast ? series[index].color : null);
-
-        selectionMerged
+            .style("stroke", (d, index) => isHighContrast ? series[index].color : null)
             .attr("tabindex", 0)
             .attr("focusable", true);
 
@@ -1163,109 +1131,299 @@ export class StreamGraph implements IVisual {
             .duration(duration)
             .attr("d", areaVar);
 
-        selectionMerged
-            .selectAll("path")
-            .append("g")
-            .classed(StreamGraph.DataPointsContainer, true);
-
         selection
             .exit()
             .remove();
 
-        this.renderDataLabels(series, stackedSeries, yScale, hasHighlights);
+        this.renderDataLabels(series, stackedSeries, xScale, yScale, hasHighlights);
 
         return selectionMerged;
     }
 
-    private renderDataLabels(series: StreamGraphSeries[], stackedSeries: Series<any, any>[], yScale: ScaleLinear<number, number>, hasHighlights: boolean): void {
-        if (!this.data.formattingSettings.dataLabels.show.value) {
-            dataLabelUtils.cleanDataLabels(this.svg);
+    private renderDataLabels(
+        series: StreamGraphSeries[], 
+        stackedSeries: Series<any, any>[], 
+        xScale: ScaleLinear<number, number>, 
+        yScale: ScaleLinear<number, number>, 
+        hasHighlights: boolean
+    ): void {
+        if (!this.data?.formattingSettings?.dataLabels?.show?.value) {
+            this.clearDataLabels();
             return;
         }
 
-        const { width, height } = this.viewport;
-        const margin = this.margin;
+        const dataLabelsSettings = this.data.formattingSettings.dataLabels;
+        const styleProperties = this.extractLabelStyleProperties(dataLabelsSettings);
+        
+        const labelsContainer = this.createOrUpdateLabelsContainer();
+        const streamLabelGroups = this.createStreamLabelGroups(labelsContainer, stackedSeries);
 
-        const labelsXScale: ScaleLinear<number, number> = scaleLinear()
-            .domain([0, series[0].dataPoints.length - 1])
-            .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxReservedTextSize]);
+        // Process each stream's labels
+        streamLabelGroups.each((seriesItem: Series<any, any>, seriesIndex: number) => {
+            this.renderStreamLabels(
+                select(streamLabelGroups.nodes()[seriesIndex]),
+                seriesItem,
+                series[seriesIndex],
+                seriesIndex,
+                xScale,
+                yScale,
+                hasHighlights,
+                dataLabelsSettings,
+                styleProperties
+            );
+        });
 
-        const layout: ILabelLayout = StreamGraph.getStreamGraphLabelLayout(
-            labelsXScale,
-            yScale,
-            this.data.formattingSettings.dataLabels,
-            this.colorPalette);
+        this.labelsSelection = streamLabelGroups;
+    }
 
-        // Merge all points into a single array
-        let dataPointsArray: StreamDataPoint[] = [];
+    /**
+     * Clears all data labels from the visualization
+     */
+    private clearDataLabels(): void {
+        const labelsContainer = this.svg.selectAll(".data-labels-container");
+        if (!labelsContainer.empty()) {
+            // Remove event listeners and clean up D3 selections
+            labelsContainer.selectAll("*").on(".", null);
+            labelsContainer.remove();
+        }
+        
+        // Clear references to prevent memory leaks
+        this.labelsSelection = null;
+        this.cachedLabelStyles = null;
+        this.lastStyleUpdate = 0;
+    }
 
-        stackedSeries.forEach((seriesItem: Series<any, any>) => {
-            const filteredDataPoints: any[] = seriesItem.filter((dataPoint: any) => {
-                return dataPoint && dataPoint[0] !== null && dataPoint[0] !== undefined;
-            }).map((dataPoint: any) => {
-                return {
-                    x: dataPoint.data.x,
-                    y0: dataPoint[0],
-                    y: dataPoint[1],
-                    text: seriesItem.key,
-                    value: dataPoint.data[seriesItem.key],
-                    highlight: dataPoint.data.highlight
-                };
-            });
+    /**
+     * Extracts and processes style properties for labels
+     */
+    private extractLabelStyleProperties(dataLabelsSettings: any): LabelStyleProperties {
+        const now = Date.now();
+        
+        // Use cached styles if available and recent
+        if (this.cachedLabelStyles && 
+            (now - this.lastStyleUpdate) < this.STYLE_CACHE_DURATION) {
+            return this.cachedLabelStyles;
+        }
 
-            if (filteredDataPoints.length > 0) {
-                dataPointsArray = dataPointsArray.concat(filteredDataPoints);
+        const styles: LabelStyleProperties = {
+            color: dataLabelsSettings?.color?.value?.value || "#000000",
+            fontSize: PixelConverter.fromPoint(dataLabelsSettings?.fontSize?.value || 12),
+            fontFamily: dataLabelsSettings?.font?.fontFamily?.value || "Arial",
+            fontWeight: dataLabelsSettings?.font?.bold?.value ? "bold" : "normal",
+            fontStyle: dataLabelsSettings?.font?.italic?.value ? "italic" : "normal",
+            textDecoration: dataLabelsSettings?.font?.underline?.value ? "underline" : "none",
+            showValues: dataLabelsSettings?.showValues?.value || false
+        };
+        
+        // Cache the styles for performance
+        this.cachedLabelStyles = styles;
+        this.lastStyleUpdate = now;
+        
+        return styles;
+    }
+
+    /**
+     * Creates or updates the main labels container
+     */
+    private createOrUpdateLabelsContainer(): Selection<BaseType, any, any, any> {
+        const labelsContainer = this.svg
+            .selectAll(".data-labels-container")
+            .data([0]);
+
+        const labelsContainerEnter = labelsContainer
+            .enter()
+            .append("g")
+            .classed("data-labels-container", true)
+            .attr("role", "group") // Accessibility
+            .attr("aria-label", "Data labels");
+
+        return labelsContainerEnter.merge(labelsContainer as any);
+    }
+
+    /**
+     * Creates and manages stream label groups
+     */
+    private createStreamLabelGroups(
+        labelsContainer: Selection<BaseType, any, any, any>, 
+        stackedSeries: Series<any, any>[]
+    ): Selection<BaseType, any, any, any> {
+        const streamLabelGroups = labelsContainer
+            .selectAll(".stream-label-group")
+            .data(stackedSeries, (d: any, i: number) => i.toString());
+        const streamLabelGroupsEnter = streamLabelGroups
+            .enter()
+            .append("g")
+            .classed("stream-label-group", true)
+            .attr("data-stream-index", (d: any, i: number) => i)
+            .attr("aria-label", (d: any, i: number) => `Stream ${i + 1} labels`);
+
+        const streamLabelGroupsMerged = streamLabelGroupsEnter.merge(streamLabelGroups as any);
+        streamLabelGroups.exit().remove();
+
+        return streamLabelGroupsMerged;
+    }
+
+    /**
+     * Renders labels for a specific stream
+     */
+    private renderStreamLabels(
+        streamGroup: Selection<BaseType, any, any, any>,
+        seriesItem: Series<any, any>,
+        seriesData: StreamGraphSeries,
+        seriesIndex: number,
+        xScale: ScaleLinear<number, number>,
+        yScale: ScaleLinear<number, number>,
+        hasHighlights: boolean,
+        dataLabelsSettings: any,
+        styleProperties: LabelStyleProperties
+    ): void {
+        if (!streamGroup || streamGroup.empty()) {
+            return;
+        }
+
+        const labelData = this.prepareLabelData(
+            seriesItem, 
+            seriesData, 
+            seriesIndex, 
+            xScale, 
+            yScale, 
+            hasHighlights
+        );
+
+        const labels = streamGroup
+            .selectAll("text.data-labels")
+            .data(labelData, (d: LabelDataItem) => `${d.seriesIndex}-${d.pointIndex}`);
+
+        labels.exit().remove();
+
+        const labelsEnter = labels
+            .enter()
+            .append("text")
+            .classed("data-labels", true);
+
+        const labelsMerged = labelsEnter.merge(labels as any);
+
+        // Apply styles and attributes
+        this.applyLabelStyles(labelsMerged, dataLabelsSettings, styleProperties);
+    }
+
+    /**
+     * Prepares label data for a specific series with optimized filtering
+     */
+    private prepareLabelData(
+        seriesItem: Series<any, any>,
+        seriesData: StreamGraphSeries,
+        seriesIndex: number,
+        xScale: ScaleLinear<number, number>,
+        yScale: ScaleLinear<number, number>,
+        hasHighlights: boolean
+    ): LabelDataItem[] {
+        const labelData: LabelDataItem[] = [];
+        
+        seriesItem.forEach((dataPoint: any, pointIndex: number) => {
+            if (this.isValidDataPoint(dataPoint)) {
+                // if (yScale(dataPoint[0]) - yScale(dataPoint[1]) < 18) {
+                //     return; // hide label
+                // }
+                const labelItem = this.createLabelItem(
+                    dataPoint, 
+                    seriesData, 
+                    seriesIndex, 
+                    pointIndex, 
+                    xScale, 
+                    yScale, 
+                    seriesItem.key
+                );
+                
+                if (labelItem && this.shouldIncludeLabel(labelItem, hasHighlights)) {
+                    labelData.push(labelItem);
+                }
             }
         });
 
-        const viewport: IViewport = {
-            height: height,
-            width: width - (this.margin.right + this.data.xAxisValueMaxReservedTextSize) - margin.left,
+        return labelData;
+    }
+
+    /**
+     * Checks if a data point is valid for labeling
+     */
+    private isValidDataPoint(dataPoint: any): boolean {
+        return dataPoint && dataPoint[0] !== null && dataPoint[0] !== undefined;
+    }
+
+    /**
+     * Creates a label item object
+     */
+    private createLabelItem(
+        dataPoint: any,
+        seriesData: StreamGraphSeries,
+        seriesIndex: number,
+        pointIndex: number,
+        xScale: ScaleLinear<number, number>,
+        yScale: ScaleLinear<number, number>,
+        seriesKey: string
+    ): any {
+        return {
+            x: xScale(dataPoint.data.x),
+            y: yScale((dataPoint[0] + dataPoint[1]) / 2),
+            text: seriesData.label,
+            value: dataPoint.data[seriesKey],
+            highlight: dataPoint.data.highlight,
+            seriesIndex: seriesIndex,
+            pointIndex: pointIndex
         };
+    }
 
+    /**
+     * Determines if a label should be included based on highlight state
+     */
+    private shouldIncludeLabel(labelItem: any, hasHighlights: boolean): boolean {
         if (hasHighlights) {
-            const highlightedPointArray: StreamDataPoint[] = dataPointsArray.filter((d: StreamDataPoint) => d.highlight && d.value !== StreamGraph.DefaultValue);
-            const additionalPointsArray: StreamDataPoint[] = dataPointsArray.filter((d: StreamDataPoint) => highlightedPointArray[0] && d.text === highlightedPointArray[0].text && d.x < highlightedPointArray[0].x);
-            dataPointsArray = additionalPointsArray.concat(highlightedPointArray);
+            return labelItem.highlight && labelItem.value !== StreamGraph.DefaultValue;
+        }
+        return true;
+    }
+
+    /**
+     * Applies styling to label elements with accessibility
+     */
+    private applyLabelStyles(
+        labelsMerged: Selection<BaseType, LabelDataItem, any, any>, 
+        dataLabelsSettings: any, 
+        styleProperties: LabelStyleProperties
+    ): void {
+        if (!labelsMerged || labelsMerged.empty()) {
+            return;
         }
 
-        dataLabelUtils.cleanDataLabels(this.svg);
+        labelsMerged
+            .text((d: LabelDataItem) => this.formatLabelText(d, styleProperties.showValues))
+            .attr("x", (d: LabelDataItem) => d.x)
+            .attr("y", (d: LabelDataItem) => d.y)
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle")
+            .attr("aria-label", (d: LabelDataItem) => 
+                `${d.text}${styleProperties.showValues && d.value !== undefined ? ': ' + d.value : ''}`
+            )
+            .style("fill", this.colorHelper.getHighContrastColor("foreground", styleProperties.color))
+            .style("font-size", styleProperties.fontSize)
+            .style("font-family", styleProperties.fontFamily)
+            .style("font-weight", styleProperties.fontWeight)
+            .style("font-style", styleProperties.fontStyle)
+            .style("text-decoration", styleProperties.textDecoration)
+            .style("pointer-events", "none")
+            .style("user-select", "none");
+    }
 
-        const labels: Selection<BaseType, StreamDataPoint, any, any> =
-            dataLabelUtils.drawDefaultLabelsForDataPointChart(
-                dataPointsArray,
-                this.svg,
-                layout,
-                viewport);
-
-        if (labels) {
-            //If Y axis is on or Y title is on, we need to consider that
-            let divider = 4;
-            if(this.data.formattingSettings.valueAxis.options.show.value)
-                divider--;
-            if(this.data.formattingSettings.valueAxis.title.show.value)
-                divider--;
-
-            let offset: number = StreamGraph.DefaultDataLabelsOffset + margin.left / divider;
-
-            //DataLabels value ON, Y axis OFF, Y title OFF
-            if(this.data.formattingSettings.dataLabels.showValues.value 
-                    && !this.data.formattingSettings.valueAxis.options.show.value
-                    && !this.data.formattingSettings.valueAxis.title.show.value)
-                offset = StreamGraph.DefaultDataLabelsOffset - (margin.left * 0.2);
-                
-            //DataLabels value ON, Y axis OFF, Y title ON
-            if(this.data.formattingSettings.dataLabels.showValues.value 
-                    && !this.data.formattingSettings.valueAxis.options.show.value
-                    && this.data.formattingSettings.valueAxis.title.show.value)
-                offset *= 0.5;
-
-            labels.attr("transform", (dataPoint: StreamDataPoint) => {
-                return translate(
-                    offset + (dataPoint.size.width / StreamGraph.MiddleOfTheLabel),
-                    dataPoint.size.height / StreamGraph.MiddleOfTheLabel);
-            });
+    /**
+     * Formats label text based on settings
+     */
+    private formatLabelText(labelData: LabelDataItem, showValues: boolean): string {
+        const baseText = labelData.text;
+        if (showValues && labelData.value !== undefined) {
+            return `${baseText} ${labelData.value}`;
         }
+        return baseText;
     }
 
     private renderLegend(streamGraphData: StreamData): void {
@@ -1335,6 +1493,10 @@ export class StreamGraph implements IVisual {
             .selectAll(StreamGraph.LayerSelector.selectorName)
             .remove();
 
+        this.svg
+            .selectAll(".data-labels-container")
+            .remove();
+
         this.legend.drawLegend(
             { dataPoints: [] },
             this.viewport);
@@ -1345,10 +1507,6 @@ export class StreamGraph implements IVisual {
 
         this.axisY
             .selectAll("*")
-            .remove();
-
-        this.svg
-            .select(".labels")
             .remove();
     }
 
