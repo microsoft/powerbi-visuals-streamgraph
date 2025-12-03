@@ -1331,8 +1331,7 @@ export class StreamGraph implements IVisual {
                     seriesIndex, 
                     pointIndex, 
                     xScale, 
-                    yScale, 
-                    seriesItem.key
+                    yScale
                 );
                 
                 if (labelItem && this.shouldIncludeLabel(labelItem, hasHighlights)) {
@@ -1360,14 +1359,16 @@ export class StreamGraph implements IVisual {
         seriesIndex: number,
         pointIndex: number,
         xScale: ScaleLinear<number, number>,
-        yScale: ScaleLinear<number, number>,
-        seriesKey: string
+        yScale: ScaleLinear<number, number>
     ): any {
+        // Calculate the actual value for the data point
+        const actualValue = dataPoint[1] - dataPoint[0];
+        
         return {
             x: xScale(dataPoint.data.x),
             y: yScale((dataPoint[0] + dataPoint[1]) / 2),
             text: seriesData.label,
-            value: dataPoint.data[seriesKey],
+            value: actualValue,
             highlight: dataPoint.data.highlight,
             seriesIndex: seriesIndex,
             pointIndex: pointIndex

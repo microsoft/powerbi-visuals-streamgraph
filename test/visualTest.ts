@@ -269,7 +269,6 @@ describe("StreamGraph", () => {
 
             it("showValues", () => {
                 const expectedTextWithValue = "Product";
-                visualBuilder.updateFlushAllD3Transitions(dataView);
                 (dataView.metadata.objects as any).labels.showValue = true;
 
                 visualBuilder.updateFlushAllD3Transitions(dataView);
