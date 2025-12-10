@@ -3,7 +3,7 @@ import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 
 import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
 import { legendInterfaces } from "powerbi-visuals-utils-chartutils";
-import { DataOrder, DataOffset } from "./utils";
+import { DataOrder, DataOffset, LabelOverlapHandling } from "./utils";
 import LegendPosition = legendInterfaces.LegendPosition;
 
 import Card = formattingSettings.SimpleCard;
@@ -27,6 +27,12 @@ const dataOrderOptions : IEnumMemberWithDisplayNameKey[] = [
 const dataOffsetOptions : IEnumMemberWithDisplayNameKey[] = [
     {value : DataOffset[DataOffset.Silhouette], displayName : "Silhouette", key: "Visual_DataOffset_Silhouette"},
     {value : DataOffset[DataOffset.Expand], displayName : "Expand", key: "Visual_DataOffset_Expand"}
+];
+
+const labelOverlapHandlingOptions : IEnumMemberWithDisplayNameKey[] = [
+    {value : LabelOverlapHandling[LabelOverlapHandling.Standard], displayName : "Standard", key: "Visual_LabelOverlap_Standard"},
+    {value : LabelOverlapHandling[LabelOverlapHandling.HideOverlap], displayName : "Hide Overlap", key: "Visual_LabelOverlap_HideOverlap"},
+    {value : LabelOverlapHandling[LabelOverlapHandling.OffsetOverlap], displayName : "Offset Overlap", key: "Visual_LabelOverlap_OffsetOverlap"}
 ];
 
 export class BaseFontCardSettings extends Card {
@@ -308,10 +314,18 @@ export class DataLabelsCardSettings extends BaseFontCardSettings {
         value: { value: "#888888" }
     });
 
+    overlapHandling = new formattingSettings.ItemDropdown({
+        name: "overlapHandling",
+        items: labelOverlapHandlingOptions,
+        value: labelOverlapHandlingOptions[0],
+        displayName: "Label Overlap Handling",
+        displayNameKey: "Visual_LabelOverlapHandling",
+    });
+
     name: string = "labels";
     displayName: string = "Data Labels";
     displayNameKey: string = "Visual_DataPointsLabels";
-    slices = [this.showValues, this.font, this.color];
+    slices = [this.showValues, this.font, this.color, this.overlapHandling];
 
     constructor(){
         super();
@@ -370,6 +384,7 @@ export class StreamGraphSettingsModel extends Model {
     public setLocalizedOptions(localizationManager: ILocalizationManager) {
         this.setLocalizedDisplayName(dataOrderOptions, localizationManager);
         this.setLocalizedDisplayName(dataOffsetOptions, localizationManager);
+        this.setLocalizedDisplayName(labelOverlapHandlingOptions, localizationManager);
     }   
 
     private setLocalizedDisplayName(options: IEnumMemberWithDisplayNameKey[], localizationManager: ILocalizationManager) {

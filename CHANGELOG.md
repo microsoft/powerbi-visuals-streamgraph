@@ -1,3 +1,16 @@
+## 3.2.0.0
+
+### New features
+* Added data label overlap handling setting
+* Added per-stream color settings
+* Added Label Orientation option to control forced label rotationng
+
+### Fixes
+* Bound data labels to streams
+* Simplified offset calculation logic
+* Fixed Y-axis font size resizing issues
+
+
 ## 3.1.0.0
 
 ### New features

@@ -42,5 +42,9 @@
 	"Visual_DataOrder_InsideOut" : "Inside Out",
 	"Visual_DataOrder_Reverse" : "Reverse",
 	"Visual_Font": "Font",
-	"Visual_Text": "Text"
+	"Visual_Text": "Text",
+	"Visual_LabelOverlapHandling": "Label Overlap Handling",
+	"Visual_LabelOverlap_Standard": "Standard",
+	"Visual_LabelOverlap_HideOverlap": "Hide Overlap",
+	"Visual_LabelOverlap_OffsetOverlap": "Offset Overlap"
 }

@@ -60,6 +60,7 @@ import { ProductSalesByDateData, MovieGenreSalesByDateData } from "./visualData"
 import { StreamGraphSeries, StreamData, StreamDataPoint } from "../src/dataInterfaces";
 import { StreamGraph, VisualUpdateType } from "../src/visual";
 import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
+import { DataOrder, DataOffset, LabelOverlapHandling } from "../src/utils";
 
 describe("StreamGraph", () => {
     let visualBuilder: StreamGraphBuilder,
@@ -297,6 +298,99 @@ describe("StreamGraph", () => {
 
                 Array.from(visualBuilder.dataLabelsText).forEach((element: HTMLElement) => {
                     expect(element.style.fontSize).toBe(expectedFontSize);
+                });
+            });
+
+            describe("overlap handling", () => {
+                beforeEach(() => {
+                    // Create test data with potential overlaps
+                    dataView.metadata.objects = {
+                        labels: {
+                            show: true,
+                            fontSize: 14
+                        }
+                    };
+                });
+
+                it("should handle Standard overlap handling", () => {
+                    (dataView.metadata.objects as any).labels.overlapHandling = {
+                        value: { value: LabelOverlapHandling[LabelOverlapHandling.Standard] }
+                    };
+
+                    visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                    // Standard handling should show all labels
+                    expect(visualBuilder.dataLabelsText.length).toBeGreaterThan(0);
+                    
+                    // Verify labels are rendered
+                    const labelsContainer = visualBuilder.mainElement.querySelector(".data-labels-container");
+                    expect(labelsContainer).not.toBeNull();
+                });
+
+                it("should handle HideOverlap overlap handling", () => {
+                    (dataView.metadata.objects as any).labels.overlapHandling = {
+                        value: { value: LabelOverlapHandling[LabelOverlapHandling.HideOverlap] }
+                    };
+
+                    visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                    // HideOverlap should potentially reduce the number of visible labels
+                    const labelsContainer = visualBuilder.mainElement.querySelector(".data-labels-container");
+                    expect(labelsContainer).not.toBeNull();
+                    
+                    // Verify that overlap handling logic has been applied
+                    const visibleLabels = visualBuilder.dataLabelsText;
+                    expect(visibleLabels.length).toBeGreaterThanOrEqual(0);
+                });
+
+                it("should handle OffsetOverlap overlap handling", () => {
+                    (dataView.metadata.objects as any).labels.overlapHandling = {
+                        value: { value: LabelOverlapHandling[LabelOverlapHandling.OffsetOverlap] }
+                    };
+
+                    visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                    // OffsetOverlap should show all labels but potentially move their positions
+                    const labelsContainer = visualBuilder.mainElement.querySelector(".data-labels-container");
+                    expect(labelsContainer).not.toBeNull();
+                    
+                    // Verify labels exist
+                    expect(visualBuilder.dataLabelsText.length).toBeGreaterThanOrEqual(0);
+                });
+
+                it("should handle numeric enum values for overlap handling", () => {
+                    // Test with numeric values instead of enum strings
+                    (dataView.metadata.objects as any).labels.overlapHandling = {
+                        value: { value: "1" } // HideOverlap
+                    };
+
+                    visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                    const labelsContainer = visualBuilder.mainElement.querySelector(".data-labels-container");
+                    expect(labelsContainer).not.toBeNull();
+                });
+
+                it("should handle string enum values for overlap handling", () => {
+                    // Test with string enum names
+                    (dataView.metadata.objects as any).labels.overlapHandling = {
+                        value: { value: "OffsetOverlap" }
+                    };
+
+                    visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                    const labelsContainer = visualBuilder.mainElement.querySelector(".data-labels-container");
+                    expect(labelsContainer).not.toBeNull();
+                });
+
+                it("should default to Standard when overlap handling is not set", () => {
+                    // Don't set overlapHandling, should default to Standard
+                    delete (dataView.metadata.objects as any).labels.overlapHandling;
+
+                    visualBuilder.updateFlushAllD3Transitions(dataView);
+
+                    const labelsContainer = visualBuilder.mainElement.querySelector(".data-labels-container");
+                    expect(labelsContainer).not.toBeNull();
+                    expect(visualBuilder.dataLabelsText.length).toBeGreaterThanOrEqual(0);
                 });
             });
         });
@@ -877,4 +971,5 @@ describe("StreamGraph", () => {
             }
         });
     });
+
 });

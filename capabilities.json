@@ -385,6 +385,21 @@
                     "type": {
                         "bool": true
                     }
+                },
+                "overlapHandling": {
+                    "type": {
+                        "enumeration": [
+                            {
+                                "value": "0"
+                            },
+                            {
+                                "value": "1"
+                            },
+                            {
+                                "value": "2"
+                            }
+                        ]
+                    }
                 }
             }
         },

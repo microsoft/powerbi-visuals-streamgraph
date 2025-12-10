@@ -53,3 +53,9 @@ export enum DataOffset {
     Silhouette = 1,
     Expand = 2
 }
+
+export enum LabelOverlapHandling {
+    Standard = 0,
+    HideOverlap = 1,
+    OffsetOverlap = 2
+}
