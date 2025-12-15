@@ -101,6 +101,9 @@ import IValueFormatter = valueFormatter.IValueFormatter;
 import { pixelConverter as PixelConverter } from "powerbi-visuals-utils-typeutils";
 import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
 
+// powerbi.extensibility.utils.dataview
+import { dataViewObjects } from "powerbi-visuals-utils-dataviewutils";
+
 // powerbi.extensibility.utils.tooltip
 import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
 
@@ -136,6 +139,9 @@ export class StreamGraph implements IVisual {
     private static EmptyDisplayName: string = "";
     private static MinLabelSize: number = 0;
     private static MiddleOfTheLabel: number = 2;
+    private static StreamPropertyIdentifier = {
+        fill: { objectName: "streams", propertyName: "fill" }
+    };
 
     private static DefaultDataLabelsOffset: number = 4;
     // Axis
@@ -312,9 +318,15 @@ export class StreamGraph implements IVisual {
                 }
             }
 
+            const seriesObject: powerbi.DataViewObjects = values[valueIndex].source.objects;
+            const fillColor = StreamGraph.getSeriesColor(
+                valueIndex,
+                colorHelper,
+                seriesObject,
+            );
             const color: string = colorHelper.getHighContrastColor(
                 "foreground",
-                colorPalette.getColor(valueIndex.toString()).value,
+               fillColor,
             );
 
             if (label) {
@@ -544,6 +556,26 @@ export class StreamGraph implements IVisual {
         };
     }
 
+    private static getSeriesColor(
+        seriesIndex: number,
+        colorHelper: ColorHelper,
+        seriesObjects: powerbi.DataViewObjects,
+    ): string {
+
+        const defaultPaletteColor = colorHelper.getColorForMeasure(
+            seriesObjects,
+            seriesIndex.toString()
+        );
+
+        // Check if there's a custom color set for this stream
+        const customStreamsColor = dataViewObjects.getFillColor(
+            seriesObjects,
+            StreamGraph.StreamPropertyIdentifier.fill
+        );
+        
+        return customStreamsColor || defaultPaletteColor;
+    }
+
     public init(options: VisualConstructorOptions): void {
         select("html").style(
             "-webkit-tap-highlight-color", "transparent" // Turns off the blue highlighting at mobile browsers
@@ -624,6 +656,8 @@ export class StreamGraph implements IVisual {
             this.interactivityService,
             this.visualHost,
         );
+
+        this.data.formattingSettings.populateStreams(this.data.series);
 
         if (!this.data
             || !this.data.series
