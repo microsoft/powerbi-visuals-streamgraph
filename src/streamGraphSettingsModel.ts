@@ -3,13 +3,15 @@ import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 
 import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
 import { legendInterfaces } from "powerbi-visuals-utils-chartutils";
-import { DataOrder, DataOffset, LabelOrientationMode } from "./utils";
+import { DataOrder, DataOffset,LabelOrientationMode } from "./utils";
+import { StreamGraphSeries } from "./dataInterfaces";
 import LegendPosition = legendInterfaces.LegendPosition;
 
 import Card = formattingSettings.SimpleCard;
 import CompositeCard = formattingSettings.CompositeCard;
 import Group = formattingSettings.Group;
 import Model = formattingSettings.Model;
+import ISelectionId = powerbi.visuals.ISelectionId;
 
 import IEnumMember = powerbi.IEnumMember;
 interface IEnumMemberWithDisplayNameKey extends IEnumMember{
@@ -367,6 +369,12 @@ export class GraphCurvatureCardSettings extends Card{
     displayNameKey: string = "Visual_Curvature";
     slices = [this.value];
 }
+export class StreamCardSettings extends CompositeCard {
+    name: string = "streams";
+    displayName: string = "Streams";
+    displayNameKey: string = "Visual_Streams";
+    groups: formattingSettings.Group[] = [];
+}
 
 export class StreamGraphSettingsModel extends Model {
     general = new GeneralCardSettings();
@@ -375,14 +383,15 @@ export class StreamGraphSettingsModel extends Model {
     legend = new LegendCardSettings();
     dataLabels = new DataLabelsCardSettings();
     graphCurvature = new GraphCurvatureCardSettings();
-
+    streams = new StreamCardSettings();
     cards = [
         this.general,
         this.categoryAxis,
         this.valueAxis,
         this.legend,
         this.dataLabels,
-        this.graphCurvature
+        this.graphCurvature,
+        this.streams
     ];
 
     public setLocalizedOptions(localizationManager: ILocalizationManager) {
@@ -395,5 +404,40 @@ export class StreamGraphSettingsModel extends Model {
         options.forEach(option => {
             option.displayName = localizationManager.getDisplayName(option.key)
         });
+    }
+  
+    public populateStreams(streams: StreamGraphSeries[]) {
+        
+        if (!streams || streams.length === 0) {
+            return;
+        }
+    
+        this.streams.groups = [];   
+        const colorSlices: formattingSettings.ColorPicker[] = [];
+        
+        for (const stream of streams) {
+            const identity: ISelectionId = <ISelectionId>stream.identity;
+            const displayName: string = stream.label;
+            const selector = identity.getSelector();
+
+            const colorPicker = new formattingSettings.ColorPicker({
+                name: "fill",
+                displayName,
+                selector,
+                value: { value: stream.color },
+                visible: true
+            });
+            
+            colorSlices.push(colorPicker);
+        }
+
+        const colorsGroup = new formattingSettings.Group({
+            name: "colors",
+            displayName: "Colors",
+            displayNameKey: "Visual_Colors",
+            slices: colorSlices
+        });
+        
+        this.streams.groups.push(colorsGroup);
     }
 }

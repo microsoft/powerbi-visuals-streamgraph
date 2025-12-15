@@ -407,6 +407,19 @@
                     }
                 }
             }
+        },
+        "streams": {
+            "properties": {
+                "fill": {
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "supportsHighlight": true
