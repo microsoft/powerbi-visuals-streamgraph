@@ -64,7 +64,7 @@ export class BaseFontCardSettings extends Card {
                 },
                 maxValue: {
                     type: powerbi.visuals.ValidatorType.Max,
-                    value: 60,
+                    value: 30,
                 }
             }
         });

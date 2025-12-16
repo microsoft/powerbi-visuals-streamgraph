@@ -170,7 +170,11 @@ export class StreamGraph implements IVisual {
     private static YAxisLabelAngle: string = "rotate(-90)";
     private static CategoryTextRotationDegree: number = 45.0;
     private static YAxisLabelDy: number = 30;
-    private static XAxisLabelDy: string = "-0.5em";
+    private static XAxisLabelDy: string = "0.3em";
+    private static RotatedLabelMarginFactor: number = 0.4;
+    private static MaxRotatedLabelMargin: number = 50;
+    private static YAxisTitleSpacingOn: number = 15;
+    private static YAxisTitleSpacingOff: number = 10;
     private margin: IMargin = {
         left: StreamGraph.YAxisOnSize,
         right: -20,
@@ -723,17 +727,6 @@ export class StreamGraph implements IVisual {
         this.events.renderingFinished(options);
     }
 
-    private setTextNodesPosition(xAxisTextNodes: Selection<BaseType, any, any, any>,
-        textAnchor: string,
-        dx: string,
-        dy: string): void {
-
-        xAxisTextNodes
-            .style("text-anchor", textAnchor)
-            .attr("dx", dx)
-            .attr("dy", dy);
-    }
-
     private toggleAxisVisibility(
         isShown: boolean,
         className: string,
@@ -767,6 +760,7 @@ export class StreamGraph implements IVisual {
             (this as Element).setAttribute("y", dy);
         });
     }
+
     private hideFirstAndLastTickXAxis()
     {
         const xAxisLineNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("line");
@@ -783,73 +777,56 @@ export class StreamGraph implements IVisual {
             (xAxisLineNodesArray[xAxisLineNodesArray.length - 1] as Element).setAttribute("opacity", "0");
         }
     }
-    private setColorFontXAxis(xAxisTextNodes: Selection<BaseType, any, any, any>)
-    {
-        const categoryAxisLabelColor: string = this.data.formattingSettings.categoryAxis.options.labelColor.value.value,
-            categoryAxisFontSize : string = this.data.formattingSettings.categoryAxis.options.fontSize.value.toString(),
-            categoryAxisFontFamily : string = this.data.formattingSettings.categoryAxis.options.fontFamily.value;
 
-        const categoryAxisFontIsBold : boolean = this.data.formattingSettings.categoryAxis.options.bold.value,
-            categoryAxisFontIsItalic : boolean = this.data.formattingSettings.categoryAxis.options.italic.value,
-            categoryAxisFontIsUnderlined : boolean = this.data.formattingSettings.categoryAxis.options.underline.value;
+    private setColorFontXAxis(xAxisTextNodes: Selection<BaseType, any, any, any>) {
+        const options = this.data.formattingSettings.categoryAxis.options;
 
-        const xAxisTextNodesArray: BaseType[] = xAxisTextNodes.nodes();
-
-        for(let idx = 0; idx < xAxisTextNodesArray.length; idx++ )
-        {
-            if(xAxisTextNodesArray[idx])
-            {
-                (xAxisTextNodesArray[idx] as Element)
-                    .setAttribute("fill", this.colorHelper.getHighContrastColor("foreground", categoryAxisLabelColor));
-                (xAxisTextNodesArray[idx] as Element)
-                    .setAttribute("stroke", categoryAxisLabelColor);
-                (xAxisTextNodesArray[idx] as Element)
-                    .setAttribute("font-size", categoryAxisFontSize);
-                (xAxisTextNodesArray[idx] as Element)
-                    .setAttribute("font-family", categoryAxisFontFamily);
-                (xAxisTextNodesArray[idx] as Element)
-                    .setAttribute("font-weight", categoryAxisFontIsBold ? "bold" : "normal");
-                (xAxisTextNodesArray[idx] as Element)
-                    .setAttribute("font-style", categoryAxisFontIsItalic ? "italic" : "normal");
-                (xAxisTextNodesArray[idx] as Element)
-                    .setAttribute("text-decoration", categoryAxisFontIsUnderlined ? "underline" : "normal");
-            }
-        }
+        this.applyAxisTextStyle(xAxisTextNodes, {
+            color: options.labelColor.value.value,
+            fontSize: options.fontSize.value.toString(),
+            fontFamily: options.fontFamily.value,
+            bold: options.bold.value,
+            italic: options.italic.value,
+            underline: options.underline.value
+        });
     }
-    private setColorFontYAxis(yAxisTextNodes: Selection<BaseType, any, any, any>)
-    {
-        const valueAxisLabelColor: string = this.data.formattingSettings.valueAxis.options.labelColor.value.value,
-            valueAxisFontSize : string = this.data.formattingSettings.valueAxis.options.fontSize.value.toString(),
-            valueAxisFontFamily : string = this.data.formattingSettings.valueAxis.options.fontFamily.value;
 
-        const valueAxisFontIsBold : boolean = this.data.formattingSettings.valueAxis.options.bold.value,
-            valueAxisFontIsItalic : boolean = this.data.formattingSettings.valueAxis.options.italic.value,
-            valueAxisFontIsUnderlined : boolean = this.data.formattingSettings.valueAxis.options.underline.value;
+    private setColorFontYAxis(yAxisTextNodes: Selection<BaseType, any, any, any>) {
+        const options = this.data.formattingSettings.valueAxis.options;
 
-
-        const yAxisTextNodesArray : BaseType[] = yAxisTextNodes.nodes();
-
-        for(let idx = 0; idx < yAxisTextNodesArray.length; idx++ )
-        {
-            if(yAxisTextNodesArray[idx])
-            {
-                (yAxisTextNodesArray[idx] as Element)
-                    .setAttribute("fill", this.colorHelper.getHighContrastColor("foreground", valueAxisLabelColor));
-                (yAxisTextNodesArray[idx] as Element)
-                    .setAttribute("stroke", valueAxisLabelColor);
-                (yAxisTextNodesArray[idx] as Element)
-                    .setAttribute("font-size", valueAxisFontSize);
-                (yAxisTextNodesArray[idx] as Element)
-                    .setAttribute("font-family", valueAxisFontFamily);
-                (yAxisTextNodesArray[idx] as Element)
-                    .setAttribute("font-weight", valueAxisFontIsBold ? "bold" : "normal");
-                (yAxisTextNodesArray[idx] as Element)
-                    .setAttribute("font-style", valueAxisFontIsItalic ? "italic" : "normal");
-                (yAxisTextNodesArray[idx] as Element)
-                    .setAttribute("text-decoration", valueAxisFontIsUnderlined ? "underline" : "normal");
-            }
-        }
+        this.applyAxisTextStyle(yAxisTextNodes, {
+            color: options.labelColor.value.value,
+            fontSize: options.fontSize.value.toString(),
+            fontFamily: options.fontFamily.value,
+            bold: options.bold.value,
+            italic: options.italic.value,
+            underline: options.underline.value
+        });
     }
+
+    private applyAxisTextStyle(
+        textNodes: Selection<BaseType, any, any, any>,
+        options: {
+            color: string;
+            fontSize: string;
+            fontFamily: string;
+            bold: boolean;
+            italic: boolean;
+            underline: boolean;
+        }
+    ): void {
+        const { color, fontSize, fontFamily, bold, italic, underline } = options;
+
+        textNodes
+            .attr("fill", this.colorHelper.getHighContrastColor("foreground", color))
+            .attr("stroke", color)
+            .attr("font-size", fontSize)
+            .attr("font-family", fontFamily)
+            .attr("font-weight", bold ? "bold" : "normal")
+            .attr("font-style", italic ? "italic" : "normal")
+            .attr("text-decoration", underline ? "underline" : "none");
+    }
+
     private calculateAxes() {
         const showAxisTitle: boolean = this.data.formattingSettings.categoryAxis.title.show.value,
             xShow: boolean = this.data.formattingSettings.categoryAxis.options.show.value,
@@ -931,6 +908,7 @@ export class StreamGraph implements IVisual {
         if (orientationMode === LabelOrientationMode[LabelOrientationMode.ForceRotate]) {
             xAxisTextNodes
                 .classed(StreamGraph.LabelMiddleSelector.className, true)
+                .style("text-anchor", StreamGraph.AxisTextNodeTextAnchorForAngel0)
                 .attr("dx", StreamGraph.AxisTextNodeDXForAngel0)
                 .attr("dy", StreamGraph.AxisTextNodeDYForAngel0)
                 .attr("transform", `rotate(-${StreamGraph.CategoryTextRotationDegree})`);
@@ -948,13 +926,16 @@ export class StreamGraph implements IVisual {
                     });
             });
         } else {
-            this.setTextNodesPosition(xAxisTextNodes, 
-                StreamGraph.AxisTextNodeTextAnchorForAngel0, 
-                StreamGraph.AxisTextNodeDXForAngel0,
-                StreamGraph.AxisTextNodeDYForAngel0
-            );  
-            xAxisTextNodes.attr("transform", null);
-            // Apply word break for non-rotated labels
+           xAxisTextNodes
+            .style("text-anchor", (_, i, nodes) =>
+                i === 0 ? "start" :
+                i === nodes.length - 1 ? "end" :
+                "middle"
+            )
+            .attr("dx", StreamGraph.AxisTextNodeDXForAngel0)
+            .attr("dy", StreamGraph.AxisTextNodeDYForAngel0)
+            .attr("transform", null);
+            // Apply word break for non-rotated labels to handle long text
             StreamGraph.applyWordBreak(xAxisTextNodes, this.xAxisProperties, StreamGraph.XAxisLabelSize, this.data.formattingSettings.categoryAxis.options.fontSize.value.toString());
         }
     }
@@ -1001,6 +982,20 @@ export class StreamGraph implements IVisual {
         const requiredHeight = longestCategoryWidth * Math.tan(StreamGraph.CategoryTextRotationDegree * Math.PI / 180);
         return requiredHeight;
     }
+
+    /**
+     * Calculates the additional left margin needed for rotated X-axis labels.
+     * This prevents rotated labels from being clipped at the left edge of the visual.
+     * returns the extra margin in pixels, or 0 if labels are not rotated
+     */
+    private getExtraLeftMarginForRotatedLabels(): number {
+        const orientationMode = this.data.formattingSettings.categoryAxis.options.labelOrientationMode.value.value;
+        if (orientationMode !== LabelOrientationMode[LabelOrientationMode.ForceRotate]) {
+            return 0;
+        }
+        const rotatedLabelHeight = this.calculateXAxisAdditionalHeight(this.data.categoriesText);
+        return Math.min(rotatedLabelHeight * StreamGraph.RotatedLabelMarginFactor, StreamGraph.MaxRotatedLabelMargin);
+    }
     
     private renderYAxis(effectiveHeight: number, metaDataColumnPercent: powerbi.DataViewMetadataColumn): void {
         this.yAxisProperties = AxisHelper.createAxis({
@@ -1027,10 +1022,18 @@ export class StreamGraph implements IVisual {
             .selectAll(StreamGraph.YAxisLabelSelector.selectorName)
             .remove();
         const valueAxisSettings: BaseAxisCardSettings = this.data.formattingSettings.valueAxis;
-        const isYAxisOn : boolean = valueAxisSettings.options.show.value;
-        this.margin.left = isYAxisOn
+        const isYAxisOn: boolean = valueAxisSettings.options.show.value;
+        
+        // Calculate base left margin for Y-axis
+        const baseMarginLeft = isYAxisOn
             ? StreamGraph.YAxisOnSize + this.data.yAxisValueMaxTextSize
             : StreamGraph.YAxisOffSize;
+        
+        this.margin.left = baseMarginLeft;
+        
+        // Add extra left margin for rotated X-axis labels
+        const extraRotatedMargin = this.getExtraLeftMarginForRotatedLabels();
+        this.margin.left += extraRotatedMargin;
 
         if (valueAxisSettings.title.show.value) {
             this.margin.left += StreamGraph.YAxisLabelSize;
@@ -1055,6 +1058,10 @@ export class StreamGraph implements IVisual {
 
             const textSettings: TextProperties = StreamGraph.getTextPropertiesFunction(yAxisText, valueAxisSettings.title);
             yAxisText = textMeasurementService.getTailoredTextOrDefault(textSettings, height);
+            
+            // Calculate Y-axis title position with proper spacing from labels
+            const yTitleOffset = baseMarginLeft + (isYAxisOn ? StreamGraph.YAxisTitleSpacingOn : StreamGraph.YAxisTitleSpacingOff);
+            
             const yAxisLabel: Selection<BaseType, any, any, any> = this.axes.append("text")
                 .style("font-family", textSettings.fontFamily)
                 .style("font-size", textSettings.fontSize)
@@ -1064,7 +1071,7 @@ export class StreamGraph implements IVisual {
                 .attr("transform", StreamGraph.YAxisLabelAngle)
                 .attr("fill", this.colorHelper.getHighContrastColor("foreground", valueAxisSettings.title.color.value.value))
                 .attr("x", -(marginTop + (height / StreamGraph.AxisLabelMiddle)))
-                .attr("y", PixelConverter.fromPoint(-(this.margin.left - StreamGraph.YAxisLabelDy)))
+                .attr("y", -yTitleOffset + StreamGraph.YAxisLabelDy)
                 .classed(StreamGraph.YAxisLabelSelector.className, true)
                 .text(yAxisText);
 
@@ -1109,35 +1116,28 @@ export class StreamGraph implements IVisual {
             .remove();
 
         const categoryAxisSettings: BaseAxisCardSettings = this.data.formattingSettings.categoryAxis;
-        this.margin.bottom = categoryAxisSettings.options.show.value
-            ? StreamGraph.XAxisOnSize + parseInt(this.data.formattingSettings.categoryAxis.options.fontSize.value.toString())
+        const isXAxisOn: boolean = categoryAxisSettings.options.show.value;
+        const additionalMarginForRotation = this.getAdditionalMarginForRotatedLabels();
+        
+        // Calculate the base bottom margin (axis + labels + rotation space)
+        const baseBottomMargin = isXAxisOn
+            ? StreamGraph.XAxisOnSize + parseInt(this.data.formattingSettings.categoryAxis.options.fontSize.value.toString()) + additionalMarginForRotation
             : StreamGraph.XAxisOffSize;
+        
+        this.margin.bottom = baseBottomMargin;
 
         if (!categoryAxisSettings.title.show.value
             || !this.dataView.categorical.categories[0]
             || !this.dataView.categorical.categories[0].source) {
             return;
         }
-
-        let shiftTitle: number = 0;
-        const orientationMode = this.data.formattingSettings.categoryAxis.options.labelOrientationMode.value.value;
-
-        if (orientationMode === LabelOrientationMode[LabelOrientationMode.ForceRotate]) {
-            // Calculate additional height needed for rotated labels
-            shiftTitle = this.calculateXAxisAdditionalHeight(this.data.categoriesText);
-        }
-
-        const valueAxisSettings: BaseAxisCardSettings = this.data.formattingSettings.valueAxis,
-            isYAxisOn: boolean = valueAxisSettings.options.show.value,
-            isYTitleOn: boolean = valueAxisSettings.title.show.value,
-            leftMargin: number = (isYAxisOn
-                ? StreamGraph.YAxisOnSize
-                : StreamGraph.YAxisOffSize)
-                + (isYTitleOn
-                    ? StreamGraph.YAxisLabelSize
-                    : StreamGraph.MinLabelSize),
-            width: number = this.viewport.width - (this.margin.right + this.data.xAxisValueMaxReservedTextSize) - leftMargin,
-            height: number = this.viewport.height + StreamGraph.XAxisLabelSize + StreamGraph.TickHeight;
+        
+        // Calculate available width for title, accounting for both left and right margins
+        const width: number = this.viewport.width - (this.margin.right + this.data.xAxisValueMaxReservedTextSize) - this.margin.left;
+        
+        // Position X-axis title below the axis and its labels
+        // The height includes the axis baseline plus space for labels and rotated label margins
+        const height: number = this.xAxisBaseline + baseBottomMargin - StreamGraph.TickHeight;
 
         let xAxisText: string = this.dataView.categorical.categories[0].source.displayName;
         const textSettings: TextProperties = StreamGraph.getTextPropertiesFunction(xAxisText, categoryAxisSettings.title);
@@ -1152,7 +1152,7 @@ export class StreamGraph implements IVisual {
             .style("text-decoration", categoryAxisSettings.title.underline.value ? "underline" : "none")
             .attr("transform", translate(
                 width / StreamGraph.AxisLabelMiddle,
-                height + shiftTitle))
+                height))
             .attr("fill", this.colorHelper.getHighContrastColor("foreground", categoryAxisSettings.title.color.value.value))
             .attr("dy", StreamGraph.XAxisLabelDy)
             .classed(StreamGraph.XAxisLabelSelector.className, true)
@@ -1206,12 +1206,14 @@ export class StreamGraph implements IVisual {
         duration: number,
         hasHighlights: boolean = false
     ): Selection<BaseType, StackedStackValue, any, any> {
-
         const { width, height } = this.viewport;
-
+        // Calculate left margin for Y-axis and Y-axis title
         this.margin.left = this.data.formattingSettings.valueAxis.options.show.value
             ? StreamGraph.YAxisOnSize + this.data.yAxisValueMaxTextSize
             : StreamGraph.YAxisOffSize;
+
+        // Add extra left margin for rotated X-axis labels
+        this.margin.left += this.getExtraLeftMarginForRotatedLabels();
 
         if (this.data.formattingSettings.valueAxis.title.show.value) {
             this.margin.left += StreamGraph.YAxisLabelSize;
