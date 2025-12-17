@@ -53,3 +53,8 @@ export enum DataOffset {
     Silhouette = 1,
     Expand = 2
 }
+
+export enum LabelOrientationMode {
+    Default = 0,
+    ForceRotate = 1
+}

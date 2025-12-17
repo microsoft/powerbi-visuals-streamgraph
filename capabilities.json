@@ -180,6 +180,12 @@
                     "type": {
                         "bool": true
                     }
+                },
+                "labelOrientationMode": {
+                    "type": {
+                        "text": true
+                    },
+                    "suppressFormatPainterCopy": true
                 }
             }
         },
