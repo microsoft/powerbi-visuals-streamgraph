@@ -1,38 +1,41 @@
 import powerbi from "powerbi-visuals-api";
-import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
-
-import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
+import { formattingSettings, formattingSettingsInterfaces } from "powerbi-visuals-utils-formattingmodel";
 import { legendInterfaces } from "powerbi-visuals-utils-chartutils";
-import { DataOrder, DataOffset, LabelOverlapHandling } from "./utils";
+import { DataOrder, DataOffset, LabelOrientationMode, LabelOverlapHandling } from "./utils";
+import { StreamGraphSeries } from "./dataInterfaces";
 import LegendPosition = legendInterfaces.LegendPosition;
+import ILocalizedItemMember = formattingSettingsInterfaces.ILocalizedItemMember;
+
 
 import Card = formattingSettings.SimpleCard;
 import CompositeCard = formattingSettings.CompositeCard;
 import Group = formattingSettings.Group;
 import Model = formattingSettings.Model;
+import ISelectionId = powerbi.visuals.ISelectionId;
 
-import IEnumMember = powerbi.IEnumMember;
-interface IEnumMemberWithDisplayNameKey extends IEnumMember{
-    key: string;
-}
 
-const dataOrderOptions : IEnumMemberWithDisplayNameKey[] = [
-    {value : DataOrder[DataOrder.None], displayName : "None", key: "Visual_DataOrder_None"}, 
-    {value : DataOrder[DataOrder.Ascending], displayName : "Ascending", key: "Visual_DataOrder_Ascending"},
-    {value : DataOrder[DataOrder.Descending], displayName : "Descending", key: "Visual_DataOrder_Descending"}, 
-    {value : DataOrder[DataOrder.InsideOut], displayName : "InsideOut", key: "Visual_DataOrder_InsideOut"}, 
-    {value : DataOrder[DataOrder.Reverse], displayName : "Reverse", key: "Visual_DataOrder_Reverse"}
+const dataOrderOptions : ILocalizedItemMember[] = [
+    {value : DataOrder[DataOrder.None], displayNameKey: "Visual_DataOrder_None"}, 
+    {value : DataOrder[DataOrder.Ascending], displayNameKey: "Visual_DataOrder_Ascending"},
+    {value : DataOrder[DataOrder.Descending], displayNameKey: "Visual_DataOrder_Descending"}, 
+    {value : DataOrder[DataOrder.InsideOut], displayNameKey: "Visual_DataOrder_InsideOut"}, 
+    {value : DataOrder[DataOrder.Reverse], displayNameKey: "Visual_DataOrder_Reverse"}
 ];
 
-const dataOffsetOptions : IEnumMemberWithDisplayNameKey[] = [
-    {value : DataOffset[DataOffset.Silhouette], displayName : "Silhouette", key: "Visual_DataOffset_Silhouette"},
-    {value : DataOffset[DataOffset.Expand], displayName : "Expand", key: "Visual_DataOffset_Expand"}
+const dataOffsetOptions : ILocalizedItemMember[] = [
+    {value : DataOffset[DataOffset.Silhouette], displayNameKey: "Visual_DataOffset_Silhouette"},
+    {value : DataOffset[DataOffset.Expand], displayNameKey: "Visual_DataOffset_Expand"}
 ];
 
-const labelOverlapHandlingOptions : IEnumMemberWithDisplayNameKey[] = [
-    {value : LabelOverlapHandling[LabelOverlapHandling.Standard], displayName : "Standard", key: "Visual_LabelOverlap_Standard"},
-    {value : LabelOverlapHandling[LabelOverlapHandling.HideOverlap], displayName : "Hide Overlap", key: "Visual_LabelOverlap_HideOverlap"},
-    {value : LabelOverlapHandling[LabelOverlapHandling.OffsetOverlap], displayName : "Offset Overlap", key: "Visual_LabelOverlap_OffsetOverlap"}
+const labelOverlapHandlingOptions : ILocalizedItemMember[] = [
+    {value : LabelOverlapHandling[LabelOverlapHandling.Standard],  displayNameKey: "Visual_LabelOverlap_Standard"},
+    {value : LabelOverlapHandling[LabelOverlapHandling.HideOverlap], displayNameKey: "Visual_LabelOverlap_HideOverlap"},
+    {value : LabelOverlapHandling[LabelOverlapHandling.OffsetOverlap], displayNameKey: "Visual_LabelOverlap_OffsetOverlap"}
+]; 
+
+const labelOrientationModeOptions : ILocalizedItemMember[] = [
+    {value : LabelOrientationMode[LabelOrientationMode.Default], displayNameKey: "Visual_LabelOrientation_Default"},
+    {value : LabelOrientationMode[LabelOrientationMode.ForceRotate], displayNameKey: "Visual_LabelOrientation_ForceRotate"}
 ];
 
 export class BaseFontCardSettings extends Card {
@@ -63,7 +66,7 @@ export class BaseFontCardSettings extends Card {
                 },
                 maxValue: {
                     type: powerbi.visuals.ValidatorType.Max,
-                    value: 60,
+                    value: 30,
                 }
             }
         });
@@ -118,14 +121,19 @@ class AxisTitleGroup extends BaseFontCardSettings {
 }
 
 class AxisOptionsGroup extends BaseFontCardSettings {
-    constructor(settingName: string, useHighPrecision: boolean = false){
+    constructor(settingName: string, useHighPrecision: boolean = false, showLabelOrientation: boolean = false){
         super();
 
         this.name = `optionsGroup${settingName}`;
         this.displayNameKey = `Visual_Values`;
         this.topLevelSlice = this.show;
 
-        this.slices = [...(useHighPrecision ? [this.highPrecision] : []), this.font, this.labelColor];
+        this.slices = [
+            ...(useHighPrecision ? [this.highPrecision] : []), 
+            this.font, 
+            this.labelColor,
+            ...(showLabelOrientation ? [this.labelOrientationMode] : [])
+        ];
     }
 
     public show = new formattingSettings.ToggleSwitch({
@@ -147,6 +155,14 @@ class AxisOptionsGroup extends BaseFontCardSettings {
         displayName: "High Precision",
         displayNameKey: "Visual_HighPrecision",
         value: false,
+    });
+
+    public labelOrientationMode = new formattingSettings.ItemDropdown({
+        items: labelOrientationModeOptions,
+        value: labelOrientationModeOptions[0],
+        displayName: "Label Orientation",
+        displayNameKey: "Visual_LabelOrientation",
+        name: "labelOrientationMode"
     });
 }
 
@@ -188,30 +204,30 @@ export class BaseAxisCardSettings extends CompositeCard {
     public options: AxisOptionsGroup;
     public groups: Group[];
 
-    constructor(name: string, displayNameKey: string, useHighPrecision: boolean = false){
+    constructor(name: string, displayNameKey: string, useHighPrecision: boolean = false, showLabelOrientation: boolean = false){
         super();
 
         this.name = name;
         this.displayNameKey = displayNameKey;
         this.title = new AxisTitleGroup(name);
-        this.options = new AxisOptionsGroup(name, useHighPrecision);
+        this.options = new AxisOptionsGroup(name, useHighPrecision, showLabelOrientation);
         this.groups = [this.options, this.title];
     }
 }
 
-const positionOptions : IEnumMember[] = [
-    {value : LegendPosition[LegendPosition.Top], displayName : "Top"}, 
-    {value : LegendPosition[LegendPosition.Bottom], displayName : "Bottom"},
-    {value : LegendPosition[LegendPosition.Left], displayName : "Left"}, 
-    {value : LegendPosition[LegendPosition.Right], displayName : "Right"}, 
-    {value : LegendPosition[LegendPosition.TopCenter], displayName : "TopCenter"}, 
-    {value : LegendPosition[LegendPosition.BottomCenter], displayName : "BottomCenter"}, 
-    {value : LegendPosition[LegendPosition.LeftCenter], displayName : "LeftCenter"}, 
-    {value : LegendPosition[LegendPosition.RightCenter], displayName : "RightCenter"}, 
+const positionOptions : ILocalizedItemMember[] = [
+    {value : LegendPosition[LegendPosition.Top], displayNameKey : "Visual_Top" }, 
+    {value : LegendPosition[LegendPosition.Bottom], displayNameKey : "Visual_Bottom"},
+    {value : LegendPosition[LegendPosition.Left], displayNameKey : "Visual_Left"}, 
+    {value : LegendPosition[LegendPosition.Right], displayNameKey : "Visual_Right"}, 
+    {value : LegendPosition[LegendPosition.TopCenter], displayNameKey : "Visual_TopCenter"}, 
+    {value : LegendPosition[LegendPosition.BottomCenter], displayNameKey : "Visual_BottomCenter"}, 
+    {value : LegendPosition[LegendPosition.LeftCenter], displayNameKey : "Visual_LeftCenter"}, 
+    {value : LegendPosition[LegendPosition.RightCenter], displayNameKey : "Visual_RightCenter"}, 
 ];
 
 class LegendOptionsGroup extends Card {
-    public defaultPosition: IEnumMember = positionOptions[0];
+    public defaultPosition: ILocalizedItemMember = positionOptions[0];
 
     public position = new formattingSettings.ItemDropdown({
         items: positionOptions,
@@ -363,33 +379,64 @@ export class GraphCurvatureCardSettings extends Card{
     displayNameKey: string = "Visual_Curvature";
     slices = [this.value];
 }
+export class StreamCardSettings extends CompositeCard {
+    name: string = "streams";
+    displayName: string = "Streams";
+    displayNameKey: string = "Visual_Streams";
+    groups: formattingSettings.Group[] = [];
+}
 
 export class StreamGraphSettingsModel extends Model {
     general = new GeneralCardSettings();
-    categoryAxis = new BaseAxisCardSettings("categoryAxis", "Visual_XAxis");
+    categoryAxis = new BaseAxisCardSettings("categoryAxis", "Visual_XAxis", false, true);
     valueAxis = new BaseAxisCardSettings("valueAxis", "Visual_YAxis", true);
     legend = new LegendCardSettings();
     dataLabels = new DataLabelsCardSettings();
     graphCurvature = new GraphCurvatureCardSettings();
-
+    streams = new StreamCardSettings();
     cards = [
         this.general,
         this.categoryAxis,
         this.valueAxis,
         this.legend,
         this.dataLabels,
-        this.graphCurvature
+        this.graphCurvature,
+        this.streams
     ];
 
-    public setLocalizedOptions(localizationManager: ILocalizationManager) {
-        this.setLocalizedDisplayName(dataOrderOptions, localizationManager);
-        this.setLocalizedDisplayName(dataOffsetOptions, localizationManager);
-        this.setLocalizedDisplayName(labelOverlapHandlingOptions, localizationManager);
-    }   
+  
+    public populateStreams(streams: StreamGraphSeries[]) {
+        
+        if (!streams || streams.length === 0) {
+            return;
+        }
+    
+        this.streams.groups = [];   
+        const colorSlices: formattingSettings.ColorPicker[] = [];
+        
+        for (const stream of streams) {
+            const identity: ISelectionId = <ISelectionId>stream.identity;
+            const displayName: string = stream.label;
+            const selector = identity.getSelector();
 
-    private setLocalizedDisplayName(options: IEnumMemberWithDisplayNameKey[], localizationManager: ILocalizationManager) {
-        options.forEach(option => {
-            option.displayName = localizationManager.getDisplayName(option.key)
+            const colorPicker = new formattingSettings.ColorPicker({
+                name: "fill",
+                displayName,
+                selector,
+                value: { value: stream.color },
+                visible: true
+            });
+            
+            colorSlices.push(colorPicker);
+        }
+
+        const colorsGroup = new formattingSettings.Group({
+            name: "colors",
+            displayName: "Colors",
+            displayNameKey: "Visual_Colors",
+            slices: colorSlices
         });
+        
+        this.streams.groups.push(colorsGroup);
     }
 }

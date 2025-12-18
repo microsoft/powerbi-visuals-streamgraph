@@ -7,13 +7,13 @@
             "name": "Category",
             "kind": "Grouping",
             "displayName": "Category",
-            "displayNameKey": "Role_DisplayName_Category"
+            "displayNameKey": "Visual_Role_DisplayName_Category"
         },
         {
             "name": "Series",
             "kind": "Grouping",
             "displayName": "Group",
-            "displayNameKey": "Role_DisplayName_Group"
+            "displayNameKey": "Visual_Role_DisplayName_Group"
         },
         {
             "name": "Y",
@@ -180,6 +180,12 @@
                     "type": {
                         "bool": true
                     }
+                },
+                "labelOrientationMode": {
+                    "type": {
+                        "text": true
+                    },
+                    "suppressFormatPainterCopy": true
                 }
             }
         },
@@ -413,6 +419,19 @@
                 "value": {
                     "type": {
                         "integer": true
+                    }
+                }
+            }
+        },
+        "streams": {
+            "properties": {
+                "fill": {
+                    "type": {
+                        "fill": {
+                            "solid": {
+                                "color": true
+                            }
+                        }
                     }
                 }
             }

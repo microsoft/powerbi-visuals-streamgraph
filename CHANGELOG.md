@@ -9,7 +9,7 @@
 * Bound data labels to streams
 * Simplified offset calculation logic
 * Fixed Y-axis font size resizing issues
-
+* Refactored localization logic to use ILocalizedItemMember
 
 ## 3.1.0.0
 
