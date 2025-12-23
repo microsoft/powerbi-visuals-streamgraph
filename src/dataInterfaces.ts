@@ -107,3 +107,23 @@ export interface StackedStackValue extends StackValue {
     key: string,
     index: number
 }
+
+export interface LabelStyleProperties {
+    color: string;
+    fontSize: string;
+    fontFamily: string;
+    fontWeight: string;
+    fontStyle: string;
+    textDecoration: string;
+    showValues: boolean;
+}
+
+export interface LabelDataItem {
+    x: number;
+    y: number;
+    text: string;
+    value: number | undefined;
+    highlight: boolean;
+    seriesIndex: number;
+    pointIndex: number;
+}

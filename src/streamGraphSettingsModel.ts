@@ -1,11 +1,11 @@
 import powerbi from "powerbi-visuals-api";
-import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
-
-import { formattingSettings } from "powerbi-visuals-utils-formattingmodel";
+import { formattingSettings, formattingSettingsInterfaces } from "powerbi-visuals-utils-formattingmodel";
 import { legendInterfaces } from "powerbi-visuals-utils-chartutils";
-import { DataOrder, DataOffset,LabelOrientationMode } from "./utils";
+import { DataOrder, DataOffset, LabelOrientationMode, LabelOverlapHandling } from "./utils";
 import { StreamGraphSeries } from "./dataInterfaces";
 import LegendPosition = legendInterfaces.LegendPosition;
+import ILocalizedItemMember = formattingSettingsInterfaces.ILocalizedItemMember;
+
 
 import Card = formattingSettings.SimpleCard;
 import CompositeCard = formattingSettings.CompositeCard;
@@ -13,27 +13,29 @@ import Group = formattingSettings.Group;
 import Model = formattingSettings.Model;
 import ISelectionId = powerbi.visuals.ISelectionId;
 
-import IEnumMember = powerbi.IEnumMember;
-interface IEnumMemberWithDisplayNameKey extends IEnumMember{
-    key: string;
-}
 
-const dataOrderOptions : IEnumMemberWithDisplayNameKey[] = [
-    {value : DataOrder[DataOrder.None], displayName : "None", key: "Visual_DataOrder_None"}, 
-    {value : DataOrder[DataOrder.Ascending], displayName : "Ascending", key: "Visual_DataOrder_Ascending"},
-    {value : DataOrder[DataOrder.Descending], displayName : "Descending", key: "Visual_DataOrder_Descending"}, 
-    {value : DataOrder[DataOrder.InsideOut], displayName : "InsideOut", key: "Visual_DataOrder_InsideOut"}, 
-    {value : DataOrder[DataOrder.Reverse], displayName : "Reverse", key: "Visual_DataOrder_Reverse"}
+const dataOrderOptions : ILocalizedItemMember[] = [
+    {value : DataOrder[DataOrder.None], displayNameKey: "Visual_DataOrder_None"}, 
+    {value : DataOrder[DataOrder.Ascending], displayNameKey: "Visual_DataOrder_Ascending"},
+    {value : DataOrder[DataOrder.Descending], displayNameKey: "Visual_DataOrder_Descending"}, 
+    {value : DataOrder[DataOrder.InsideOut], displayNameKey: "Visual_DataOrder_InsideOut"}, 
+    {value : DataOrder[DataOrder.Reverse], displayNameKey: "Visual_DataOrder_Reverse"}
 ];
 
-const dataOffsetOptions : IEnumMemberWithDisplayNameKey[] = [
-    {value : DataOffset[DataOffset.Silhouette], displayName : "Silhouette", key: "Visual_DataOffset_Silhouette"},
-    {value : DataOffset[DataOffset.Expand], displayName : "Expand", key: "Visual_DataOffset_Expand"}
+const dataOffsetOptions : ILocalizedItemMember[] = [
+    {value : DataOffset[DataOffset.Silhouette], displayNameKey: "Visual_DataOffset_Silhouette"},
+    {value : DataOffset[DataOffset.Expand], displayNameKey: "Visual_DataOffset_Expand"}
 ];
 
-const labelOrientationModeOptions : IEnumMemberWithDisplayNameKey[] = [
-    {value : LabelOrientationMode[LabelOrientationMode.Default], displayName : "Default (Auto)", key: "Visual_LabelOrientation_Default"},
-    {value : LabelOrientationMode[LabelOrientationMode.ForceRotate], displayName : "Force Rotate", key: "Visual_LabelOrientation_ForceRotate"}
+const labelOverlapHandlingOptions : ILocalizedItemMember[] = [
+    {value : LabelOverlapHandling[LabelOverlapHandling.Standard],  displayNameKey: "Visual_LabelOverlap_Standard"},
+    {value : LabelOverlapHandling[LabelOverlapHandling.HideOverlap], displayNameKey: "Visual_LabelOverlap_HideOverlap"},
+    {value : LabelOverlapHandling[LabelOverlapHandling.OffsetOverlap], displayNameKey: "Visual_LabelOverlap_OffsetOverlap"}
+]; 
+
+const labelOrientationModeOptions : ILocalizedItemMember[] = [
+    {value : LabelOrientationMode[LabelOrientationMode.Default], displayNameKey: "Visual_LabelOrientation_Default"},
+    {value : LabelOrientationMode[LabelOrientationMode.ForceRotate], displayNameKey: "Visual_LabelOrientation_ForceRotate"}
 ];
 
 export class BaseFontCardSettings extends Card {
@@ -213,19 +215,19 @@ export class BaseAxisCardSettings extends CompositeCard {
     }
 }
 
-const positionOptions : IEnumMember[] = [
-    {value : LegendPosition[LegendPosition.Top], displayName : "Top"}, 
-    {value : LegendPosition[LegendPosition.Bottom], displayName : "Bottom"},
-    {value : LegendPosition[LegendPosition.Left], displayName : "Left"}, 
-    {value : LegendPosition[LegendPosition.Right], displayName : "Right"}, 
-    {value : LegendPosition[LegendPosition.TopCenter], displayName : "TopCenter"}, 
-    {value : LegendPosition[LegendPosition.BottomCenter], displayName : "BottomCenter"}, 
-    {value : LegendPosition[LegendPosition.LeftCenter], displayName : "LeftCenter"}, 
-    {value : LegendPosition[LegendPosition.RightCenter], displayName : "RightCenter"}, 
+const positionOptions : ILocalizedItemMember[] = [
+    {value : LegendPosition[LegendPosition.Top], displayNameKey : "Visual_Top" }, 
+    {value : LegendPosition[LegendPosition.Bottom], displayNameKey : "Visual_Bottom"},
+    {value : LegendPosition[LegendPosition.Left], displayNameKey : "Visual_Left"}, 
+    {value : LegendPosition[LegendPosition.Right], displayNameKey : "Visual_Right"}, 
+    {value : LegendPosition[LegendPosition.TopCenter], displayNameKey : "Visual_TopCenter"}, 
+    {value : LegendPosition[LegendPosition.BottomCenter], displayNameKey : "Visual_BottomCenter"}, 
+    {value : LegendPosition[LegendPosition.LeftCenter], displayNameKey : "Visual_LeftCenter"}, 
+    {value : LegendPosition[LegendPosition.RightCenter], displayNameKey : "Visual_RightCenter"}, 
 ];
 
 class LegendOptionsGroup extends Card {
-    public defaultPosition: IEnumMember = positionOptions[0];
+    public defaultPosition: ILocalizedItemMember = positionOptions[0];
 
     public position = new formattingSettings.ItemDropdown({
         items: positionOptions,
@@ -328,10 +330,18 @@ export class DataLabelsCardSettings extends BaseFontCardSettings {
         value: { value: "#888888" }
     });
 
+    overlapHandling = new formattingSettings.ItemDropdown({
+        name: "overlapHandling",
+        items: labelOverlapHandlingOptions,
+        value: labelOverlapHandlingOptions[0],
+        displayName: "Label Overlap Handling",
+        displayNameKey: "Visual_LabelOverlapHandling",
+    });
+
     name: string = "labels";
     displayName: string = "Data Labels";
     displayNameKey: string = "Visual_DataPointsLabels";
-    slices = [this.showValues, this.font, this.color];
+    slices = [this.showValues, this.font, this.color, this.overlapHandling];
 
     constructor(){
         super();
@@ -394,17 +404,6 @@ export class StreamGraphSettingsModel extends Model {
         this.streams
     ];
 
-    public setLocalizedOptions(localizationManager: ILocalizationManager) {
-        this.setLocalizedDisplayName(dataOrderOptions, localizationManager);
-        this.setLocalizedDisplayName(dataOffsetOptions, localizationManager);
-        this.setLocalizedDisplayName(labelOrientationModeOptions, localizationManager);
-    }   
-
-    private setLocalizedDisplayName(options: IEnumMemberWithDisplayNameKey[], localizationManager: ILocalizationManager) {
-        options.forEach(option => {
-            option.displayName = localizationManager.getDisplayName(option.key)
-        });
-    }
   
     public populateStreams(streams: StreamGraphSeries[]) {
         

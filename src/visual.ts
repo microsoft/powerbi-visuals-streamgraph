@@ -57,10 +57,10 @@ import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 import IVisualEventService = powerbi.extensibility.IVisualEventService;
 
 import { DefaultOpacity, DataOrder, DataOffset, LabelOrientationMode } from "./utils";
-import { StreamGraphSettingsModel, BaseAxisCardSettings, DataLabelsCardSettings, LegendTitleGroup, LegendCardSettings, BaseFontCardSettings } from "./streamGraphSettingsModel";
+import { StreamGraphSettingsModel, BaseAxisCardSettings, LegendTitleGroup, LegendCardSettings, BaseFontCardSettings } from "./streamGraphSettingsModel";
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
 import { createTooltipInfo } from "./tooltipBuilder";
-import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue, StackedStackValue } from "./dataInterfaces";
+import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue, StackedStackValue, LabelStyleProperties, LabelDataItem } from "./dataInterfaces";
 
 
 // powerbi.extensibility.utils.svg
@@ -80,13 +80,12 @@ import IInteractiveBehavior = interactivityBaseService.IInteractiveBehavior;
 import createInteractivitySelectionService = interactivitySelectionService.createInteractivitySelectionService;
 
 // powerbi.extensibility.utils.chart
-import { legendInterfaces, axis, legend, dataLabelUtils, dataLabelInterfaces, axisInterfaces } from "powerbi-visuals-utils-chartutils";
+import { legendInterfaces, axis, legend, axisInterfaces } from "powerbi-visuals-utils-chartutils";
 import ILegend = legendInterfaces.ILegend;
 import LegendData = legendInterfaces.LegendData;
 import createLegend = legend.createLegend;
 import LegendPosition = legendInterfaces.LegendPosition;
 import AxisHelper = axis;
-import ILabelLayout = dataLabelInterfaces.ILabelLayout;
 import IAxisProperties = axisInterfaces.IAxisProperties;
 import LegendDataPoint = legendInterfaces.LegendDataPoint;
 import { positionChartArea } from "powerbi-visuals-utils-chartutils/lib/legend/legend";
@@ -143,7 +142,19 @@ export class StreamGraph implements IVisual {
         fill: { objectName: "streams", propertyName: "fill" }
     };
 
-    private static DefaultDataLabelsOffset: number = 4;
+    // Cache style properties
+    private cachedLabelStyles: LabelStyleProperties | null = null;
+    private lastStyleUpdate: number = 0;
+    private readonly STYLE_CACHE_DURATION = 1000; // 1 second cache
+    
+    // Data Labels Constants
+    private static LabelPaddingVertical: number = 8;
+    private static LabelPaddingVerticalReduced: number = 4;
+    private static LabelOffsetSpacing: number = 2;
+    private static LabelWidthCharacterMultiplier: number = 0.6;
+    private static MinLabelWidth: number = 4;
+    private static MaxOverlapIterations: number = 5;
+    
     // Axis
     private static Axes: ClassAndSelector = createClassAndSelector("axes");
     private static Axis: ClassAndSelector = createClassAndSelector("axis");
@@ -170,6 +181,7 @@ export class StreamGraph implements IVisual {
     private static YAxisLabelAngle: string = "rotate(-90)";
     private static CategoryTextRotationDegree: number = 45.0;
     private static YAxisLabelDy: number = 30;
+    private static YAxisMaxTextWidth: number = 80;
     private static XAxisLabelDy: string = "0.3em";
     private static RotatedLabelMarginFactor: number = 0.4;
     private static MaxRotatedLabelMargin: number = 50;
@@ -208,6 +220,7 @@ export class StreamGraph implements IVisual {
     private svg: Selection<BaseType, any, any, any>;
     private clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
     private dataPointsContainer: Selection<BaseType, StreamGraphSeries, any, any>;
+    private labelsSelection: Selection<BaseType, any, any, any>;
 
     private localizationManager: ILocalizationManager;
     private selectionManager: ISelectionManager;
@@ -252,7 +265,7 @@ export class StreamGraph implements IVisual {
         }
 
         let xMaxValue: number = -Number.MAX_VALUE;
-        let xLongestText : string = ""; //will contain the longest text in X Axis, used to calculate right margin offsets
+        let xLongestText : string = ""; // will contain the longest text in X Axis, used to calculate right margin offsets
         let xMinValue: number = Number.MAX_VALUE;
         let yMaxValue: number = -Number.MAX_VALUE;
         let yMinValue: number = Number.MAX_VALUE;
@@ -480,7 +493,7 @@ export class StreamGraph implements IVisual {
             fontSize: PixelConverter.toString(formattingSettings.categoryAxis.options.fontSize.value)
         };
         const xAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textProperties);
-        const xAxisValueMaxReservedTextSize: number = xAxisValueMaxTextSize * 1.15; //reserve additional space
+        const xAxisValueMaxReservedTextSize: number = xAxisValueMaxTextSize * 1.15; // reserve additional space
         const textPropertiesY: TextProperties = {
             text: yMaxValue.toString(),
             fontFamily: "sans-serif",
@@ -713,6 +726,7 @@ export class StreamGraph implements IVisual {
                 series: this.data.series,
                 clearCatcher: this.clearCatcher,
                 dataPoints: this.data.series,
+                labelsSelection: this.labelsSelection,
                 interactivityServiceOptions: {
                     overrideSelectionFromData: true
                 }
@@ -919,7 +933,7 @@ export class StreamGraph implements IVisual {
                 const shiftX: number = (<any>this).getBBox().width / Math.tan(StreamGraph.CategoryTextRotationDegree * Math.PI / 180) / 2.0;
                 const shiftY: number = (<any>this).getBBox().width * Math.tan(StreamGraph.CategoryTextRotationDegree * Math.PI / 180) / 2.0;
                 const currTransform: string = (<any>this).attributes.transform.value;
-                const translate: [number, number, number] = StreamGraph.getTranslation(currTransform);
+                const translate: [number, number, number] = StreamGraph.parseSvgTransformToTranslateAndRotation(currTransform);
                 select(<any>this)
                     .attr("transform", () => {
                         return manipulation.translate(+translate[0] - shiftX, +translate[1] + shiftY);
@@ -927,11 +941,7 @@ export class StreamGraph implements IVisual {
             });
         } else {
            xAxisTextNodes
-            .style("text-anchor", (_, i, nodes) =>
-                i === 0 ? "start" :
-                i === nodes.length - 1 ? "end" :
-                "middle"
-            )
+            .attr("text-anchor", "middle")
             .attr("dx", StreamGraph.AxisTextNodeDXForAngel0)
             .attr("dy", StreamGraph.AxisTextNodeDYForAngel0)
             .attr("transform", null);
@@ -940,7 +950,7 @@ export class StreamGraph implements IVisual {
         }
     }
 
-     public static getTranslation(transform: string): [number, number, number] {
+    public static parseSvgTransformToTranslateAndRotation(transform: string): [number, number, number] {
         // eslint-disable-next-line powerbi-visuals/no-http-string
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.setAttributeNS(null, "transform", transform);
@@ -983,19 +993,6 @@ export class StreamGraph implements IVisual {
         return requiredHeight;
     }
 
-    /**
-     * Calculates the additional left margin needed for rotated X-axis labels.
-     * This prevents rotated labels from being clipped at the left edge of the visual.
-     * returns the extra margin in pixels, or 0 if labels are not rotated
-     */
-    private getExtraLeftMarginForRotatedLabels(): number {
-        const orientationMode = this.data.formattingSettings.categoryAxis.options.labelOrientationMode.value.value;
-        if (orientationMode !== LabelOrientationMode[LabelOrientationMode.ForceRotate]) {
-            return 0;
-        }
-        const rotatedLabelHeight = this.calculateXAxisAdditionalHeight(this.data.categoriesText);
-        return Math.min(rotatedLabelHeight * StreamGraph.RotatedLabelMarginFactor, StreamGraph.MaxRotatedLabelMargin);
-    }
     
     private renderYAxis(effectiveHeight: number, metaDataColumnPercent: powerbi.DataViewMetadataColumn): void {
         this.yAxisProperties = AxisHelper.createAxis({
@@ -1032,7 +1029,7 @@ export class StreamGraph implements IVisual {
         this.margin.left = baseMarginLeft;
         
         // Add extra left margin for rotated X-axis labels
-        const extraRotatedMargin = this.getExtraLeftMarginForRotatedLabels();
+        const extraRotatedMargin = this.getRotatedXAxisLabelMargin();
         this.margin.left += extraRotatedMargin;
 
         if (valueAxisSettings.title.show.value) {
@@ -1117,7 +1114,7 @@ export class StreamGraph implements IVisual {
 
         const categoryAxisSettings: BaseAxisCardSettings = this.data.formattingSettings.categoryAxis;
         const isXAxisOn: boolean = categoryAxisSettings.options.show.value;
-        const additionalMarginForRotation = this.getAdditionalMarginForRotatedLabels();
+        const additionalMarginForRotation = this.getRotatedXAxisLabelMargin();
         
         // Calculate the base bottom margin (axis + labels + rotation space)
         const baseBottomMargin = isXAxisOn
@@ -1164,42 +1161,6 @@ export class StreamGraph implements IVisual {
             textMeasurementService.svgEllipsis);
     }
 
-    private static getStreamGraphLabelLayout(
-        xScale: ScaleLinear<number, number>,
-        yScale: ScaleLinear<number, number>,
-        dataLabels: DataLabelsCardSettings,
-        colorPalette: ISandboxExtendedColorPalette
-    ): ILabelLayout {
-
-        const colorHelper = new ColorHelper(colorPalette);
-        const color = dataLabels.color.value.value;
-
-        const fontSize: string = PixelConverter.fromPoint(dataLabels.fontSize.value);
-        const fontFamily = dataLabels.font.fontFamily.value;
-        const bold = dataLabels.font.bold.value ? "bold" : "normal";
-        const italic = dataLabels.font.italic.value ? "italic" : "normal";
-        const underline = dataLabels.font.underline.value ? "underline" : "none";
-
-        return {
-            labelText: (d) => d.text + (dataLabels.showValues.value ? " " + d.value : ""),
-            labelLayout: {
-                x: (d) => xScale(d.x),
-                y: (d) => yScale(d.y0)
-            },
-            filter: (d: StreamDataPoint) => {
-                return d != null && d.text != null;
-            },
-            style: {
-                "fill": colorHelper.getHighContrastColor("foreground", color),
-                "font-size": fontSize,
-                "font-family": fontFamily,
-                "font-weight": bold,
-                "font-style": italic,
-                "text-decoration": underline
-            },
-        };
-    }
-
     private renderChart(
         series: StreamGraphSeries[],
         stackedSeries: Series<any, any>[],
@@ -1209,17 +1170,17 @@ export class StreamGraph implements IVisual {
         const { width, height } = this.viewport;
         // Calculate left margin for Y-axis and Y-axis title
         this.margin.left = this.data.formattingSettings.valueAxis.options.show.value
-            ? StreamGraph.YAxisOnSize + this.data.yAxisValueMaxTextSize
+            ? StreamGraph.YAxisOnSize + Math.min(this.data.yAxisValueMaxTextSize, StreamGraph.YAxisMaxTextWidth)
             : StreamGraph.YAxisOffSize;
 
         // Add extra left margin for rotated X-axis labels
-        this.margin.left += this.getExtraLeftMarginForRotatedLabels();
+        this.margin.left += this.getRotatedXAxisLabelMargin();
 
         if (this.data.formattingSettings.valueAxis.title.show.value) {
             this.margin.left += StreamGraph.YAxisLabelSize;
         }
 
-        const additionalMarginForRotation = this.getAdditionalMarginForRotatedLabels();
+        const additionalMarginForRotation = this.getRotatedXAxisLabelMargin();
         this.margin.bottom = this.data.formattingSettings.categoryAxis.options.show.value
             ? StreamGraph.XAxisOnSize + this.data.xAxisFontSize + additionalMarginForRotation
             : StreamGraph.XAxisOffSize;
@@ -1270,9 +1231,7 @@ export class StreamGraph implements IVisual {
             .classed(StreamGraph.LayerSelector.className, true)
             .style("opacity", DefaultOpacity)
             .style("fill", (d, index) => isHighContrast ? null : series[index].color)
-            .style("stroke", (d, index) => isHighContrast ? series[index].color : null);
-
-        selectionMerged
+            .style("stroke", (d, index) => isHighContrast ? series[index].color : null)
             .attr("tabindex", 0)
             .attr("focusable", true);
 
@@ -1281,109 +1240,456 @@ export class StreamGraph implements IVisual {
             .duration(duration)
             .attr("d", areaVar);
 
-        selectionMerged
-            .selectAll("path")
-            .append("g")
-            .classed(StreamGraph.DataPointsContainer, true);
-
         selection
             .exit()
             .remove();
 
-        this.renderDataLabels(series, stackedSeries, yScale, hasHighlights);
+        this.renderDataLabels(series, stackedSeries, xScale, yScale, hasHighlights);
 
         return selectionMerged;
     }
 
-    private renderDataLabels(series: StreamGraphSeries[], stackedSeries: Series<any, any>[], yScale: ScaleLinear<number, number>, hasHighlights: boolean): void {
-        if (!this.data.formattingSettings.dataLabels.show.value) {
-            dataLabelUtils.cleanDataLabels(this.svg);
+    private renderDataLabels(
+        series: StreamGraphSeries[], 
+        stackedSeries: Series<any, any>[], 
+        xScale: ScaleLinear<number, number>, 
+        yScale: ScaleLinear<number, number>, 
+        hasHighlights: boolean
+    ): void {
+        if (!this.data?.formattingSettings?.dataLabels?.show?.value) {
+            this.clearDataLabels();
             return;
         }
 
-        const { width, height } = this.viewport;
-        const margin = this.margin;
+        const dataLabelsSettings = this.data.formattingSettings.dataLabels;
+        const styleProperties = this.extractLabelStyleProperties(dataLabelsSettings);
+        
+        const labelsContainer = this.createOrUpdateLabelsContainer();
+        const streamLabelGroups = this.createStreamLabelGroups(labelsContainer, stackedSeries);
 
-        const labelsXScale: ScaleLinear<number, number> = scaleLinear()
-            .domain([0, series[0].dataPoints.length - 1])
-            .range([0, width - margin.left - this.margin.right - this.data.xAxisValueMaxReservedTextSize]);
+        // Collect all labels first for overlap detection
+        const allLabelData: LabelDataItem[] = [];
 
-        const layout: ILabelLayout = StreamGraph.getStreamGraphLabelLayout(
-            labelsXScale,
-            yScale,
-            this.data.formattingSettings.dataLabels,
-            this.colorPalette);
+        // Process each stream's labels
+        streamLabelGroups.each((seriesItem: Series<any, any>, seriesIndex: number) => {
+            const labelData = this.prepareLabelData(
+                seriesItem,
+                series[seriesIndex],
+                seriesIndex,
+                xScale,
+                yScale,
+                hasHighlights
+            );
+            allLabelData.push(...labelData);
+        });
 
-        // Merge all points into a single array
-        let dataPointsArray: StreamDataPoint[] = [];
+        // Apply overlap handling
+        const processedLabels = this.applyOverlapHandling(allLabelData, dataLabelsSettings);
 
-        stackedSeries.forEach((seriesItem: Series<any, any>) => {
-            const filteredDataPoints: any[] = seriesItem.filter((dataPoint: any) => {
-                return dataPoint && dataPoint[0] !== null && dataPoint[0] !== undefined;
-            }).map((dataPoint: any) => {
-                return {
-                    x: dataPoint.data.x,
-                    y0: dataPoint[0],
-                    y: dataPoint[1],
-                    text: seriesItem.key,
-                    value: dataPoint.data[seriesItem.key],
-                    highlight: dataPoint.data.highlight
-                };
-            });
+        // Render processed labels
+        streamLabelGroups.each((seriesItem: Series<any, any>, seriesIndex: number) => {
+            const streamLabels = processedLabels.filter(label => label.seriesIndex === seriesIndex);
+            this.renderStreamLabels(
+                select(streamLabelGroups.nodes()[seriesIndex]),
+                streamLabels,
+                dataLabelsSettings,
+                styleProperties
+            );
+        });
 
-            if (filteredDataPoints.length > 0) {
-                dataPointsArray = dataPointsArray.concat(filteredDataPoints);
+        this.labelsSelection = streamLabelGroups;
+    }
+
+    //Clears all data labels from the visualization
+    private clearDataLabels(): void {
+        const labelsContainer = this.svg.selectAll(".data-labels-container");
+        if (!labelsContainer.empty()) {
+            labelsContainer.remove();
+        }
+        
+        // Clear references to prevent memory leaks
+        this.labelsSelection = null;
+        this.cachedLabelStyles = null;
+        this.lastStyleUpdate = 0;
+    }
+
+    // Extracts and processes style properties for labels
+    private extractLabelStyleProperties(dataLabelsSettings: any): LabelStyleProperties {
+        const now = Date.now();
+        
+        // Use cached styles if available and recent
+        if (this.cachedLabelStyles && 
+            (now - this.lastStyleUpdate) < this.STYLE_CACHE_DURATION) {
+            return this.cachedLabelStyles;
+        }
+
+        const styles: LabelStyleProperties = {
+            color: dataLabelsSettings?.color?.value?.value || "#000000",
+            fontSize: PixelConverter.fromPoint(dataLabelsSettings?.fontSize?.value || 12),
+            fontFamily: dataLabelsSettings?.font?.fontFamily?.value || "Arial",
+            fontWeight: dataLabelsSettings?.font?.bold?.value ? "bold" : "normal",
+            fontStyle: dataLabelsSettings?.font?.italic?.value ? "italic" : "normal",
+            textDecoration: dataLabelsSettings?.font?.underline?.value ? "underline" : "none",
+            showValues: dataLabelsSettings?.showValues?.value || false
+        };
+        
+        // Cache the styles for performance
+        this.cachedLabelStyles = styles;
+        this.lastStyleUpdate = now;
+        
+        return styles;
+    }
+
+   // Creates or updates the main labels container
+    private createOrUpdateLabelsContainer(): Selection<BaseType, any, any, any> {
+        const labelsContainer = this.svg
+            .selectAll(".data-labels-container")
+            .data([0]);
+
+        const labelsContainerEnter = labelsContainer
+            .enter()
+            .append("g")
+            .classed("data-labels-container", true)
+            .attr("role", "group") // Accessibility
+            .attr("aria-label", "Data labels");
+
+        return labelsContainerEnter.merge(labelsContainer as any);
+    }
+
+    // Creates and manages stream label groups
+    private createStreamLabelGroups(
+        labelsContainer: Selection<BaseType, any, any, any>, 
+        stackedSeries: Series<any, any>[]
+    ): Selection<BaseType, any, any, any> {
+        const streamLabelGroups = labelsContainer
+            .selectAll(".stream-label-group")
+            .data(stackedSeries, (d: any, i: number) => i.toString());
+        const streamLabelGroupsEnter = streamLabelGroups
+            .enter()
+            .append("g")
+            .classed("stream-label-group", true)
+            .attr("data-stream-index", (d: any, i: number) => i)
+            .attr("aria-label", (d: any, i: number) => `Stream ${i + 1} labels`);
+
+        const streamLabelGroupsMerged = streamLabelGroupsEnter.merge(streamLabelGroups as any);
+        streamLabelGroups.exit().remove();
+
+        return streamLabelGroupsMerged;
+    }
+
+    // Renders labels for a specific stream
+    private renderStreamLabels(
+        streamGroup: Selection<BaseType, any, any, any>,
+        labelData: LabelDataItem[],
+        dataLabelsSettings: any,
+        styleProperties: LabelStyleProperties
+    ): void {
+        if (!streamGroup || streamGroup.empty()) {
+            return;
+        }
+
+        const labels = streamGroup
+            .selectAll("text.data-labels")
+            .data(labelData, (d: LabelDataItem) => `${d.seriesIndex}-${d.pointIndex}`);
+
+        labels.exit().remove();
+
+        const labelsEnter = labels
+            .enter()
+            .append("text")
+            .classed("data-labels", true);
+
+        const labelsMerged = labelsEnter.merge(labels as any);
+
+        // Apply styles and attributes
+        this.applyLabelStyles(labelsMerged, dataLabelsSettings, styleProperties);
+    }
+
+    /**
+     * Prepares label data for a specific series with optimized filtering
+     */
+    private prepareLabelData(
+        seriesItem: Series<any, any>,
+        seriesData: StreamGraphSeries,
+        seriesIndex: number,
+        xScale: ScaleLinear<number, number>,
+        yScale: ScaleLinear<number, number>,
+        hasHighlights: boolean
+    ): LabelDataItem[] {
+        const labelData: LabelDataItem[] = [];
+        
+        seriesItem.forEach((dataPoint: any, pointIndex: number) => {
+            if (this.isValidDataPoint(dataPoint)) {
+                const labelItem = this.createLabelItem(
+                    dataPoint, 
+                    seriesData, 
+                    seriesIndex, 
+                    pointIndex, 
+                    xScale, 
+                    yScale
+                );
+                
+                if (labelItem && this.shouldIncludeLabel(labelItem, hasHighlights)) {
+                    labelData.push(labelItem);
+                }
             }
         });
 
-        const viewport: IViewport = {
-            height: height,
-            width: width - (this.margin.right + this.data.xAxisValueMaxReservedTextSize) - margin.left,
+        return labelData;
+    }
+
+    // Checks if a data point is valid for labeling
+    private isValidDataPoint(dataPoint: any): boolean {
+        return dataPoint && dataPoint[0] !== null && dataPoint[0] !== undefined;
+    }
+
+    private createLabelItem(
+        dataPoint: any,
+        seriesData: StreamGraphSeries,
+        seriesIndex: number,
+        pointIndex: number,
+        xScale: ScaleLinear<number, number>,
+        yScale: ScaleLinear<number, number>
+    ): LabelDataItem {
+        // Calculate the actual value for the data point
+        const actualValue = dataPoint[1] - dataPoint[0];
+        
+        return {
+            x: xScale(dataPoint.data.x),
+            y: yScale((dataPoint[0] + dataPoint[1]) / 2),
+            text: seriesData.label,
+            value: actualValue,
+            highlight: dataPoint.data.highlight,
+            seriesIndex: seriesIndex,
+            pointIndex: pointIndex
+        };
+    }
+
+    private shouldIncludeLabel(labelItem: LabelDataItem, hasHighlights: boolean): boolean {
+        if (hasHighlights) {
+            return labelItem.highlight && labelItem.value !== StreamGraph.DefaultValue;
+        }
+        return true;
+    }
+
+    // Applies styling to label elements with accessibility
+    private applyLabelStyles(
+        labelsMerged: Selection<BaseType, LabelDataItem, any, any>, 
+        dataLabelsSettings: any, 
+        styleProperties: LabelStyleProperties
+    ): void {
+        if (!labelsMerged || labelsMerged.empty()) {
+            return;
+        }
+
+        labelsMerged
+            .text((d: LabelDataItem) => this.formatLabelText(d, styleProperties.showValues))
+            .attr("x", (d: LabelDataItem) => d.x)
+            .attr("y", (d: LabelDataItem) => d.y)
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle")
+            .attr("aria-label", (d: LabelDataItem) => 
+                `${d.text}${styleProperties.showValues && d.value !== undefined ? ': ' + d.value : ''}`
+            )
+            .style("fill", this.colorHelper.getHighContrastColor("foreground", styleProperties.color))
+            .style("font-size", styleProperties.fontSize)
+            .style("font-family", styleProperties.fontFamily)
+            .style("font-weight", styleProperties.fontWeight)
+            .style("font-style", styleProperties.fontStyle)
+            .style("text-decoration", styleProperties.textDecoration)
+            .style("pointer-events", "none")
+            .style("user-select", "none");
+    }
+
+    private formatLabelText(labelData: LabelDataItem, showValues: boolean): string {
+        const baseText = labelData.text;
+        if (showValues && labelData.value !== undefined) {
+            return `${baseText} ${labelData.value}`;
+        }
+        return baseText;
+    }
+
+    /**
+     * Calculates the width of a label based on the actual formatted text that will be displayed
+     */
+    private getLabelWidth(label: LabelDataItem, dataLabelsSettings: any, styleProperties?: LabelStyleProperties): number {
+        // Use styleProperties if provided, otherwise extract fontSize
+        const fontSize = styleProperties 
+            ? parseFloat(styleProperties.fontSize)
+            : (dataLabelsSettings?.fontSize?.value || 12);
+        const showValues = dataLabelsSettings?.showValues?.value || false;
+        
+        // Get the actual text that will be displayed
+        const displayText = this.formatLabelText(label, showValues);
+        
+        // Use actual text measurement for accurate width calculation
+        const textProperties: TextProperties = {
+            text: displayText || "Sample", // Fallback text for measurement
+            fontFamily: styleProperties?.fontFamily || dataLabelsSettings?.font?.fontFamily?.value || "Arial",
+            fontSize: PixelConverter.toString(fontSize)
+        };
+        
+        const measuredWidth = textMeasurementService.measureSvgTextWidth(textProperties);
+        
+        // Return measured width with a small buffer for safety
+        return Math.max(measuredWidth * 1.1, fontSize * StreamGraph.MinLabelWidth);
+    }
+
+    private applyOverlapHandling(labelData: LabelDataItem[], dataLabelsSettings: any): LabelDataItem[] {
+        const overlapHandling = dataLabelsSettings?.overlapHandling?.value?.value;        
+        // Handle both numeric enum values and enum name strings
+        if (!overlapHandling || overlapHandling === "Standard" || overlapHandling === "0") {
+            return labelData;
+        }
+
+        if (overlapHandling === "HideOverlap" || overlapHandling === "1") {
+            return this.hideOverlappingLabels(labelData, dataLabelsSettings);
+        }
+
+        if (overlapHandling === "OffsetOverlap" || overlapHandling === "2") {
+            return this.offsetOverlappingLabels(labelData, dataLabelsSettings);
+        }
+
+        return labelData;
+    }
+
+ 
+    // Hides overlapping labels by removing them from the array
+    private hideOverlappingLabels(labelData: LabelDataItem[], dataLabelsSettings: any): LabelDataItem[] {
+        const processedLabels: LabelDataItem[] = [];
+        const styleProperties = this.extractLabelStyleProperties(dataLabelsSettings);
+        const fontSize = parseFloat(styleProperties.fontSize);
+        const labelHeight = fontSize + StreamGraph.LabelPaddingVertical; // More generous padding
+        
+        // Cache width calculations to avoid expensive text measurement in nested loops
+        const widthCache = new Map<string, number>();
+        const getCachedWidth = (label: LabelDataItem): number => {
+            const key = `${label.seriesIndex}-${label.pointIndex}`;
+            if (!widthCache.has(key)) {
+                widthCache.set(key, this.getLabelWidth(label, dataLabelsSettings, styleProperties));
+            }
+            return widthCache.get(key)!;
+        };
+        
+        // Sort labels by x position (left to right) for better distribution
+        const sortedLabels = [...labelData].sort((a, b) => a.x - b.x);
+
+        for (const currentLabel of sortedLabels) {
+            let hasOverlap = false;
+            const currentWidth = getCachedWidth(currentLabel);
+
+            // Check if current label overlaps with any already processed label
+            for (const existingLabel of processedLabels) {
+                const existingWidth = getCachedWidth(existingLabel);
+                const maxWidth = Math.max(currentWidth, existingWidth);
+                
+                if (this.labelsOverlap(currentLabel, existingLabel, maxWidth, labelHeight)) {
+                    hasOverlap = true;
+                    break;
+                }
+            }
+
+            // Only add label if it doesn't overlap with existing ones
+            if (!hasOverlap) {
+                processedLabels.push(currentLabel);
+            }
+        }
+
+        return processedLabels;
+    }
+
+    // Offsets overlapping labels to avoid overlaps
+    private offsetOverlappingLabels(labelData: LabelDataItem[], dataLabelsSettings: any): LabelDataItem[] {
+        const styleProperties = this.extractLabelStyleProperties(dataLabelsSettings);
+        const fontSize = parseFloat(styleProperties.fontSize);
+        const labelHeight = fontSize + StreamGraph.LabelPaddingVerticalReduced; // Reduced padding
+        const offsetDistance = labelHeight + StreamGraph.LabelOffsetSpacing; // Smaller spacing
+        const maxIterations = StreamGraph.MaxOverlapIterations;
+        
+        // Cache width calculations to avoid expensive text measurement in nested loops
+        const widthCache = new Map<string, number>();
+        const getCachedWidth = (label: LabelDataItem): number => {
+            const key = `${label.seriesIndex}-${label.pointIndex}`;
+            if (!widthCache.has(key)) {
+                widthCache.set(key, this.getLabelWidth(label, dataLabelsSettings, styleProperties));
+            }
+            return widthCache.get(key)!;
+        };
+        
+        // Create a copy of label data to modify
+        const processedLabels: LabelDataItem[] = labelData.map(label => ({ ...label }));
+
+        // Sort by original y position
+        processedLabels.sort((a, b) => a.y - b.y);
+
+        // Iterative overlap resolution
+        for (let iteration = 0; iteration < maxIterations; iteration++) {
+            let overlapFound = false;
+            
+            // Check each label against all others
+            for (let i = 0; i < processedLabels.length - 1; i++) {
+                for (let j = i + 1; j < processedLabels.length; j++) {
+                    const label1 = processedLabels[i];
+                    const label2 = processedLabels[j];
+                    
+                    const width1 = getCachedWidth(label1);
+                    const width2 = getCachedWidth(label2);
+                    const maxWidth = Math.max(width1, width2);
+
+                    if (this.labelsOverlap(label1, label2, maxWidth, labelHeight)) {
+                        // Move the lower label down
+                        const upperLabel = label1.y < label2.y ? label1 : label2;
+                        const lowerLabel = label1.y >= label2.y ? label1 : label2;
+                        
+                        const newY = upperLabel.y + offsetDistance;
+                        if (lowerLabel.y < newY) {
+                            lowerLabel.y = newY;
+                            overlapFound = true;
+                        }
+                    }
+                }
+            }
+            
+            // If no overlaps were found, we're done
+            if (!overlapFound) {
+                break;
+            }
+            
+            // Re-sort after moving labels
+            processedLabels.sort((a, b) => a.y - b.y);
+        }
+
+        return processedLabels;
+    }
+
+    
+    // Checks if two labels overlap
+    private labelsOverlap(label1: LabelDataItem, label2: LabelDataItem, width: number, height: number): boolean {
+        const halfWidth = width / 2;
+        const halfHeight = height / 2;
+
+        // Calculate bounding boxes
+        const box1 = {
+            left: label1.x - halfWidth,
+            right: label1.x + halfWidth,
+            top: label1.y - halfHeight,
+            bottom: label1.y + halfHeight
         };
 
-        if (hasHighlights) {
-            const highlightedPointArray: StreamDataPoint[] = dataPointsArray.filter((d: StreamDataPoint) => d.highlight && d.value !== StreamGraph.DefaultValue);
-            const additionalPointsArray: StreamDataPoint[] = dataPointsArray.filter((d: StreamDataPoint) => highlightedPointArray[0] && d.text === highlightedPointArray[0].text && d.x < highlightedPointArray[0].x);
-            dataPointsArray = additionalPointsArray.concat(highlightedPointArray);
-        }
+        const box2 = {
+            left: label2.x - halfWidth,
+            right: label2.x + halfWidth,
+            top: label2.y - halfHeight,
+            bottom: label2.y + halfHeight
+        };
 
-        dataLabelUtils.cleanDataLabels(this.svg);
-
-        const labels: Selection<BaseType, StreamDataPoint, any, any> =
-            dataLabelUtils.drawDefaultLabelsForDataPointChart(
-                dataPointsArray,
-                this.svg,
-                layout,
-                viewport);
-
-        if (labels) {
-            //If Y axis is on or Y title is on, we need to consider that
-            let divider = 4;
-            if(this.data.formattingSettings.valueAxis.options.show.value)
-                divider--;
-            if(this.data.formattingSettings.valueAxis.title.show.value)
-                divider--;
-
-            let offset: number = StreamGraph.DefaultDataLabelsOffset + margin.left / divider;
-
-            //DataLabels value ON, Y axis OFF, Y title OFF
-            if(this.data.formattingSettings.dataLabels.showValues.value 
-                    && !this.data.formattingSettings.valueAxis.options.show.value
-                    && !this.data.formattingSettings.valueAxis.title.show.value)
-                offset = StreamGraph.DefaultDataLabelsOffset - (margin.left * 0.2);
-                
-            //DataLabels value ON, Y axis OFF, Y title ON
-            if(this.data.formattingSettings.dataLabels.showValues.value 
-                    && !this.data.formattingSettings.valueAxis.options.show.value
-                    && this.data.formattingSettings.valueAxis.title.show.value)
-                offset *= 0.5;
-
-            labels.attr("transform", (dataPoint: StreamDataPoint) => {
-                return translate(
-                    offset + (dataPoint.size.width / StreamGraph.MiddleOfTheLabel),
-                    dataPoint.size.height / StreamGraph.MiddleOfTheLabel);
-            });
-        }
+        // Check if boxes overlap
+        const overlaps = !(box1.right <= box2.left || 
+                          box1.left >= box2.right || 
+                          box1.bottom <= box2.top || 
+                          box1.top >= box2.bottom);
+        
+        return overlaps;
     }
 
     private renderLegend(streamGraphData: StreamData): void {
@@ -1453,6 +1759,10 @@ export class StreamGraph implements IVisual {
             .selectAll(StreamGraph.LayerSelector.selectorName)
             .remove();
 
+        this.svg
+            .selectAll(".data-labels-container")
+            .remove();
+
         this.legend.drawLegend(
             { dataPoints: [] },
             this.viewport);
@@ -1463,10 +1773,6 @@ export class StreamGraph implements IVisual {
 
         this.axisY
             .selectAll("*")
-            .remove();
-
-        this.svg
-            .select(".labels")
             .remove();
     }
 
@@ -1484,7 +1790,7 @@ export class StreamGraph implements IVisual {
         };
     }
 
-    private getAdditionalMarginForRotatedLabels(): number {
+    private getRotatedXAxisLabelMargin(): number {
         const orientationMode = this.data.formattingSettings.categoryAxis.options.labelOrientationMode.value.value;
         if (orientationMode !== LabelOrientationMode[LabelOrientationMode.ForceRotate]) {
             return 0;
@@ -1515,7 +1821,6 @@ export class StreamGraph implements IVisual {
     }
 
     public getFormattingModel(): powerbi.visuals.FormattingModel {
-        StreamGraph.formattingSettings.setLocalizedOptions(this.localizationManager);
         return StreamGraph.formattingSettingsService.buildFormattingModel(StreamGraph.formattingSettings);
     }
 

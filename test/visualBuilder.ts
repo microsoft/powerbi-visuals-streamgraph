@@ -69,7 +69,7 @@ export class StreamGraphBuilder extends VisualBuilderBase<StreamGraph> {
     }
     
     public get dataLabelsText(): NodeListOf<HTMLElement> {
-        return this.mainElement.querySelectorAll("g.labels text.data-labels");
+        return this.mainElement.querySelectorAll(".data-labels-container text.data-labels");
     }
     
     public get layers(): NodeListOf<HTMLElement> {

@@ -54,6 +54,12 @@ export enum DataOffset {
     Expand = 2
 }
 
+export enum LabelOverlapHandling {
+    Standard = 0,
+    HideOverlap = 1,
+    OffsetOverlap = 2
+}
+
 export enum LabelOrientationMode {
     Default = 0,
     ForceRotate = 1
