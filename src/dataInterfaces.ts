@@ -122,7 +122,7 @@ export interface LabelDataItem {
     x: number;
     y: number;
     text: string;
-    value: any;
+    value: number | undefined;
     highlight: boolean;
     seriesIndex: number;
     pointIndex: number;

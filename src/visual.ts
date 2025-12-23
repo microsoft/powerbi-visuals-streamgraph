@@ -142,7 +142,7 @@ export class StreamGraph implements IVisual {
         fill: { objectName: "streams", propertyName: "fill" }
     };
 
-    //cache style properties
+    // Cache style properties
     private cachedLabelStyles: LabelStyleProperties | null = null;
     private lastStyleUpdate: number = 0;
     private readonly STYLE_CACHE_DURATION = 1000; // 1 second cache
@@ -265,7 +265,7 @@ export class StreamGraph implements IVisual {
         }
 
         let xMaxValue: number = -Number.MAX_VALUE;
-        let xLongestText : string = ""; //will contain the longest text in X Axis, used to calculate right margin offsets
+        let xLongestText : string = ""; // will contain the longest text in X Axis, used to calculate right margin offsets
         let xMinValue: number = Number.MAX_VALUE;
         let yMaxValue: number = -Number.MAX_VALUE;
         let yMinValue: number = Number.MAX_VALUE;
@@ -493,7 +493,7 @@ export class StreamGraph implements IVisual {
             fontSize: PixelConverter.toString(formattingSettings.categoryAxis.options.fontSize.value)
         };
         const xAxisValueMaxTextSize: number = textMeasurementService.measureSvgTextWidth(textProperties);
-        const xAxisValueMaxReservedTextSize: number = xAxisValueMaxTextSize * 1.15; //reserve additional space
+        const xAxisValueMaxReservedTextSize: number = xAxisValueMaxTextSize * 1.15; // reserve additional space
         const textPropertiesY: TextProperties = {
             text: yMaxValue.toString(),
             fontFamily: "sans-serif",
@@ -993,19 +993,6 @@ export class StreamGraph implements IVisual {
         return requiredHeight;
     }
 
-    /**
-     * Calculates the additional left margin needed for rotated X-axis labels.
-     * This prevents rotated labels from being clipped at the left edge of the visual.
-     * returns the extra margin in pixels, or 0 if labels are not rotated
-     */
-    private getExtraLeftMarginForRotatedLabels(): number {
-        const orientationMode = this.data.formattingSettings.categoryAxis.options.labelOrientationMode.value.value;
-        if (orientationMode !== LabelOrientationMode[LabelOrientationMode.ForceRotate]) {
-            return 0;
-        }
-        const rotatedLabelHeight = this.calculateXAxisAdditionalHeight(this.data.categoriesText);
-        return Math.min(rotatedLabelHeight * StreamGraph.RotatedLabelMarginFactor, StreamGraph.MaxRotatedLabelMargin);
-    }
     
     private renderYAxis(effectiveHeight: number, metaDataColumnPercent: powerbi.DataViewMetadataColumn): void {
         this.yAxisProperties = AxisHelper.createAxis({
@@ -1042,7 +1029,7 @@ export class StreamGraph implements IVisual {
         this.margin.left = baseMarginLeft;
         
         // Add extra left margin for rotated X-axis labels
-        const extraRotatedMargin = this.getExtraLeftMarginForRotatedLabels();
+        const extraRotatedMargin = this.getRotatedXAxisLabelMargin();
         this.margin.left += extraRotatedMargin;
 
         if (valueAxisSettings.title.show.value) {
@@ -1127,7 +1114,7 @@ export class StreamGraph implements IVisual {
 
         const categoryAxisSettings: BaseAxisCardSettings = this.data.formattingSettings.categoryAxis;
         const isXAxisOn: boolean = categoryAxisSettings.options.show.value;
-        const additionalMarginForRotation = this.getAdditionalMarginForRotatedLabels();
+        const additionalMarginForRotation = this.getRotatedXAxisLabelMargin();
         
         // Calculate the base bottom margin (axis + labels + rotation space)
         const baseBottomMargin = isXAxisOn
@@ -1187,13 +1174,13 @@ export class StreamGraph implements IVisual {
             : StreamGraph.YAxisOffSize;
 
         // Add extra left margin for rotated X-axis labels
-        this.margin.left += this.getExtraLeftMarginForRotatedLabels();
+        this.margin.left += this.getRotatedXAxisLabelMargin();
 
         if (this.data.formattingSettings.valueAxis.title.show.value) {
             this.margin.left += StreamGraph.YAxisLabelSize;
         }
 
-        const additionalMarginForRotation = this.getAdditionalMarginForRotatedLabels();
+        const additionalMarginForRotation = this.getRotatedXAxisLabelMargin();
         this.margin.bottom = this.data.formattingSettings.categoryAxis.options.show.value
             ? StreamGraph.XAxisOnSize + this.data.xAxisFontSize + additionalMarginForRotation
             : StreamGraph.XAxisOffSize;
@@ -1317,8 +1304,6 @@ export class StreamGraph implements IVisual {
     private clearDataLabels(): void {
         const labelsContainer = this.svg.selectAll(".data-labels-container");
         if (!labelsContainer.empty()) {
-            // Remove event listeners and clean up D3 selections
-            labelsContainer.selectAll("*").on(".", null);
             labelsContainer.remove();
         }
         
@@ -1328,7 +1313,7 @@ export class StreamGraph implements IVisual {
         this.lastStyleUpdate = 0;
     }
 
-    //Extracts and processes style properties for labels
+    // Extracts and processes style properties for labels
     private extractLabelStyleProperties(dataLabelsSettings: any): LabelStyleProperties {
         const now = Date.now();
         
@@ -1371,7 +1356,7 @@ export class StreamGraph implements IVisual {
         return labelsContainerEnter.merge(labelsContainer as any);
     }
 
-    //Creates and manages stream label groups
+    // Creates and manages stream label groups
     private createStreamLabelGroups(
         labelsContainer: Selection<BaseType, any, any, any>, 
         stackedSeries: Series<any, any>[]
@@ -1392,7 +1377,7 @@ export class StreamGraph implements IVisual {
         return streamLabelGroupsMerged;
     }
 
-    //Renders labels for a specific stream
+    // Renders labels for a specific stream
     private renderStreamLabels(
         streamGroup: Selection<BaseType, any, any, any>,
         labelData: LabelDataItem[],
@@ -1465,7 +1450,7 @@ export class StreamGraph implements IVisual {
         pointIndex: number,
         xScale: ScaleLinear<number, number>,
         yScale: ScaleLinear<number, number>
-    ): any {
+    ): LabelDataItem {
         // Calculate the actual value for the data point
         const actualValue = dataPoint[1] - dataPoint[0];
         
@@ -1480,7 +1465,7 @@ export class StreamGraph implements IVisual {
         };
     }
 
-    private shouldIncludeLabel(labelItem: any, hasHighlights: boolean): boolean {
+    private shouldIncludeLabel(labelItem: LabelDataItem, hasHighlights: boolean): boolean {
         if (hasHighlights) {
             return labelItem.highlight && labelItem.value !== StreamGraph.DefaultValue;
         }
@@ -1524,18 +1509,44 @@ export class StreamGraph implements IVisual {
         return baseText;
     }
 
+    /**
+     * Calculates the width of a label based on the actual formatted text that will be displayed
+     */
+    private getLabelWidth(label: LabelDataItem, dataLabelsSettings: any, styleProperties?: LabelStyleProperties): number {
+        // Use styleProperties if provided, otherwise extract fontSize
+        const fontSize = styleProperties 
+            ? parseFloat(styleProperties.fontSize)
+            : (dataLabelsSettings?.fontSize?.value || 12);
+        const showValues = dataLabelsSettings?.showValues?.value || false;
+        
+        // Get the actual text that will be displayed
+        const displayText = this.formatLabelText(label, showValues);
+        
+        // Use actual text measurement for accurate width calculation
+        const textProperties: TextProperties = {
+            text: displayText || "Sample", // Fallback text for measurement
+            fontFamily: styleProperties?.fontFamily || dataLabelsSettings?.font?.fontFamily?.value || "Arial",
+            fontSize: PixelConverter.toString(fontSize)
+        };
+        
+        const measuredWidth = textMeasurementService.measureSvgTextWidth(textProperties);
+        
+        // Return measured width with a small buffer for safety
+        return Math.max(measuredWidth * 1.1, fontSize * StreamGraph.MinLabelWidth);
+    }
+
     private applyOverlapHandling(labelData: LabelDataItem[], dataLabelsSettings: any): LabelDataItem[] {
         const overlapHandling = dataLabelsSettings?.overlapHandling?.value?.value;        
         // Handle both numeric enum values and enum name strings
-        if (!overlapHandling || overlapHandling === "Standard") {
+        if (!overlapHandling || overlapHandling === "Standard" || overlapHandling === "0") {
             return labelData;
         }
 
-        if (overlapHandling === "HideOverlap") {
+        if (overlapHandling === "HideOverlap" || overlapHandling === "1") {
             return this.hideOverlappingLabels(labelData, dataLabelsSettings);
         }
 
-        if (overlapHandling === "OffsetOverlap") {
+        if (overlapHandling === "OffsetOverlap" || overlapHandling === "2") {
             return this.offsetOverlappingLabels(labelData, dataLabelsSettings);
         }
 
@@ -1546,25 +1557,30 @@ export class StreamGraph implements IVisual {
     // Hides overlapping labels by removing them from the array
     private hideOverlappingLabels(labelData: LabelDataItem[], dataLabelsSettings: any): LabelDataItem[] {
         const processedLabels: LabelDataItem[] = [];
-        const fontSize = dataLabelsSettings?.fontSize?.value || 12;
+        const styleProperties = this.extractLabelStyleProperties(dataLabelsSettings);
+        const fontSize = parseFloat(styleProperties.fontSize);
         const labelHeight = fontSize + StreamGraph.LabelPaddingVertical; // More generous padding
         
-        // Calculate label width based on text content
-        const getLabelWidth = (label: LabelDataItem) => {
-            const textLength = label.text ? label.text.length : 6;
-            return Math.max(fontSize * StreamGraph.LabelWidthCharacterMultiplier * textLength, fontSize * StreamGraph.MinLabelWidth); // Minimum width
+        // Cache width calculations to avoid expensive text measurement in nested loops
+        const widthCache = new Map<string, number>();
+        const getCachedWidth = (label: LabelDataItem): number => {
+            const key = `${label.seriesIndex}-${label.pointIndex}`;
+            if (!widthCache.has(key)) {
+                widthCache.set(key, this.getLabelWidth(label, dataLabelsSettings, styleProperties));
+            }
+            return widthCache.get(key)!;
         };
-
+        
         // Sort labels by x position (left to right) for better distribution
         const sortedLabels = [...labelData].sort((a, b) => a.x - b.x);
 
         for (const currentLabel of sortedLabels) {
             let hasOverlap = false;
-            const currentWidth = getLabelWidth(currentLabel);
+            const currentWidth = getCachedWidth(currentLabel);
 
             // Check if current label overlaps with any already processed label
             for (const existingLabel of processedLabels) {
-                const existingWidth = getLabelWidth(existingLabel);
+                const existingWidth = getCachedWidth(existingLabel);
                 const maxWidth = Math.max(currentWidth, existingWidth);
                 
                 if (this.labelsOverlap(currentLabel, existingLabel, maxWidth, labelHeight)) {
@@ -1584,17 +1600,22 @@ export class StreamGraph implements IVisual {
 
     // Offsets overlapping labels to avoid overlaps
     private offsetOverlappingLabels(labelData: LabelDataItem[], dataLabelsSettings: any): LabelDataItem[] {
-        const fontSize = dataLabelsSettings?.fontSize?.value || 12;
+        const styleProperties = this.extractLabelStyleProperties(dataLabelsSettings);
+        const fontSize = parseFloat(styleProperties.fontSize);
         const labelHeight = fontSize + StreamGraph.LabelPaddingVerticalReduced; // Reduced padding
         const offsetDistance = labelHeight + StreamGraph.LabelOffsetSpacing; // Smaller spacing
         const maxIterations = StreamGraph.MaxOverlapIterations;
         
-        // Calculate label width based on text content
-        const getLabelWidth = (label: LabelDataItem) => {
-            const textLength = label.text ? label.text.length : 6;
-            return Math.max(fontSize * StreamGraph.LabelWidthCharacterMultiplier * textLength, fontSize * StreamGraph.MinLabelWidth); // Reduced width
+        // Cache width calculations to avoid expensive text measurement in nested loops
+        const widthCache = new Map<string, number>();
+        const getCachedWidth = (label: LabelDataItem): number => {
+            const key = `${label.seriesIndex}-${label.pointIndex}`;
+            if (!widthCache.has(key)) {
+                widthCache.set(key, this.getLabelWidth(label, dataLabelsSettings, styleProperties));
+            }
+            return widthCache.get(key)!;
         };
-
+        
         // Create a copy of label data to modify
         const processedLabels: LabelDataItem[] = labelData.map(label => ({ ...label }));
 
@@ -1611,8 +1632,8 @@ export class StreamGraph implements IVisual {
                     const label1 = processedLabels[i];
                     const label2 = processedLabels[j];
                     
-                    const width1 = getLabelWidth(label1);
-                    const width2 = getLabelWidth(label2);
+                    const width1 = getCachedWidth(label1);
+                    const width2 = getCachedWidth(label2);
                     const maxWidth = Math.max(width1, width2);
 
                     if (this.labelsOverlap(label1, label2, maxWidth, labelHeight)) {
@@ -1769,7 +1790,7 @@ export class StreamGraph implements IVisual {
         };
     }
 
-    private getAdditionalMarginForRotatedLabels(): number {
+    private getRotatedXAxisLabelMargin(): number {
         const orientationMode = this.data.formattingSettings.categoryAxis.options.labelOrientationMode.value.value;
         if (orientationMode !== LabelOrientationMode[LabelOrientationMode.ForceRotate]) {
             return 0;

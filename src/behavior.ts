@@ -103,7 +103,7 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
             });
 
             // Update nested stream labels
-            this.labelsSelection.selectAll("g.stream-labels").each((d: any, i: number, nodes: any) => {
+            this.labelsSelection.selectAll("g.stream-label-group").each((d: any, i: number, nodes: any) => {
                 if (nodes[i] && i >= 0 && i < highlightStates.length) {
                     const streamGroup = nodes[i];
                     const { isCurrentHighlighted, anyHighlightedAtAll } = highlightStates[i];
