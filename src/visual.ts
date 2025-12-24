@@ -248,7 +248,6 @@ export class StreamGraph implements IVisual {
         return !isNaN(value as number) && isFinite(value as number) && value !== null;
     }
 
-    /* eslint-disable-next-line max-lines-per-function */
     public static converter(
         dataView: DataView,
         colorPalette: IColorPalette,
@@ -352,7 +351,7 @@ export class StreamGraph implements IVisual {
                 legendData.dataPoints.push({
                     color,
                     label,
-                    identity,
+                    identity: identity as any,
                     selected: false
                 });
             }
@@ -647,8 +646,7 @@ export class StreamGraph implements IVisual {
         this.legend = createLegend(
             element,
             false,
-            this.interactivityService,
-            true
+            null
         );
     }
 
@@ -951,7 +949,6 @@ export class StreamGraph implements IVisual {
     }
 
     public static parseSvgTransformToTranslateAndRotation(transform: string): [number, number, number] {
-        // eslint-disable-next-line powerbi-visuals/no-http-string
         const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
         g.setAttributeNS(null, "transform", transform);
         const matrix = g.transform.baseVal.consolidate().matrix;

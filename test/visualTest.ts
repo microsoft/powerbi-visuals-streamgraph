@@ -92,7 +92,7 @@ describe("StreamGraph", () => {
             const dataPointsContainer = document.querySelector(".streamGraph .dataPointsContainer");
             const paths = dataPointsContainer!.querySelectorAll("path");
             paths.forEach(function (element) {
-                let nanLocation = element.getAttribute("d")!.indexOf("NaN");
+                const nanLocation = element.getAttribute("d")!.indexOf("NaN");
                 expect(nanLocation).toBe(-1);
             });
         });
@@ -118,9 +118,9 @@ describe("StreamGraph", () => {
 
             const isNumberRegExp = /\d/;
 
-            Array.from(visualBuilder.xAxisTicks).forEach((element, index) => {
+            Array.from(visualBuilder.xAxisTicks).forEach((element) => {
                 const textElements = element.querySelectorAll("text");
-                Array.from(textElements).forEach((textElement, index, array) => {
+                Array.from(textElements).forEach((textElement) => {
                     expect(isNumberRegExp.test(textElement.textContent!)).toBeFalsy();
                 });
             });
@@ -139,7 +139,7 @@ describe("StreamGraph", () => {
 
             visualBuilder.updateVisual(visualUpdateOptions);
 
-            const layers = Array.from(visualBuilder.layers).map((layer: HTMLElement) => { });
+            const layers = Array.from(visualBuilder.layers).map(() => { });
             expect(layers.length).toBeGreaterThan(0);
         });
 
@@ -471,8 +471,8 @@ describe("StreamGraph", () => {
 
             it("first tick aligns with start of graph", () => {
                 visualBuilder.updateFlushAllD3Transitions(dataView);
-                let firstLayerX = visualBuilder.layers[0].getBoundingClientRect().x;
-                let axisDomainX = visualBuilder.xAxisTicks[0].children[0].getBoundingClientRect().x;
+                const firstLayerX = visualBuilder.layers[0].getBoundingClientRect().x;
+                const axisDomainX = visualBuilder.xAxisTicks[0].children[0].getBoundingClientRect().x;
 
                 expect(Math.abs(axisDomainX - firstLayerX)).toBeLessThan(maxPixelDiffereneceDelta);
             });
@@ -649,7 +649,7 @@ describe("StreamGraph", () => {
                 expect(layers.length).toBeGreaterThan(0);
                 
                 // Verify that each layer maintains its identity for consistent coloring
-                Array.from(layers).forEach((layer: HTMLElement, index: number) => {
+                Array.from(layers).forEach((layer: HTMLElement) => {
                     expect(layer.getAttribute("class")).toContain("layer");
                     // Each layer should have consistent styling
                     const computedStyle = getComputedStyle(layer);
@@ -810,7 +810,7 @@ describe("StreamGraph", () => {
 
             it("every identity is defined", () => {
                 streamData.series.forEach((series: StreamGraphSeries) => {
-                    let identity: ISelectionId = series.identity as ISelectionId;
+                    const identity: ISelectionId = series.identity as ISelectionId;
 
                     expect(identity).toBeDefined();
                     expect(identity).not.toBeNull();
@@ -888,9 +888,9 @@ describe("StreamGraph", () => {
 
     describe("Capabilities tests", () => {
         it("all items having displayName should have displayNameKey property", async () => {
-            let r = await fetch("base/capabilities.json");
-            let jsonData = await r.json();
-            let objectsChecker: Function = (obj) => {
+            const r = await fetch("base/capabilities.json");
+            const jsonData = await r.json();
+            const objectsChecker: Function = (obj) => {
                 const objKeys = Object.keys(obj);
                 for (let property of objKeys) {
                     let value: any = obj[property];
