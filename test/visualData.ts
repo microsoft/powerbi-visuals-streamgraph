@@ -184,7 +184,7 @@ export class MovieGenreSalesByDateData extends TestDataViewBuilder {
     ];
 
     public generateHightLightedValues(valuesArray: number[], hightlightedElementNumber?: number): number[] {
-        const array: number[] = [];
+        const array: any[] = [];
         const length: number = valuesArray.length;
         for (let i: number = 0; i < length; i++) {
             array[i] = null;

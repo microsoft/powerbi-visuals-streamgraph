@@ -712,8 +712,8 @@ describe("StreamGraph", () => {
 
         it("Selection state set on converter result including clear", () => {
             let series: StreamGraphSeries[];
-
-            interactivityService["selectionManager"].selectionIds = [seriesSelectionId];
+            
+            (interactivityService as any)["selectionManager"].selectionIds = [seriesSelectionId];
 
             const data = StreamGraph.converter(
                 dataView,
@@ -890,7 +890,7 @@ describe("StreamGraph", () => {
         it("all items having displayName should have displayNameKey property", async () => {
             const r = await fetch("base/capabilities.json");
             const jsonData = await r.json();
-            const objectsChecker: Function = (obj) => {
+            const objectsChecker: Function = (obj:any) => {
                 const objKeys = Object.keys(obj);
                 for (let property of objKeys) {
                     let value: any = obj[property];
