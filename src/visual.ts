@@ -1712,6 +1712,19 @@ export class StreamGraph implements IVisual {
 
         this.legend.drawLegend(legendData, { ...this.viewport });
 
+        // Set up legend interactivity by connecting legend datapoints with series
+        if (this.interactivityService && legendData.dataPoints.length > 0) {            
+            // Map legend data points to series for automatic selection sync
+            legendData.dataPoints.forEach((legendPoint, index) => {
+                if (index < streamGraphData.series.length) {
+                    const series = streamGraphData.series[index];
+                    // Sync the selection state
+                    legendPoint.selected = series.selected;
+                    legendPoint.identity = series.identity as any;
+                }
+            });
+        }
+
         const legendSelection = this.element
             .select(".legend");
 
