@@ -68,10 +68,30 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
         this.bindContextMenuEvent();
         this.bindClickEvents();
         this.bindKeyboardEvents();
+        this.bindLegendEvents(); // Auto-bind legend events
 
         this.clearCatcher.on("click", () => {
             selectionHandler.handleClearSelection();
         });
+    }
+
+    private bindLegendEvents(): void {
+        const legendItems = select("body").selectAll(".legendItem");
+        
+        if (!legendItems.empty() && this.series && this.selectionHandler) {
+            legendItems.on("click", (event: PointerEvent, d: unknown) => {
+                const clickedElement = event.currentTarget as Element;
+                const parentElement = clickedElement.parentElement;
+                const siblings = Array.from(parentElement.children);
+                const actualIndex = siblings.indexOf(clickedElement);
+                
+                if (actualIndex >= 0 && actualIndex < this.series.length) {
+                    const series = this.series[actualIndex];
+                    this.selectionHandler.handleSelection(series, event.ctrlKey);
+                }
+                event.stopPropagation();
+            });
+        }
     }
 
     public renderSelection(hasHighlight: boolean): void {
@@ -110,6 +130,23 @@ export class StreamGraphBehavior implements IInteractiveBehavior {
                     const opacity = getFillOpacity(isCurrentHighlighted, anyHighlightedAtAll);
                     select(streamGroup).style("opacity", opacity);
                 }
+            });
+        }
+
+        // Auto-update legend opacity based on selection state
+        this.updateLegendOpacity(highlightStates);
+    }
+
+    private updateLegendOpacity(highlightStates: Array<{ isCurrentHighlighted: boolean, anyHighlightedAtAll: boolean }>): void {
+        const legendItems = select("body").selectAll(".legendItem");
+        
+        if (!legendItems.empty() && this.series) {
+            legendItems.style("opacity", (d: any, i: number) => {
+                if (i < highlightStates.length) {
+                    const { isCurrentHighlighted, anyHighlightedAtAll } = highlightStates[i];
+                    return getFillOpacity(isCurrentHighlighted, anyHighlightedAtAll);
+                }
+                return "1";
             });
         }
     }
