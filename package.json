@@ -80,6 +80,6 @@
     "style-loader": "3.3.4",
     "ts-loader": "9.5.1",
     "typescript": "5.3.3",
-    "webpack": "^5.88.1"
+    "webpack": "^5.105.0"
   }
 }
