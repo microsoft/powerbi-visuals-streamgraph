@@ -32,7 +32,7 @@ import VisualConstructorOptions = powerbi.extensibility.visual.VisualConstructor
 import VisualUpdateOptions = powerbi.extensibility.visual.VisualUpdateOptions;
 
 export class StreamGraphBuilder extends VisualBuilderBase<StreamGraph> {
-    constructor(width: number, height: number, isMinervaVisualPlugin: boolean = false) {
+    constructor(width: number, height: number) {
         super(width, height, "StreamGraph1446659696222");
     }
 

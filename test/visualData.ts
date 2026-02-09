@@ -65,7 +65,7 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
     ];
 
     public generateHightLightedValues(valuesArray: number[], hightlightedElementNumber?: number): number[] {
-        let array: number[] = [];
+        const array: number[] = [];
         const lenght: number = valuesArray.length;
         for (let i: number = 0; i < lenght; i++) {
             array[i] = NaN;
@@ -101,7 +101,7 @@ export class ProductSalesByDateData extends TestDataViewBuilder {
             });
         }
 
-        let columns: DataViewBuilderValuesColumnOptions[] = [{
+        const columns: DataViewBuilderValuesColumnOptions[] = [{
             source: {
                 displayName: ProductSalesByDateData.ColumnValues[0],
                 isMeasure: true,
@@ -184,7 +184,7 @@ export class MovieGenreSalesByDateData extends TestDataViewBuilder {
     ];
 
     public generateHightLightedValues(valuesArray: number[], hightlightedElementNumber?: number): number[] {
-        let array: any[] = [];
+        const array: any[] = [];
         const length: number = valuesArray.length;
         for (let i: number = 0; i < length; i++) {
             array[i] = null;
@@ -209,7 +209,7 @@ export class MovieGenreSalesByDateData extends TestDataViewBuilder {
             values: this.valuesDate
         }];
 
-        let columns: DataViewBuilderValuesColumnOptions[] = [{
+        const columns: DataViewBuilderValuesColumnOptions[] = [{
             source: {
                 displayName: MovieGenreSalesByDateData.ColumnValues[0],
                 isMeasure: true,

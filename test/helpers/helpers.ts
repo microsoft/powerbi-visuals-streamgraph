@@ -52,7 +52,7 @@ export function isColorAppliedToElements(
     });
 }
 
-export function getSolidColorStructuralObject(color: string): any {
+export function getSolidColorStructuralObject(color: string) {
     return { solid: { color: color } };
 }
 
@@ -83,7 +83,7 @@ export function getRandomUniqueNumbers(
     min: number = 0,
     max: number = 1): number[] {
 
-    let resultNumbers: number[] = [];
+    const resultNumbers: number[] = [];
 
     for (let i: number = 0; i < count; i++) {
         resultNumbers.push(getRandomNumber(min, max, resultNumbers));
