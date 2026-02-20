@@ -59,6 +59,7 @@ import { isColorAppliedToElements, getSolidColorStructuralObject } from "./helpe
 import { ProductSalesByDateData, MovieGenreSalesByDateData } from "./visualData";
 import { StreamGraphSeries, StreamData, StreamDataPoint } from "../src/dataInterfaces";
 import { StreamGraph, VisualUpdateType } from "../src/visual";
+import { createTooltipInfo, getFormattedValue } from "../src/tooltipBuilder";
 import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
 import { LabelOverlapHandling } from "../src/utils";
 
@@ -1113,6 +1114,83 @@ describe("StreamGraph", () => {
 
                 expect(currentStrokeWidth).toBeLessThan(focusedStrokeWidth);
             }
+        });
+    });
+
+    describe("Support tooltips", () => {
+        const localizationManager = {
+            getDisplayName: (key: string): string => key
+        } as any;
+
+        it("returns default tooltip items when Tooltip bucket is empty", () => {
+            const dataViewForTooltip = defaultDataViewBuilder.getDataView();
+            const categorical = dataViewForTooltip.categorical!;
+
+            categorical.categories!.forEach(categoryColumn => {
+                (categoryColumn.source as any).roles = undefined;
+            });
+
+            categorical.values!.forEach(valueColumn => {
+                (valueColumn.source as any).roles = undefined;
+            });
+
+            const tooltipItems = createTooltipInfo(
+                dataViewForTooltip,
+                categorical,
+                localizationManager,
+                0,
+                0
+            );
+
+            expect(tooltipItems.length).toBeGreaterThan(0);
+            expect(tooltipItems.some(item => item.displayName === "Visual_Values")).toBe(true);
+        });
+
+        it("returns only Tooltip bucket category value when Tooltip bucket is populated", () => {
+            const dataViewForTooltip = defaultDataViewBuilder.getDataView();
+            const categorical = dataViewForTooltip.categorical!;
+            const categoryColumn = categorical.categories![0];
+            const categoryIndex = 3;
+
+            (categoryColumn.source as any).roles = { Tooltips: true };
+            categorical.values!.forEach(valueColumn => {
+                (valueColumn.source as any).roles = undefined;
+            });
+
+            const tooltipItems = createTooltipInfo(
+                dataViewForTooltip,
+                categorical,
+                localizationManager,
+                0,
+                categoryIndex
+            );
+
+            const expectedCategoryValue = getFormattedValue(
+                categoryColumn.source,
+                categoryColumn.values[categoryIndex]
+            );
+
+            expect(tooltipItems.length).toBe(1);
+            expect(tooltipItems[0].displayName).toBe(categoryColumn.source.displayName);
+            expect(tooltipItems[0].value).toBe(expectedCategoryValue);
+        });
+
+        it("returns empty array when Tooltip bucket is populated but category index is missing", () => {
+            const dataViewForTooltip = defaultDataViewBuilder.getDataView();
+            const categorical = dataViewForTooltip.categorical!;
+            const categoryColumn = categorical.categories![0];
+
+            (categoryColumn.source as any).roles = { Tooltips: true };
+
+            const tooltipItems = createTooltipInfo(
+                dataViewForTooltip,
+                categorical,
+                localizationManager,
+                0,
+                undefined
+            );
+
+            expect(tooltipItems.length).toBe(0);
         });
     });
 
