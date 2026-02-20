@@ -1,3 +1,14 @@
+
+## 3.3.0.0
+
+### New features
+* Tooltip bucket -  now shows only Tooltip bucket fields when populated; default tooltip rows are shown only when Tooltip bucket is empty
+* Tooltip values now resolve per hovered stream point (series + category index)
+
+### Tests
+* Added tooltip-focused test cases covering default tooltip fallback, explicit Tooltip bucket output
+
+
 ## 3.2.0.0
 
 ### New features

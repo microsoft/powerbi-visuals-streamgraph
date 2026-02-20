@@ -87,6 +87,7 @@ export interface StreamDataPoint extends IDataLabelInfo {
     labelFontSize: string;
     value?: number;
     highlight?: boolean;
+    tooltipInfo?: VisualTooltipDataItem[];
 }
 
 export interface StreamGraphSeries extends SelectableDataPoint {

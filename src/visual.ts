@@ -27,7 +27,7 @@ import "./../style/visual.less";
 
 // d3
 import "d3-transition";
-import { BaseType, Selection, select } from "d3-selection";
+import { BaseType, Selection, select, pointer } from "d3-selection";
 import { scaleLinear, ScaleLinear } from "d3-scale";
 import { stackOrderNone, stackOrderAscending, stackOrderDescending, stackOrderInsideOut, stackOrderReverse } from "d3-shape";
 import { stackOffsetNone, stackOffsetExpand, stackOffsetSilhouette } from "d3-shape";
@@ -203,6 +203,12 @@ export class StreamGraph implements IVisual {
     private static DefaultFontFamily: string = "helvetica, arial, sans-serif";
     private static DefaultFontWeight: string = "normal";
     private static LayerSelector: ClassAndSelector = createClassAndSelector("layer");
+    
+    private static readonly TooltipEventsNs = {
+        over: "pointerover.tooltip",
+        move: "pointermove.tooltip",
+        out: "pointerout.tooltip",
+    } as const;
 
     private visualHost: IVisualHost;
 
@@ -292,6 +298,8 @@ export class StreamGraph implements IVisual {
         const fontSizeInPx: string = PixelConverter.fromPoint(formattingSettings.dataLabels.fontSize.value);
 
         const stackValues: StackValue[] = [];
+        //create localization manager once
+        const localizationManager = visualHost?.createLocalizationManager();
 
         for (let valueIndex: number = 0; valueIndex < values.length; valueIndex++) {
             let label: string = values[valueIndex].source.groupName as string,
@@ -321,8 +329,8 @@ export class StreamGraph implements IVisual {
 
             const tooltipInfo: VisualTooltipDataItem[] = createTooltipInfo(
                 dataView,
-                { categories: null, values: values },
-                visualHost.createLocalizationManager(),
+                { categories, values },
+                localizationManager,
                 valueIndex
             );
 
@@ -378,6 +386,16 @@ export class StreamGraph implements IVisual {
                 if (y > value) {
                     value = y;
                 }
+
+                // Create tooltip info for this specific data point
+                const dataPointTooltipInfo: VisualTooltipDataItem[] = createTooltipInfo(
+                    dataView,
+                    { categories, values },
+                    localizationManager,
+                    valueIndex,
+                    dataPointValueIndex
+                );
+
                 const streamDataPoint: StreamDataPoint = {
                     x: dataPointValueIndex,
                     y: StreamGraph.isNumber(y)
@@ -385,7 +403,11 @@ export class StreamGraph implements IVisual {
                         : StreamGraph.DefaultValue,
                     text: label,
                     labelFontSize: fontSizeInPx,
-                    highlight: hasHighlights && values[valueIndex].highlights && values[valueIndex].highlights[dataPointValueIndex] !== null
+                    highlight:
+                        hasHighlights &&
+                        values[valueIndex].highlights &&
+                        values[valueIndex].highlights[dataPointValueIndex] !== null,
+                    tooltipInfo: dataPointTooltipInfo,
                 };
 
                 series[valueIndex].dataPoints.push(streamDataPoint);
@@ -703,16 +725,8 @@ export class StreamGraph implements IVisual {
 
         this.calculateAxes();
 
-        this.tooltipServiceWrapper.addTooltip(
-            selection,
-            (tooltipEvent: any) => {
-                const index: number = tooltipEvent.index;
-                return this.data.series[index].tooltipInfo;
-            },
-            (tooltipEvent: any) => {
-                const index: number = tooltipEvent.index;
-                return this.data.series[index].identity;
-            });
+        // Tooltip binding extracted (same logic, cleaner update)
+        this.bindLayerTooltips(selection as any, this.data);
 
         const interactivityService: IInteractivityService<StreamGraphSeries> = this.interactivityService;
 
@@ -739,11 +753,115 @@ export class StreamGraph implements IVisual {
         this.events.renderingFinished(options);
     }
 
-    private toggleAxisVisibility(
-        isShown: boolean,
-        className: string,
-        axis: Selection<BaseType, any, any, any>): void {
+    private bindLayerTooltips(
+        selection: Selection<BaseType, any, any, any>,
+        data: StreamData
+    ): void {
+        const hasExplicitTooltipFields = this.hasExplicitTooltipFields(this.dataView);
+        const getSeriesData = (seriesIndex: number): StreamGraphSeries | undefined => data.series?.[seriesIndex];
 
+        selection
+            .on(StreamGraph.TooltipEventsNs.over, (event: PointerEvent, stackedDatum: any) => {
+                this.showOrMoveTooltip(event, stackedDatum, "show", getSeriesData, hasExplicitTooltipFields);
+            })
+            .on(StreamGraph.TooltipEventsNs.move, (event: PointerEvent, stackedDatum: any) => {
+                this.showOrMoveTooltip(event, stackedDatum, "move", getSeriesData, hasExplicitTooltipFields);
+            })
+            .on(StreamGraph.TooltipEventsNs.out, () => {
+                this.hideTooltip();
+            });
+    }
+
+    private showOrMoveTooltip(
+        event: PointerEvent,
+        stackedDatum: any,
+        action: "show" | "move",
+        getSeriesData: (seriesIndex: number) => StreamGraphSeries | undefined,
+        hasExplicitTooltipFields: boolean
+    ): void {
+        const seriesIndex = this.getStackedDatumIndex(stackedDatum);
+        const seriesData = getSeriesData(seriesIndex);
+
+        if (!seriesData?.dataPoints?.length) {
+            return;
+        }
+
+        const pointIndex = this.resolveTooltipPointIndex(event, seriesData.dataPoints.length);
+        const dataItems = this.getTooltipItemsForPoint(seriesData, seriesIndex, pointIndex, hasExplicitTooltipFields);
+
+        if (!dataItems.length) {
+            this.hideTooltip();
+            return;
+        }
+
+        this.visualHost.tooltipService[action]({
+            coordinates: [event.clientX, event.clientY],
+            isTouchEvent: event.pointerType === "touch",
+            dataItems,
+            identities: [seriesData.identity],
+        });
+    }
+
+    private hideTooltip(): void {
+        this.visualHost.tooltipService.hide({ isTouchEvent: false, immediately: false });
+    }
+
+    private getStackedDatumIndex(stackedDatum: any): number {
+        return stackedDatum && typeof stackedDatum.index === "number" ? stackedDatum.index : 0;
+    }
+
+    private resolveTooltipPointIndex(event: PointerEvent, pointCount: number): number {
+        if (pointCount <= 1) {
+            return 0;
+        }
+
+        const svgNode: SVGElement = this.svg.node() as SVGElement;
+        const [localPointerX]: [number, number] = pointer(event, svgNode);
+
+        const xRangeStart: number = this.margin.left;
+        const xRangeEnd: number = this.viewport.width - (this.margin.right + this.data.xAxisValueMaxReservedTextSize);
+        const xRange: number = xRangeEnd - xRangeStart;
+
+        if (xRange <= 0) {
+            return 0;
+        }
+
+        const step: number = xRange / (pointCount - 1);
+        const relativeX: number = localPointerX - xRangeStart;
+        const estimatedIndex: number = Math.round(relativeX / step);
+
+        return Math.max(0, Math.min(pointCount - 1, estimatedIndex));
+    }
+
+    private getTooltipItemsForPoint(
+        seriesData: StreamGraphSeries,
+        seriesIndex: number,
+        pointIndex: number,
+        hasExplicitTooltipFields: boolean
+    ): VisualTooltipDataItem[] {
+        const point = seriesData.dataPoints?.[pointIndex];
+
+        if (point?.tooltipInfo?.length) {
+            return point.tooltipInfo;
+        }
+
+        return hasExplicitTooltipFields ? [] : seriesData.tooltipInfo || [];
+    }
+
+    private hasExplicitTooltipFields(dataView: DataView): boolean {
+        const categoricalData: DataViewCategorical | undefined = dataView?.categorical;
+        const hasTooltipsRole = (roles?: { [key: string]: boolean }): boolean => !!(roles && roles["Tooltips"]);
+
+        return !!(
+            categoricalData &&
+            ((categoricalData.categories &&
+                categoricalData.categories.some((categoryColumn) => hasTooltipsRole(categoryColumn?.source?.roles as any))) ||
+                (categoricalData.values &&
+                    categoricalData.values.some((valueColumn) => hasTooltipsRole(valueColumn?.source?.roles as any))))
+        );
+    }
+
+    private toggleAxisVisibility(isShown: boolean, className: string, axis: Selection<BaseType, any, any, any>): void {
         axis.classed(className, isShown);
         if (!isShown) {
             axis
@@ -1647,7 +1765,7 @@ export class StreamGraph implements IVisual {
                 }
             }
             
-            // If no overlaps were found, we're done
+            // If no overlaps were found
             if (!overlapFound) {
                 break;
             }
