@@ -27,7 +27,7 @@ import "./../style/visual.less";
 
 // d3
 import "d3-transition";
-import { BaseType, Selection, select } from "d3-selection";
+import { BaseType, Selection, select, pointer } from "d3-selection";
 import { scaleLinear, ScaleLinear } from "d3-scale";
 import { stackOrderNone, stackOrderAscending, stackOrderDescending, stackOrderInsideOut, stackOrderReverse } from "d3-shape";
 import { stackOffsetNone, stackOffsetExpand, stackOffsetSilhouette } from "d3-shape";
@@ -59,7 +59,7 @@ import IVisualEventService = powerbi.extensibility.IVisualEventService;
 import { DefaultOpacity, DataOrder, DataOffset, LabelOrientationMode } from "./utils";
 import { StreamGraphSettingsModel, BaseAxisCardSettings, LegendTitleGroup, LegendCardSettings, BaseFontCardSettings } from "./streamGraphSettingsModel";
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
-import { createTooltipInfo } from "./tooltipBuilder";
+import { createTooltipInfo, TooltipsRoleName } from "./tooltipBuilder";
 import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue, StackedStackValue, LabelStyleProperties, LabelDataItem } from "./dataInterfaces";
 
 
@@ -102,9 +102,6 @@ import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
 
 // powerbi.extensibility.utils.dataview
 import { dataViewObjects } from "powerbi-visuals-utils-dataviewutils";
-
-// powerbi.extensibility.utils.tooltip
-import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
 
 // powerbi.extensibility.utils.formattingModel
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
@@ -203,6 +200,12 @@ export class StreamGraph implements IVisual {
     private static DefaultFontFamily: string = "helvetica, arial, sans-serif";
     private static DefaultFontWeight: string = "normal";
     private static LayerSelector: ClassAndSelector = createClassAndSelector("layer");
+    
+    private static readonly TooltipEventsNs = {
+        over: "pointerover.tooltip",
+        move: "pointermove.tooltip",
+        out: "pointerout.tooltip",
+    } as const;
 
     private visualHost: IVisualHost;
 
@@ -215,7 +218,15 @@ export class StreamGraph implements IVisual {
     private behavior: IInteractiveBehavior;
     private interactivityService: IInteractivityService<StreamGraphSeries>;
 
-    private tooltipServiceWrapper: ITooltipServiceWrapper;
+    // Track last tooltip interaction type for proper touch dismissal
+    private lastTooltipWasTouch: boolean = false;
+
+    // Cache for lazy tooltip computation to avoid redundant calculations
+    private tooltipCache: Map<string, VisualTooltipDataItem[]> = new Map();
+
+    // Cached per-update value for rotated label margin
+    private cachedRotatedLabelMargin: number = 0;
+
     private element: Selection<BaseType, any, any, any>;
     private svg: Selection<BaseType, any, any, any>;
     private clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
@@ -253,6 +264,7 @@ export class StreamGraph implements IVisual {
         colorPalette: IColorPalette,
         interactivityService: IInteractivityService<StreamGraphSeries>,
         visualHost: IVisualHost,
+        localizationManager: ILocalizationManager,
     ): StreamData {
 
         if (!dataView
@@ -292,17 +304,19 @@ export class StreamGraph implements IVisual {
         const fontSizeInPx: string = PixelConverter.fromPoint(formattingSettings.dataLabels.fontSize.value);
 
         const stackValues: StackValue[] = [];
+        const arrayOfYs: number[] = [];
 
         for (let valueIndex: number = 0; valueIndex < values.length; valueIndex++) {
             let label: string = values[valueIndex].source.groupName as string,
                 identity: ISelectionId = null,
-                hasHighlights: boolean = !!(values.length > 0 && values[valueIndex].highlights);
-            
-            if(hasHighlights)
-            {
-                for(let idx = 0; idx < values[valueIndex].highlights.length; idx++)
-                {
-                    hasHighlights ||= !!(values[valueIndex].highlights[idx]);
+                hasHighlights: boolean = false;
+
+            if (values[valueIndex].highlights) {
+                for (let idx = 0; idx < values[valueIndex].highlights.length; idx++) {
+                    if (values[valueIndex].highlights[idx] !== null) {
+                        hasHighlights = true;
+                        break;
+                    }
                 }
             }
 
@@ -320,9 +334,8 @@ export class StreamGraph implements IVisual {
             }
 
             const tooltipInfo: VisualTooltipDataItem[] = createTooltipInfo(
-                dataView,
-                { categories: null, values: values },
-                visualHost.createLocalizationManager(),
+                { categories, values },
+                localizationManager,
                 valueIndex
             );
 
@@ -378,6 +391,8 @@ export class StreamGraph implements IVisual {
                 if (y > value) {
                     value = y;
                 }
+
+                // Store raw data for lazy tooltip computation instead of pre-computing
                 const streamDataPoint: StreamDataPoint = {
                     x: dataPointValueIndex,
                     y: StreamGraph.isNumber(y)
@@ -385,7 +400,11 @@ export class StreamGraph implements IVisual {
                         : StreamGraph.DefaultValue,
                     text: label,
                     labelFontSize: fontSizeInPx,
-                    highlight: hasHighlights && values[valueIndex].highlights && values[valueIndex].highlights[dataPointValueIndex] !== null
+                    highlight:
+                        hasHighlights &&
+                        values[valueIndex].highlights &&
+                        values[valueIndex].highlights[dataPointValueIndex] !== null,
+                    tooltipInfo: undefined,
                 };
 
                 series[valueIndex].dataPoints.push(streamDataPoint);
@@ -420,31 +439,18 @@ export class StreamGraph implements IVisual {
                 if (streamDataPoint.y < yMinValue) {
                     yMinValue = streamDataPoint.y;
                 }
-            }
-        }
 
-        const arrayOfYs = [];
-        for (let valueIndex: number = 0; valueIndex < values.length; valueIndex++) {
-            const dataPointsValues: PrimitiveValue[] = values[valueIndex].values;
-
-            for (let dataPointValueIndex: number = 0; dataPointValueIndex < dataPointsValues.length; dataPointValueIndex++) {
-                let y: number = dataPointsValues[dataPointValueIndex] as number;
-
-                if (y > value) {
-                    value = y;
+                // Accumulate per-column Y totals for stacked yMax calculation
+                if (arrayOfYs.length <= dataPointValueIndex) {
+                    arrayOfYs.push(streamDataPoint.y);
+                } else {
+                    arrayOfYs[dataPointValueIndex] += streamDataPoint.y;
                 }
-                y = StreamGraph.isNumber(y)
-                        ? y
-                        : StreamGraph.DefaultValue;
-
-                if(arrayOfYs.length <= dataPointValueIndex)
-                    arrayOfYs.push(y)
-                else
-                    arrayOfYs[dataPointValueIndex] += y;
             }
         }
-        for(let idx = 0; idx < arrayOfYs.length; idx++)
-        {
+
+        // Update yMaxValue with stacked totals
+        for (let idx = 0; idx < arrayOfYs.length; idx++) {
             if (arrayOfYs[idx] > yMaxValue) {
                 yMaxValue = arrayOfYs[idx];
             }
@@ -609,10 +615,6 @@ export class StreamGraph implements IVisual {
         const element: HTMLElement = options.element;
         this.element = select(element);
 
-        this.tooltipServiceWrapper = createTooltipServiceWrapper(
-            this.visualHost.tooltipService,
-            element);
-
         this.svg = select(element)
             .append("svg")
             .classed(StreamGraph.VisualClassName, true);
@@ -653,6 +655,9 @@ export class StreamGraph implements IVisual {
     public update(options: VisualUpdateOptions): void {
         this.events.renderingStarted(options);
 
+        // Clear tooltip cache on data updates
+        this.tooltipCache.clear();
+
         if (!options
             || !options.dataViews
             || !options.dataViews[0]
@@ -672,6 +677,7 @@ export class StreamGraph implements IVisual {
             this.colorPalette,
             this.interactivityService,
             this.visualHost,
+            this.localizationManager,
         );
 
         this.data.formattingSettings.populateStreams(this.data.series);
@@ -703,16 +709,8 @@ export class StreamGraph implements IVisual {
 
         this.calculateAxes();
 
-        this.tooltipServiceWrapper.addTooltip(
-            selection,
-            (tooltipEvent: any) => {
-                const index: number = tooltipEvent.index;
-                return this.data.series[index].tooltipInfo;
-            },
-            (tooltipEvent: any) => {
-                const index: number = tooltipEvent.index;
-                return this.data.series[index].identity;
-            });
+        // Tooltip binding extracted (same logic, cleaner update)
+        this.bindLayerTooltips(selection as any, this.data);
 
         const interactivityService: IInteractivityService<StreamGraphSeries> = this.interactivityService;
 
@@ -739,11 +737,151 @@ export class StreamGraph implements IVisual {
         this.events.renderingFinished(options);
     }
 
-    private toggleAxisVisibility(
-        isShown: boolean,
-        className: string,
-        axis: Selection<BaseType, any, any, any>): void {
+    private bindLayerTooltips(
+        selection: Selection<BaseType, any, any, any>,
+        data: StreamData
+    ): void {
+        const hasExplicitTooltipFields = this.hasExplicitTooltipFields(this.dataView);
+        const getSeriesData = (seriesIndex: number): StreamGraphSeries | undefined => data.series?.[seriesIndex];
 
+        selection
+            .on(StreamGraph.TooltipEventsNs.over, (event: PointerEvent, stackedDatum: any) => {
+                this.showOrMoveTooltip(event, stackedDatum, "show", getSeriesData, hasExplicitTooltipFields);
+            })
+            .on(StreamGraph.TooltipEventsNs.move, (event: PointerEvent, stackedDatum: any) => {
+                this.showOrMoveTooltip(event, stackedDatum, "move", getSeriesData, hasExplicitTooltipFields);
+            })
+            .on(StreamGraph.TooltipEventsNs.out, () => {
+                this.hideTooltip();
+            });
+    }
+
+    private showOrMoveTooltip(
+        event: PointerEvent,
+        stackedDatum: any,
+        action: "show" | "move",
+        getSeriesData: (seriesIndex: number) => StreamGraphSeries | undefined,
+        hasExplicitTooltipFields: boolean
+    ): void {
+        const seriesIndex = this.getStackedDatumIndex(stackedDatum);
+        const seriesData = getSeriesData(seriesIndex);
+
+        if (!seriesData?.dataPoints?.length) {
+            return;
+        }
+
+        const pointIndex = this.resolveTooltipPointIndex(event, seriesData.dataPoints.length);
+        const dataItems = this.getTooltipItemsForPoint(seriesData, seriesIndex, pointIndex, hasExplicitTooltipFields);
+
+        if (!dataItems.length) {
+            this.hideTooltip();
+            return;
+        }
+
+        const isTouchEvent = event.pointerType === "touch";
+        this.lastTooltipWasTouch = isTouchEvent;
+
+        this.visualHost.tooltipService[action]({
+            coordinates: [event.clientX, event.clientY],
+            isTouchEvent,
+            dataItems,
+            identities: [seriesData.identity],
+        });
+    }
+
+    private hideTooltip(): void {
+        this.visualHost.tooltipService.hide({ 
+            isTouchEvent: this.lastTooltipWasTouch, 
+            immediately: false 
+        });
+    }
+
+    private getStackedDatumIndex(stackedDatum: any): number {
+        return stackedDatum && typeof stackedDatum.index === "number" ? stackedDatum.index : 0;
+    }
+
+    private resolveTooltipPointIndex(event: PointerEvent, pointCount: number): number {
+        if (pointCount <= 1) {
+            return 0;
+        }
+
+        const svgNode: SVGElement = this.svg.node() as SVGElement;
+        const [localPointerX]: [number, number] = pointer(event, svgNode);
+
+        const xRangeStart: number = this.margin.left;
+        const xRangeEnd: number = this.viewport.width - (this.margin.right + this.data.xAxisValueMaxReservedTextSize);
+        const xRange: number = xRangeEnd - xRangeStart;
+
+        if (xRange <= 0) {
+            return 0;
+        }
+
+        const step: number = xRange / (pointCount - 1);
+        const relativeX: number = localPointerX - xRangeStart;
+        const estimatedIndex: number = Math.round(relativeX / step);
+
+        return Math.max(0, Math.min(pointCount - 1, estimatedIndex));
+    }
+
+    private getTooltipItemsForPoint(
+        seriesData: StreamGraphSeries,
+        seriesIndex: number,
+        pointIndex: number,
+        hasExplicitTooltipFields: boolean
+    ): VisualTooltipDataItem[] {
+        const point = seriesData.dataPoints?.[pointIndex];
+
+        if (!point) {
+            return hasExplicitTooltipFields ? [] : seriesData.tooltipInfo || [];
+        }
+
+        // Compute tooltip info lazily on first access
+        if (point.tooltipInfo === undefined) {
+            // In default mode all points of the same series produce identical items,
+            // so key by series only. In explicit mode each point can differ.
+            const cacheKey = hasExplicitTooltipFields
+                ? `${seriesIndex}-${pointIndex}`
+                : `${seriesIndex}`;
+            
+            let tooltipInfo = this.tooltipCache.get(cacheKey);
+            if (!tooltipInfo) {
+                // Lazy computation - only when actually needed
+                tooltipInfo = createTooltipInfo(
+                    { categories: this.dataView.categorical.categories, values: this.dataView.categorical.values },
+                    this.localizationManager,
+                    seriesIndex,
+                    pointIndex
+                );
+                
+                // Cache the result to avoid recomputing
+                this.tooltipCache.set(cacheKey, tooltipInfo);
+            }
+            
+            // Store in the data point for subsequent accesses
+            point.tooltipInfo = tooltipInfo;
+        }
+
+        if (point.tooltipInfo?.length) {
+            return point.tooltipInfo;
+        }
+
+        return hasExplicitTooltipFields ? [] : seriesData.tooltipInfo || [];
+    }
+
+    private hasExplicitTooltipFields(dataView: DataView): boolean {
+        const categoricalData: DataViewCategorical | undefined = dataView?.categorical;
+        const hasTooltipsRole = (roles?: { [key: string]: boolean }): boolean => !!(roles && roles[TooltipsRoleName]);
+
+        return !!(
+            categoricalData &&
+            ((categoricalData.categories &&
+                categoricalData.categories.some((categoryColumn) => hasTooltipsRole(categoryColumn?.source?.roles as any))) ||
+                (categoricalData.values &&
+                    categoricalData.values.some((valueColumn) => hasTooltipsRole(valueColumn?.source?.roles as any))))
+        );
+    }
+
+    private toggleAxisVisibility(isShown: boolean, className: string, axis: Selection<BaseType, any, any, any>): void {
         axis.classed(className, isShown);
         if (!isShown) {
             axis
@@ -771,23 +909,6 @@ export class StreamGraph implements IVisual {
                     : 0);
             (this as Element).setAttribute("y", dy);
         });
-    }
-
-    private hideFirstAndLastTickXAxis()
-    {
-        const xAxisLineNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("line");
-        const xAxisLineNodesArray: BaseType[] = xAxisLineNodes.nodes();
-
-        // This is done to make sure first and last tick always transparent (there are cases when they are not alligned with start and end of axis)
-        if(xAxisLineNodesArray.length > 2)
-        {
-            for(let idx = 0; idx < xAxisLineNodesArray.length; idx++ )
-            {
-                (xAxisLineNodesArray[idx] as Element).setAttribute("opacity", "100");
-            }
-            (xAxisLineNodesArray[0] as Element).setAttribute("opacity", "0");
-            (xAxisLineNodesArray[xAxisLineNodesArray.length - 1] as Element).setAttribute("opacity", "0");
-        }
     }
 
     private setColorFontXAxis(xAxisTextNodes: Selection<BaseType, any, any, any>) {
@@ -906,18 +1027,37 @@ export class StreamGraph implements IVisual {
         };
 
         this.xAxisProperties = AxisHelper.createAxis(axisOptions);
-        this.axisX.call(this.xAxisProperties.axis);
-
-        this.hideFirstAndLastTickXAxis();
-        
-        const xAxisTextNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("text");
-        
-        this.setColorFontXAxis(xAxisTextNodes);
 
         // Handle label rotation based on orientation mode
         const orientationMode = this.data.formattingSettings.categoryAxis.options.labelOrientationMode.value.value;
+
+        // When ForceRotate is on, force ALL tick values to show regardless of available space.
+        // This prevents labels from disappearing one-by-one during resize.
+        if (orientationMode === LabelOrientationMode[LabelOrientationMode.ForceRotate]) {
+            if (isScalarVal) {
+                // For scalar (datetime/numeric) axes, use all actual category values as tick values
+                const allTickValues = this.data.categoriesText.map((val) =>
+                    val instanceof Date ? (val as Date).getTime() : val as number
+                );
+                this.xAxisProperties.axis.tickValues(allTickValues);
+            } else {
+                this.xAxisProperties.axis.tickValues(dataDomainVals);
+            }
+        }
+
+        this.axisX.call(this.xAxisProperties.axis);
+        const xAxisTextNodes: Selection<BaseType, any, any, any> = this.axisX.selectAll("text");
+        
+        this.setColorFontXAxis(xAxisTextNodes);
         
         if (orientationMode === LabelOrientationMode[LabelOrientationMode.ForceRotate]) {
+            // Hide first and last inner ticks only when rotating to prevent visual duplication
+            const xAxisTickLines = this.axisX.selectAll<Element, unknown>(".tick line").nodes();
+            if (xAxisTickLines.length > 2) {
+                xAxisTickLines[0].setAttribute("opacity", "0");
+                xAxisTickLines[xAxisTickLines.length - 1].setAttribute("opacity", "0");
+            }
+
             xAxisTextNodes
                 .classed(StreamGraph.LabelMiddleSelector.className, true)
                 .style("text-anchor", StreamGraph.AxisTextNodeTextAnchorForAngel0)
@@ -954,42 +1094,6 @@ export class StreamGraph implements IVisual {
         const matrix = g.transform.baseVal.consolidate().matrix;
         return [matrix.e, matrix.f, -Math.asin(matrix.a) * 180 / Math.PI];
     }
-
-    private calculateXAxisAdditionalHeight(categories: PrimitiveValue[]): number {
-        if (!categories || categories.length === 0) {
-            return 0;
-        }
-
-        const sortedByLength: PrimitiveValue[] = [...categories].sort((a: string, b: string) => 
-            (a ? a.toString().length : 0) > (b ? b.toString().length : 0) ? 1 : -1);
-        let longestCategory: PrimitiveValue = sortedByLength[categories.length - 1] || "";
-
-        if (longestCategory instanceof Date) {
-            const metadataColumn: DataViewMetadataColumn = this.dataView.categorical.categories[0].source;
-            const formatString: string = valueFormatter.getFormatStringByColumn(metadataColumn);
-
-            const formatter = valueFormatter.create({
-                format: formatString,
-                value: longestCategory,
-                columnType: {
-                    dateTime: true
-                }
-            });
-
-            longestCategory = formatter.format(longestCategory);
-        }
-
-        const textProperties: TextProperties = {
-            text: longestCategory.toString(),
-            fontFamily: "sans-serif",
-            fontSize: PixelConverter.toString(this.data.formattingSettings.categoryAxis.options.fontSize.value)
-        };
-
-        const longestCategoryWidth = textMeasurementService.measureSvgTextWidth(textProperties);
-        const requiredHeight = longestCategoryWidth * Math.tan(StreamGraph.CategoryTextRotationDegree * Math.PI / 180);
-        return requiredHeight;
-    }
-
     
     private renderYAxis(effectiveHeight: number, metaDataColumnPercent: powerbi.DataViewMetadataColumn): void {
         this.yAxisProperties = AxisHelper.createAxis({
@@ -1026,8 +1130,7 @@ export class StreamGraph implements IVisual {
         this.margin.left = baseMarginLeft;
         
         // Add extra left margin for rotated X-axis labels
-        const extraRotatedMargin = this.getRotatedXAxisLabelMargin();
-        this.margin.left += extraRotatedMargin;
+        this.margin.left += this.cachedRotatedLabelMargin;
 
         if (valueAxisSettings.title.show.value) {
             this.margin.left += StreamGraph.YAxisLabelSize;
@@ -1111,11 +1214,10 @@ export class StreamGraph implements IVisual {
 
         const categoryAxisSettings: BaseAxisCardSettings = this.data.formattingSettings.categoryAxis;
         const isXAxisOn: boolean = categoryAxisSettings.options.show.value;
-        const additionalMarginForRotation = this.getRotatedXAxisLabelMargin();
         
         // Calculate the base bottom margin (axis + labels + rotation space)
         const baseBottomMargin = isXAxisOn
-            ? StreamGraph.XAxisOnSize + parseInt(this.data.formattingSettings.categoryAxis.options.fontSize.value.toString()) + additionalMarginForRotation
+            ? StreamGraph.XAxisOnSize + parseInt(this.data.formattingSettings.categoryAxis.options.fontSize.value.toString()) + this.cachedRotatedLabelMargin
             : StreamGraph.XAxisOffSize;
         
         this.margin.bottom = baseBottomMargin;
@@ -1165,21 +1267,22 @@ export class StreamGraph implements IVisual {
         hasHighlights: boolean = false
     ): Selection<BaseType, StackedStackValue, any, any> {
         const { width, height } = this.viewport;
+        this.cachedRotatedLabelMargin = this.getRotatedXAxisLabelMargin();
+
         // Calculate left margin for Y-axis and Y-axis title
         this.margin.left = this.data.formattingSettings.valueAxis.options.show.value
             ? StreamGraph.YAxisOnSize + Math.min(this.data.yAxisValueMaxTextSize, StreamGraph.YAxisMaxTextWidth)
             : StreamGraph.YAxisOffSize;
 
         // Add extra left margin for rotated X-axis labels
-        this.margin.left += this.getRotatedXAxisLabelMargin();
+        this.margin.left += this.cachedRotatedLabelMargin;
 
         if (this.data.formattingSettings.valueAxis.title.show.value) {
             this.margin.left += StreamGraph.YAxisLabelSize;
         }
 
-        const additionalMarginForRotation = this.getRotatedXAxisLabelMargin();
         this.margin.bottom = this.data.formattingSettings.categoryAxis.options.show.value
-            ? StreamGraph.XAxisOnSize + this.data.xAxisFontSize + additionalMarginForRotation
+            ? StreamGraph.XAxisOnSize + this.data.xAxisFontSize + this.cachedRotatedLabelMargin
             : StreamGraph.XAxisOffSize;
 
         if (this.data.formattingSettings.categoryAxis.title.show.value) {
@@ -1647,7 +1750,7 @@ export class StreamGraph implements IVisual {
                 }
             }
             
-            // If no overlaps were found, we're done
+            // If no overlaps were found
             if (!overlapFound) {
                 break;
             }
@@ -1665,28 +1768,12 @@ export class StreamGraph implements IVisual {
         const halfWidth = width / 2;
         const halfHeight = height / 2;
 
-        // Calculate bounding boxes
-        const box1 = {
-            left: label1.x - halfWidth,
-            right: label1.x + halfWidth,
-            top: label1.y - halfHeight,
-            bottom: label1.y + halfHeight
-        };
-
-        const box2 = {
-            left: label2.x - halfWidth,
-            right: label2.x + halfWidth,
-            top: label2.y - halfHeight,
-            bottom: label2.y + halfHeight
-        };
-
-        // Check if boxes overlap
-        const overlaps = !(box1.right <= box2.left || 
-                          box1.left >= box2.right || 
-                          box1.bottom <= box2.top || 
-                          box1.top >= box2.bottom);
-        
-        return overlaps;
+        return !(
+            label1.x + halfWidth <= label2.x - halfWidth ||
+            label1.x - halfWidth >= label2.x + halfWidth ||
+            label1.y + halfHeight <= label2.y - halfHeight ||
+            label1.y - halfHeight >= label2.y + halfHeight
+        );
     }
 
     private renderLegend(streamGraphData: StreamData): void {

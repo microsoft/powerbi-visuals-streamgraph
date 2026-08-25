@@ -20,6 +20,12 @@
             "kind": "Measure",
             "displayName": "Values",
             "displayNameKey": "Visual_Values"
+        },
+        {
+            "name": "Tooltips",
+            "kind": "GroupingOrMeasure",
+            "displayName": "Tooltips",
+            "displayNameKey": "Visual_Tooltips"
         }
     ],
     "dataViewMappings": [
@@ -31,6 +37,9 @@
                     },
                     "Series": {
                         "max": 0
+                    },
+                    "Tooltips": {
+                        "max": 5
                     }
                 },
                 {
@@ -43,14 +52,26 @@
                     },
                     "Y": {
                         "max": 1
+                    },
+                    "Tooltips": {
+                        "max": 5
                     }
                 }
             ],
             "categorical": {
                 "categories": {
-                    "for": {
-                        "in": "Category"
-                    },
+                    "select": [
+                        {
+                            "for": {
+                                "in": "Category"
+                            }
+                        },
+                        {
+                            "for": {
+                                "in": "Tooltips"
+                            }
+                        }
+                    ],
                     "dataReductionAlgorithm": {
                         "bottom": {}
                     }
@@ -62,6 +83,11 @@
                             {
                                 "for": {
                                     "in": "Y"
+                                }
+                            },
+                            {
+                                "for": {
+                                    "in": "Tooltips"
                                 }
                             }
                         ],
@@ -436,6 +462,15 @@
                 }
             }
         }
+    },
+    "tooltips": {
+        "supportedTypes": {
+            "default": true,
+            "canvas": true
+        },
+        "roles": [
+            "Tooltips"
+        ]
     },
     "supportsHighlight": true
 }
