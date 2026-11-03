@@ -748,7 +748,7 @@ export class StreamGraph implements IVisual {
     private showTooltip(event: PointerEvent, stackedSeries: Series<any, any>, action: "show" | "move"): void {
         const seriesIndex: number = stackedSeries.index;
         const series: StreamGraphSeries = this.data?.series?.[seriesIndex];
-        if (!series) {
+        if (!series || !this.data.formattingSettings.tooltips.show.value) {
             return;
         }
 
@@ -766,8 +766,30 @@ export class StreamGraph implements IVisual {
             coordinates: [event.clientX, event.clientY],
             isTouchEvent: this.lastTooltipWasTouch,
             dataItems,
-            identities: [series.identity]
+            identities: [this.createPointSelectionId(seriesIndex, categoryIndex) ?? series.identity]
         });
+    }
+
+    // Identity of the hovered point (category + series), used to filter report page tooltips
+    private createPointSelectionId(seriesIndex: number, categoryIndex: number): ISelectionId | null {
+        const categorical: DataViewCategorical = this.dataView?.categorical;
+        const category: DataViewCategoryColumn = StreamGraph.getCategoryColumn(categorical);
+        const valueColumn: DataViewValueColumn = categorical?.values
+            ?.filter(column => !column.source.roles?.[TooltipsRoleName])[seriesIndex];
+
+        if (!category?.identity || !valueColumn) {
+            return null;
+        }
+
+        const builder = this.visualHost.createSelectionIdBuilder()
+            .withCategory(category, categoryIndex)
+            .withMeasure(valueColumn.source.queryName);
+
+        if (valueColumn.identity) {
+            builder.withSeries(categorical.values, valueColumn);
+        }
+
+        return builder.createSelectionId();
     }
 
     private getCategoryIndexAtPointer(event: PointerEvent, pointsCount: number): number {

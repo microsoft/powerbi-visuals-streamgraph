@@ -449,6 +449,15 @@
                 }
             }
         },
+        "tooltips": {
+            "properties": {
+                "show": {
+                    "type": {
+                        "bool": true
+                    }
+                }
+            }
+        },
         "streams": {
             "properties": {
                 "fill": {

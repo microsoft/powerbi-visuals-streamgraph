@@ -3,6 +3,7 @@ import DataViewCategorical = powerbi.DataViewCategorical;
 import ILocalizationManager = powerbi.extensibility.ILocalizationManager;
 
 import { createTooltipInfo, hasTooltipFields } from "../src/tooltipBuilder";
+import { StreamGraphSettingsModel } from "../src/streamGraphSettingsModel";
 
 describe("Tooltips bucket", () => {
     const localizationManager = { getDisplayName: (key: string) => key } as ILocalizationManager;
@@ -74,5 +75,12 @@ describe("Tooltips bucket", () => {
 
     it("returns no items when the point index is unknown", () => {
         expect(createTooltipInfo(buildCategorical(true), localizationManager, 0)).toEqual([]);
+    });
+
+    it("shows tooltips by default in the format settings", () => {
+        const settings = new StreamGraphSettingsModel();
+
+        expect(settings.tooltips.show.value).toBe(true);
+        expect(settings.cards).toContain(settings.tooltips);
     });
 });
