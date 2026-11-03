@@ -379,6 +379,19 @@ export class GraphCurvatureCardSettings extends Card{
     displayNameKey: string = "Visual_Curvature";
     slices = [this.value];
 }
+export class TooltipsCardSettings extends Card {
+    show = new formattingSettings.ToggleSwitch({
+        name: "show",
+        value: true,
+    });
+
+    topLevelSlice = this.show;
+
+    name: string = "tooltips";
+    displayName: string = "Tooltips";
+    displayNameKey: string = "Visual_Tooltips";
+}
+
 export class StreamCardSettings extends CompositeCard {
     name: string = "streams";
     displayName: string = "Streams";
@@ -393,6 +406,7 @@ export class StreamGraphSettingsModel extends Model {
     legend = new LegendCardSettings();
     dataLabels = new DataLabelsCardSettings();
     graphCurvature = new GraphCurvatureCardSettings();
+    tooltips = new TooltipsCardSettings();
     streams = new StreamCardSettings();
     cards = [
         this.general,
@@ -401,6 +415,7 @@ export class StreamGraphSettingsModel extends Model {
         this.legend,
         this.dataLabels,
         this.graphCurvature,
+        this.tooltips,
         this.streams
     ];
 

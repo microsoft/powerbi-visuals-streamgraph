@@ -1,4 +1,4 @@
-﻿/*
+/*
  *  Power BI Visualizations
  *
  *  Copyright (c) Microsoft Corporation
@@ -27,7 +27,7 @@ import "./../style/visual.less";
 
 // d3
 import "d3-transition";
-import { BaseType, Selection, select } from "d3-selection";
+import { BaseType, Selection, select, pointer } from "d3-selection";
 import { scaleLinear, ScaleLinear } from "d3-scale";
 import { stackOrderNone, stackOrderAscending, stackOrderDescending, stackOrderInsideOut, stackOrderReverse } from "d3-shape";
 import { stackOffsetNone, stackOffsetExpand, stackOffsetSilhouette } from "d3-shape";
@@ -41,6 +41,7 @@ import PrimitiveValue = powerbi.PrimitiveValue;
 import DataViewCategorical = powerbi.DataViewCategorical;
 import DataViewCategoryColumn = powerbi.DataViewCategoryColumn;
 import DataViewValueColumns = powerbi.DataViewValueColumns;
+import DataViewValueColumn = powerbi.DataViewValueColumn;
 import DataViewMetadataColumn = powerbi.DataViewMetadataColumn;
 import DataView = powerbi.DataView;
 
@@ -59,7 +60,7 @@ import IVisualEventService = powerbi.extensibility.IVisualEventService;
 import { DefaultOpacity, DataOrder, DataOffset, LabelOrientationMode } from "./utils";
 import { StreamGraphSettingsModel, BaseAxisCardSettings, LegendTitleGroup, LegendCardSettings, BaseFontCardSettings } from "./streamGraphSettingsModel";
 import { BehaviorOptions, StreamGraphBehavior } from "./behavior";
-import { createTooltipInfo } from "./tooltipBuilder";
+import { createDefaultTooltipInfo, createTooltipInfo, hasTooltipFields, TooltipsRoleName } from "./tooltipBuilder";
 import { StreamData, StreamGraphSeries, StreamDataPoint, StackValue, StackedStackValue, LabelStyleProperties, LabelDataItem } from "./dataInterfaces";
 
 
@@ -102,9 +103,6 @@ import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
 
 // powerbi.extensibility.utils.dataview
 import { dataViewObjects } from "powerbi-visuals-utils-dataviewutils";
-
-// powerbi.extensibility.utils.tooltip
-import { ITooltipServiceWrapper, createTooltipServiceWrapper } from "powerbi-visuals-utils-tooltiputils";
 
 // powerbi.extensibility.utils.formattingModel
 import { FormattingSettingsService } from "powerbi-visuals-utils-formattingmodel";
@@ -215,7 +213,8 @@ export class StreamGraph implements IVisual {
     private behavior: IInteractiveBehavior;
     private interactivityService: IInteractivityService<StreamGraphSeries>;
 
-    private tooltipServiceWrapper: ITooltipServiceWrapper;
+    private xScale: ScaleLinear<number, number>;
+    private lastTooltipWasTouch: boolean = false;
     private element: Selection<BaseType, any, any, any>;
     private svg: Selection<BaseType, any, any, any>;
     private clearCatcher: Selection<BaseType, StreamGraphSeries, any, any>;
@@ -248,6 +247,11 @@ export class StreamGraph implements IVisual {
         return !isNaN(value as number) && isFinite(value as number) && value !== null;
     }
 
+    // Tooltips role fields share the categories array with the Category field
+    private static getCategoryColumn(categorical: DataViewCategorical): DataViewCategoryColumn | null {
+        return categorical?.categories?.find(c => !c.source.roles?.[TooltipsRoleName]) ?? null;
+    }
+
     public static converter(
         dataView: DataView,
         colorPalette: IColorPalette,
@@ -271,19 +275,22 @@ export class StreamGraph implements IVisual {
 
         const categorical: DataViewCategorical = dataView.categorical,
             categories: DataViewCategoryColumn[] = categorical.categories,
-            values: DataViewValueColumns = categorical.values,
+            values: DataViewValueColumn[] = categorical.values
+                ? categorical.values.filter(column => !column.source.roles?.[TooltipsRoleName])
+                : [],
             series: StreamGraphSeries[] = [],
             legendData: LegendData = {
                 dataPoints: [],
-                title: values.source
-                    ? values.source.displayName
+                title: categorical.values.source
+                    ? categorical.values.source.displayName
                     : LegendTitleGroup.DefaultTitleText,
             };
         let value: number = 0;
 
-        const category: DataViewCategoryColumn = categories && categories.length > 0
-            ? categories[0]
-            : null;
+        const category: DataViewCategoryColumn = StreamGraph.getCategoryColumn(categorical);
+        if (!category) {
+            return null;
+        }
 
         const colorHelper: ColorHelper = new ColorHelper(colorPalette);
 
@@ -319,9 +326,8 @@ export class StreamGraph implements IVisual {
                     .createSelectionId();
             }
 
-            const tooltipInfo: VisualTooltipDataItem[] = createTooltipInfo(
-                dataView,
-                { categories: null, values: values },
+            const tooltipInfo: VisualTooltipDataItem[] = createDefaultTooltipInfo(
+                { categories: null, values: categorical.values },
                 visualHost.createLocalizationManager(),
                 valueIndex
             );
@@ -609,10 +615,6 @@ export class StreamGraph implements IVisual {
         const element: HTMLElement = options.element;
         this.element = select(element);
 
-        this.tooltipServiceWrapper = createTooltipServiceWrapper(
-            this.visualHost.tooltipService,
-            element);
-
         this.svg = select(element)
             .append("svg")
             .classed(StreamGraph.VisualClassName, true);
@@ -674,8 +676,6 @@ export class StreamGraph implements IVisual {
             this.visualHost,
         );
 
-        this.data.formattingSettings.populateStreams(this.data.series);
-
         if (!this.data
             || !this.data.series
             || !this.data.series.length
@@ -685,13 +685,16 @@ export class StreamGraph implements IVisual {
             return;
         }
 
+        this.data.formattingSettings.populateStreams(this.data.series);
+
         this.renderLegend(this.data);
         this.updateViewport();
 
         this.svg.attr("width", PixelConverter.toString(this.viewport.width));
         this.svg.attr("height", PixelConverter.toString(this.viewport.height));
 
-        const values: DataViewValueColumns = this.dataView.categorical.values;
+        const values: DataViewValueColumn[] = this.dataView.categorical.values
+            .filter(column => !column.source.roles?.[TooltipsRoleName]);
         const hasHighlights: boolean = !!(values.length > 0 && values[0].highlights);
 
         const selection: Selection<BaseType, StackedStackValue, any, any> = this.renderChart(
@@ -703,16 +706,7 @@ export class StreamGraph implements IVisual {
 
         this.calculateAxes();
 
-        this.tooltipServiceWrapper.addTooltip(
-            selection,
-            (tooltipEvent: any) => {
-                const index: number = tooltipEvent.index;
-                return this.data.series[index].tooltipInfo;
-            },
-            (tooltipEvent: any) => {
-                const index: number = tooltipEvent.index;
-                return this.data.series[index].identity;
-            });
+        this.bindTooltips(selection);
 
         const interactivityService: IInteractivityService<StreamGraphSeries> = this.interactivityService;
 
@@ -737,6 +731,74 @@ export class StreamGraph implements IVisual {
             this.behavior.renderSelection(interactivityService.hasSelection());
         }
         this.events.renderingFinished(options);
+    }
+
+    private bindTooltips(selection: Selection<BaseType, any, any, any>): void {
+        selection
+            .on("pointerover.tooltip", (event: PointerEvent, d: Series<any, any>) => this.showTooltip(event, d, "show"))
+            .on("pointermove.tooltip", (event: PointerEvent, d: Series<any, any>) => this.showTooltip(event, d, "move"))
+            .on("pointerout.tooltip", () => {
+                this.visualHost.tooltipService.hide({
+                    isTouchEvent: this.lastTooltipWasTouch,
+                    immediately: false
+                });
+            });
+    }
+
+    private showTooltip(event: PointerEvent, stackedSeries: Series<any, any>, action: "show" | "move"): void {
+        const seriesIndex: number = stackedSeries.index;
+        const series: StreamGraphSeries = this.data?.series?.[seriesIndex];
+        if (!series || !this.data.formattingSettings.tooltips.show.value) {
+            return;
+        }
+
+        const categoryIndex: number = this.getCategoryIndexAtPointer(event, series.dataPoints.length);
+        const dataItems: VisualTooltipDataItem[] = hasTooltipFields(this.dataView?.categorical)
+            ? createTooltipInfo(this.dataView.categorical, this.localizationManager, seriesIndex, categoryIndex)
+            : series.tooltipInfo;
+
+        if (!dataItems?.length) {
+            return;
+        }
+
+        this.lastTooltipWasTouch = event.pointerType === "touch";
+        this.visualHost.tooltipService[action]({
+            coordinates: [event.clientX, event.clientY],
+            isTouchEvent: this.lastTooltipWasTouch,
+            dataItems,
+            identities: [this.createPointSelectionId(seriesIndex, categoryIndex) ?? series.identity]
+        });
+    }
+
+    // Identity of the hovered point (category + series), used to filter report page tooltips
+    private createPointSelectionId(seriesIndex: number, categoryIndex: number): ISelectionId | null {
+        const categorical: DataViewCategorical = this.dataView?.categorical;
+        const category: DataViewCategoryColumn = StreamGraph.getCategoryColumn(categorical);
+        const valueColumn: DataViewValueColumn = categorical?.values
+            ?.filter(column => !column.source.roles?.[TooltipsRoleName])[seriesIndex];
+
+        if (!category?.identity || !valueColumn) {
+            return null;
+        }
+
+        const builder = this.visualHost.createSelectionIdBuilder()
+            .withCategory(category, categoryIndex)
+            .withMeasure(valueColumn.source.queryName);
+
+        if (valueColumn.identity) {
+            builder.withSeries(categorical.values, valueColumn);
+        }
+
+        return builder.createSelectionId();
+    }
+
+    private getCategoryIndexAtPointer(event: PointerEvent, pointsCount: number): number {
+        if (!this.xScale || pointsCount < 2) {
+            return 0;
+        }
+
+        const [x] = pointer(event, this.svg.node());
+        return Math.max(0, Math.min(pointsCount - 1, Math.round(this.xScale.invert(x))));
     }
 
     private toggleAxisVisibility(
@@ -965,7 +1027,7 @@ export class StreamGraph implements IVisual {
         let longestCategory: PrimitiveValue = sortedByLength[categories.length - 1] || "";
 
         if (longestCategory instanceof Date) {
-            const metadataColumn: DataViewMetadataColumn = this.dataView.categorical.categories[0].source;
+            const metadataColumn: DataViewMetadataColumn = StreamGraph.getCategoryColumn(this.dataView.categorical).source;
             const formatString: string = valueFormatter.getFormatStringByColumn(metadataColumn);
 
             const formatter = valueFormatter.create({
@@ -1048,7 +1110,8 @@ export class StreamGraph implements IVisual {
 
             let yAxisText: string = values.source
                 ? values.source.displayName
-                : StreamGraph.getYAxisTitleFromValues(values);
+                : StreamGraph.getYAxisTitleFromValues(
+                    values.filter(column => !column.source.roles?.[TooltipsRoleName]));
 
             const textSettings: TextProperties = StreamGraph.getTextPropertiesFunction(yAxisText, valueAxisSettings.title);
             yAxisText = textMeasurementService.getTailoredTextOrDefault(textSettings, height);
@@ -1076,7 +1139,7 @@ export class StreamGraph implements IVisual {
         }
     }
 
-    private static getYAxisTitleFromValues(values: DataViewValueColumns): string {
+    private static getYAxisTitleFromValues(values: DataViewValueColumn[]): string {
         const valuesMetadataArray: DataViewMetadataColumn[] = [];
 
         for (let valueIndex: number = 0; valueIndex < values.length; valueIndex++) {
@@ -1121,8 +1184,7 @@ export class StreamGraph implements IVisual {
         this.margin.bottom = baseBottomMargin;
 
         if (!categoryAxisSettings.title.show.value
-            || !this.dataView.categorical.categories[0]
-            || !this.dataView.categorical.categories[0].source) {
+            || !StreamGraph.getCategoryColumn(this.dataView.categorical)?.source) {
             return;
         }
         
@@ -1133,7 +1195,7 @@ export class StreamGraph implements IVisual {
         // The height includes the axis baseline plus space for labels and rotated label margins
         const height: number = this.xAxisBaseline + baseBottomMargin - StreamGraph.TickHeight;
 
-        let xAxisText: string = this.dataView.categorical.categories[0].source.displayName;
+        let xAxisText: string = StreamGraph.getCategoryColumn(this.dataView.categorical).source.displayName;
         const textSettings: TextProperties = StreamGraph.getTextPropertiesFunction(xAxisText, categoryAxisSettings.title);
 
         xAxisText = textMeasurementService.getTailoredTextOrDefault(textSettings, width);
@@ -1188,7 +1250,7 @@ export class StreamGraph implements IVisual {
 
         const
             margin: IMargin = this.margin,
-            xScale: ScaleLinear<number, number> = scaleLinear()
+            xScale: ScaleLinear<number, number> = this.xScale = scaleLinear()
                 .domain([0, series[0].dataPoints.length - 1])
                 .range([margin.left, width - (margin.right + this.data.xAxisValueMaxReservedTextSize)]);
 
