@@ -1,3 +1,8 @@
+## 3.3.0.0
+
+### New features
+* Added Tooltips bucket: when populated, the tooltip shows only its fields for the hovered point; otherwise the default tooltip is shown
+
 ## 3.2.0.0
 
 ### New features

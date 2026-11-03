@@ -61,6 +61,7 @@ import { StreamGraphSeries, StreamData, StreamDataPoint } from "../src/dataInter
 import { StreamGraph, VisualUpdateType } from "../src/visual";
 import { ValueType } from "powerbi-visuals-utils-typeutils/lib/valueType";
 import { LabelOverlapHandling } from "../src/utils";
+import "./tooltipTest";
 
 describe("StreamGraph", () => {
     let visualBuilder: StreamGraphBuilder,
